@@ -9,7 +9,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "migrate": "knex migrate:latest --knexfile src/config/database.js",
-    "migrate:rollback": "knex migrate:rollback --knexfile src/config/database.js"
+    "migrate:rollback": "knex migrate:rollback --knexfile src/config/database.js",
+    "seed": "knex seed:run --knexfile src/config/database.js"
   },
   "keywords": [],
   "author": "",
