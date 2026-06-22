@@ -44,6 +44,31 @@ app.patch('/api/finance/transactions/:id/reject', rbacMiddleware(['co_manager', 
 app.get('/api/finance/approvals/pending', rbacMiddleware(['co_manager', 'owner']), financeHandler.getPendingApprovals);
 app.get('/api/finance/balance', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getBalance);
 
+// Campaign routes
+const campaignHandler = require('./handlers/campaignHandler');
+// Create new campaign (co-managers and owners only)
+app.post('/api/campaigns', rbacMiddleware(['co_manager', 'owner']), campaignHandler.createCampaign);
+// List all campaigns (accessible to all roles)
+app.get('/api/campaigns', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.listCampaigns);
+// Get single campaign details
+app.get('/api/campaigns/:id', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.getCampaign);
+// Get campaign assignments (co-managers view)
+app.get('/api/campaigns/:id/assignments', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getAssignments);
+// Member confirms participation in campaign
+app.post('/api/campaigns/:id/assignments/:userId/confirm', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.memberConfirm);
+// Member rejects participation in campaign
+app.post('/api/campaigns/:id/assignments/:userId/reject', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.memberReject);
+// Co-manager approves member participation
+app.patch('/api/campaigns/:id/assignments/:userId/approve', rbacMiddleware(['co_manager', 'owner']), campaignHandler.coManagerApprove);
+// Co-manager rejects member participation
+app.patch('/api/campaigns/:id/assignments/:userId/reject', rbacMiddleware(['co_manager', 'owner']), campaignHandler.coManagerReject);
+// Co-manager exempts member from campaign
+app.patch('/api/campaigns/:id/assignments/:userId/exempt', rbacMiddleware(['co_manager', 'owner']), campaignHandler.coManagerExempt);
+// Close campaign and finalize
+app.post('/api/campaigns/:id/close', rbacMiddleware(['co_manager', 'owner']), campaignHandler.closeCampaign);
+// Get campaign report (analytics and results)
+app.get('/api/campaigns/:id/report', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getReport);
+
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
   handleError(err, req, res, {
