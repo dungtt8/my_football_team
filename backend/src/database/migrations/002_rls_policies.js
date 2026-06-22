@@ -2,6 +2,7 @@ exports.up = async (knex) => {
     // Enable RLS on all business tables
     await knex.raw('ALTER TABLE teams ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE users ENABLE ROW LEVEL SECURITY');
+    await knex.raw('ALTER TABLE team_members ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE fund_campaigns ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE fund_transactions ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE campaign_assignments ENABLE ROW LEVEL SECURITY');
@@ -16,25 +17,33 @@ exports.up = async (knex) => {
     USING (id = (current_setting('app.current_team_id'))::bigint);
   `);
 
-    // users RLS policies
+    // users RLS policies - users are global, no team filtering needed
     await knex.raw(`
-    CREATE POLICY "Users can view their team's members"
+    CREATE POLICY "All authenticated users can view users"
     ON users
+    FOR SELECT
+    USING (true);
+  `);
+
+    // team_members RLS policies
+    await knex.raw(`
+    CREATE POLICY "Users can view team members in their team"
+    ON team_members
     FOR SELECT
     USING (team_id = (current_setting('app.current_team_id'))::bigint);
   `);
 
     await knex.raw(`
-    CREATE POLICY "Only owner/co_manager can insert users"
-    ON users
+    CREATE POLICY "Only owner/co_manager can insert team members"
+    ON team_members
     FOR INSERT
     WITH CHECK (team_id = (current_setting('app.current_team_id'))::bigint
       AND (current_setting('app.current_role')) IN ('owner', 'co_manager'));
   `);
 
     await knex.raw(`
-    CREATE POLICY "Only owner/co_manager can update users"
-    ON users
+    CREATE POLICY "Only owner/co_manager can update team members"
+    ON team_members
     FOR UPDATE
     USING (team_id = (current_setting('app.current_team_id'))::bigint
       AND (current_setting('app.current_role')) IN ('owner', 'co_manager'));
@@ -144,12 +153,13 @@ exports.up = async (knex) => {
     ON inngest_logs
     FOR SELECT
     USING (team_id IS NULL OR team_id = (current_setting('app.current_team_id'))::bigint);
-  `);
 };
 
 exports.down = async (knex) => {
+    // Disable RLS on all tables
     await knex.raw('ALTER TABLE teams DISABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE users DISABLE ROW LEVEL SECURITY');
+    await knex.raw('ALTER TABLE team_members DISABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE fund_campaigns DISABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE fund_transactions DISABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE campaign_assignments DISABLE ROW LEVEL SECURITY');
