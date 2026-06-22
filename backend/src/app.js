@@ -17,8 +17,8 @@ app.get('/health', (req, res) => {
 });
 
 // Auth routes (no tenancy required)
-// Placeholder - will be filled in Task 6
-// app.post('/auth/zalo/callback', require('./handlers/authHandler'));
+const authHandler = require('./handlers/authHandler');
+app.post('/auth/zalo/callback', authHandler);
 
 // Protected routes (require auth + tenancy)
 app.use(authMiddleware);
