@@ -1,0 +1,8 @@
+{
+  "name": "saas-football-monorepo",
+  "version": "1.0.0",
+  "description": "Hệ thống quản lý đội bóng phong trào - Monorepo Master",
+  "scripts": {
+    "dev": "npx concurrently --kill-others-on-fail \"npm run dev --prefix frontend\" \"cd backend && node local-dev.js\""
+  }
+}
