@@ -17,25 +17,12 @@ exports.up = async (knex) => {
         table.index(['team_id', 'status']);
     });
 
-    // attendance_records table
-    await knex.schema.createTable('attendance_records', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('session_id').notNullable().references('attendance_sessions.id').onDelete('CASCADE');
-        table.bigInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
-        table.enu('status', ['attended', 'absent', 'marked_absent']).notNullable();
-        table.timestamp('checked_in_at').nullable();
-        table.bigInteger('marked_by').references('users.id');
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        table.unique(['session_id', 'user_id']);
-        table.index(['user_id', 'created_at']);
-    });
-
     // gamification_points table
     await knex.schema.createTable('gamification_points', (table) => {
         table.bigIncrements('id').primary();
         table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
         table.bigInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
-        table.integer('points').notNullable().checkRaw('points != 0');
+        table.integer('points').notNullable();
         table.string('reason', 255).notNullable();
         table.string('month', 7).notNullable(); // YYYY-MM format
         table.bigInteger('session_id').references('attendance_sessions.id').onDelete('SET NULL');
@@ -57,7 +44,6 @@ exports.up = async (knex) => {
 
     // Enable RLS on all new tables
     await knex.raw('ALTER TABLE attendance_sessions ENABLE ROW LEVEL SECURITY');
-    await knex.raw('ALTER TABLE attendance_records ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE gamification_points ENABLE ROW LEVEL SECURITY');
     await knex.raw('ALTER TABLE leaderboard_archives ENABLE ROW LEVEL SECURITY');
 
@@ -83,34 +69,6 @@ exports.up = async (knex) => {
     FOR UPDATE
     USING (team_id = (current_setting('app.current_team_id'))::bigint
       AND (current_setting('app.current_role')) IN ('owner', 'co_manager'));
-  `);
-
-    // attendance_records RLS policies
-    await knex.raw(`
-    CREATE POLICY "Users can view attendance records for their team"
-    ON attendance_records
-    FOR SELECT
-    USING (session_id IN (
-      SELECT id FROM attendance_sessions WHERE team_id = (current_setting('app.current_team_id'))::bigint
-    ));
-  `);
-
-    await knex.raw(`
-    CREATE POLICY "Users can create attendance records for their team"
-    ON attendance_records
-    FOR INSERT
-    WITH CHECK (session_id IN (
-      SELECT id FROM attendance_sessions WHERE team_id = (current_setting('app.current_team_id'))::bigint
-    ));
-  `);
-
-    await knex.raw(`
-    CREATE POLICY "Only owner/co_manager can update attendance records"
-    ON attendance_records
-    FOR UPDATE
-    USING (session_id IN (
-      SELECT id FROM attendance_sessions WHERE team_id = (current_setting('app.current_team_id'))::bigint
-    ) AND (current_setting('app.current_role')) IN ('owner', 'co_manager'));
   `);
 
     // gamification_points RLS policies
@@ -149,6 +107,5 @@ exports.up = async (knex) => {
 exports.down = async (knex) => {
     await knex.schema.dropTable('leaderboard_archives');
     await knex.schema.dropTable('gamification_points');
-    await knex.schema.dropTable('attendance_records');
     await knex.schema.dropTable('attendance_sessions');
 };
