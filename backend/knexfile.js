@@ -22,7 +22,7 @@ module.exports = {
     }
   },
 
-  staging: {
+  production: {
     client: 'postgresql',
     connection: process.env.DATABASE_URL,
     pool: {
@@ -44,35 +44,6 @@ module.exports = {
     },
     ssl: {
       rejectUnauthorized: false
-    }
-  },
-
-  production: {
-    client: 'postgresql',
-    connection: {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 5432,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      ssl: 'require'
-    },
-    pool: {
-      min: 2,
-      max: 10,
-      afterCreate: (connection, callback) => {
-        connection.query('SET timezone="UTC"', (err) => {
-          callback(err, connection);
-        });
-      }
-    },
-    migrations: {
-      directory: './src/database/migrations',
-      extension: 'js'
-    },
-    seeds: {
-      directory: './src/database/seeds',
-      extension: 'js'
     }
   }
 };

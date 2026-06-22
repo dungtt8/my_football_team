@@ -4,19 +4,8 @@
 
 ### 1. Create GitHub Secrets
 
-Go to **Settings → Secrets and variables → Actions** and add these secrets:
+Go to **Settings → Secrets and variables → Actions** and add these secrets for production:
 
-**Staging Environment:**
-```
-SUPABASE_PROJECT_ID_STAGING        # Your Supabase project ID
-DATABASE_URL_STAGING               # postgresql://user:pass@db.xxx.supabase.co:5432/postgres
-SUPABASE_URL_STAGING               # https://xxx.supabase.co
-SUPABASE_KEY_STAGING               # Your public API key
-SUPABASE_SERVICE_ROLE_STAGING      # Your service role secret key
-SUPABASE_ACCESS_TOKEN_STAGING      # Personal access token for CLI
-```
-
-**Production Environment:**
 ```
 SUPABASE_PROJECT_ID                # Your Supabase project ID
 DATABASE_URL                       # postgresql://user:pass@db.xxx.supabase.co:5432/postgres
@@ -24,11 +13,7 @@ SUPABASE_URL                       # https://xxx.supabase.co
 SUPABASE_KEY                       # Your public API key
 SUPABASE_SERVICE_ROLE              # Your service role secret key
 SUPABASE_ACCESS_TOKEN              # Personal access token for CLI
-```
-
-**Optional (for Slack notifications):**
-```
-SLACK_WEBHOOK                      # Your Slack webhook URL
+SLACK_WEBHOOK                      # (Optional) Your Slack webhook URL
 ```
 
 ### 2. How to Get Supabase Credentials
@@ -40,13 +25,12 @@ SLACK_WEBHOOK                      # Your Slack webhook URL
 5. **SUPABASE_SERVICE_ROLE**: Settings → API → service_role secret
 6. **SUPABASE_ACCESS_TOKEN**: Create at https://supabase.com/dashboard/account/tokens
 
-### 3. Update Environment Names in GitHub
+### 3. Setup GitHub Production Environment
 
 Go to **Settings → Environments** and create:
-- `staging` environment
 - `production` environment
 
-Add secrets to each environment accordingly.
+Add secrets to the production environment.
 
 ---
 
@@ -61,7 +45,7 @@ This workflow runs when:
 
 2. **Manual trigger** (workflow_dispatch)
    - Go to Actions → Deploy to Supabase → Run workflow
-   - Select environment: staging or production
+   - Deploys to production automatically
 
 ---
 

@@ -8,15 +8,6 @@ on:
       - 'backend/**'
       - '.github/workflows/deploy-supabase.yml'
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
 
 env:
   NODE_VERSION: '18'
@@ -25,7 +16,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.event.inputs.environment || 'staging' }}
+      name: production
     
     steps:
       - name: Checkout code
@@ -52,9 +43,9 @@ jobs:
         run: npm test --if-present
         continue-on-error: true
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL_STAGING }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY_STAGING }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
       - name: Run database migrations
         working-directory: backend
