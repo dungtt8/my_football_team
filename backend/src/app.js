@@ -3,6 +3,7 @@ const cors = require('cors');
 const authMiddleware = require('./middleware/authMiddleware');
 const tenancyMiddleware = require('./middleware/tenancyMiddleware');
 const { handleError } = require('./services/errorService');
+const inngest = require('./config/inngest');
 
 const app = express();
 
@@ -29,8 +30,8 @@ app.use(tenancyMiddleware);
 // app.post('/api/zalo/webhook', require('./handlers/zaloWebhookHandler'));
 
 // Inngest webhook
-// Placeholder - will be filled in Task 7
-// app.use('/api/inngest', require('./handlers/inngestHandler'));
+const inngestHandler = require('./handlers/inngestHandler');
+app.use('/api/inngest', inngestHandler);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
