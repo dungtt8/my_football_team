@@ -1,4 +1,5 @@
 const inngest = require('../config/inngest');
+const monthlyReminderHandler = require('./handlers/monthlyReminder');
 
 // Event definitions
 const events = {
@@ -15,15 +16,6 @@ const events = {
 };
 
 // Define functions (to be implemented in separate files)
-const createMonthlyReminderFunction = inngest.createFunction(
-  { id: 'fund.monthly-reminder' },
-  { cron: '0 1 1 * *' }, // 1st of month at 01:00 UTC
-  async ({ event, step }) => {
-    // Placeholder - implemented in next task
-    return { status: 'scheduled' };
-  }
-);
-
 const createCampaignDeadlineCheckFunction = inngest.createFunction(
   { id: 'fund.campaign-deadline-check' },
   { cron: '0 23 * * *' }, // Daily at 23:00 UTC (06:00 UTC+7)
@@ -35,6 +27,6 @@ const createCampaignDeadlineCheckFunction = inngest.createFunction(
 
 module.exports = {
   events,
-  createMonthlyReminderFunction,
+  createMonthlyReminderFunction: monthlyReminderHandler,
   createCampaignDeadlineCheckFunction
 };
