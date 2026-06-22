@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   CurrencyDollar,
   Megaphone,
-  LineChart,
+  ChartLine,
   Gear,
 } from 'phosphor-react'
 
@@ -19,7 +19,7 @@ interface TabItem {
 const TAB_ITEMS: TabItem[] = [
   { id: 'finance', label: 'Finance', path: '/app/finance', icon: <CurrencyDollar size={24} weight="bold" /> },
   { id: 'campaigns', label: 'Campaigns', path: '/app/campaigns', icon: <Megaphone size={24} weight="bold" /> },
-  { id: 'attendance', label: 'Attendance', path: '/app/attendance', icon: <LineChart size={24} weight="bold" /> },
+  { id: 'attendance', label: 'Attendance', path: '/app/attendance', icon: <ChartLine size={24} weight="bold" /> },
   { id: 'menu', label: 'Menu', path: '/app/menu', icon: <Gear size={24} weight="bold" /> },
 ]
 
