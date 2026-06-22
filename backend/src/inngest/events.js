@@ -1,6 +1,7 @@
 const inngest = require('../config/inngest');
 const monthlyReminderHandler = require('./handlers/monthlyReminder');
 const { onApprovalPending, onApprovalApproved, onApprovalRejected } = require('./handlers/financeEvents');
+const { onAttendanceSessionCreated, onAttendanceCheckIn, onAttendanceSessionClosed } = require('./handlers/attendanceEvents');
 
 // Event definitions
 const events = {
@@ -16,6 +17,8 @@ const events = {
   CAMPAIGN_CLOSED: 'campaign.closed',
 
   // Attendance events
+  ATTENDANCE_SESSION_CREATED: 'attendance.session-created',
+  ATTENDANCE_CHECK_IN: 'attendance.check-in',
   ATTENDANCE_SESSION_CLOSED: 'attendance.session-closed',
 
   // Zalo events
@@ -121,6 +124,53 @@ const createCampaignDeadlineCheckFunction = inngest.createFunction(
   }
 );
 
+// ============================================================================
+// Attendance Event Handlers
+// To be implemented in backend/src/inngest/handlers/attendanceEvents.js
+// ============================================================================
+
+/**
+ * Attendance Session Created Handler
+ * Triggered when: attendance.session-created event is emitted
+ * Action: Notify team members of new attendance session
+ */
+const onAttendanceSessionCreatedHandler = inngest.createFunction(
+  {
+    id: 'attendance.session-created',
+    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
+  },
+  { event: 'attendance.session-created' },
+  onAttendanceSessionCreated
+);
+
+/**
+ * Attendance Check-In Handler
+ * Triggered when: attendance.check-in event is emitted
+ * Action: Award gamification points for attendance
+ */
+const onAttendanceCheckInHandler = inngest.createFunction(
+  {
+    id: 'attendance.check-in',
+    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
+  },
+  { event: 'attendance.check-in' },
+  onAttendanceCheckIn
+);
+
+/**
+ * Attendance Session Closed Handler
+ * Triggered when: attendance.session-closed event is emitted
+ * Action: Finalize session attendance, process any pending check-ins
+ */
+const onAttendanceSessionClosedHandler = inngest.createFunction(
+  {
+    id: 'attendance.session-closed',
+    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
+  },
+  { event: 'attendance.session-closed' },
+  onAttendanceSessionClosed
+);
+
 module.exports = {
   events,
   createMonthlyReminderFunction: monthlyReminderHandler,
@@ -131,5 +181,8 @@ module.exports = {
   onCampaignAssignmentCreatedHandler,
   onCampaignMemberConfirmedHandler,
   onCampaignMemberRejectedHandler,
-  onCampaignClosedHandler
+  onCampaignClosedHandler,
+  onAttendanceSessionCreatedHandler,
+  onAttendanceCheckInHandler,
+  onAttendanceSessionClosedHandler
 };
