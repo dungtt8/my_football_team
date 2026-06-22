@@ -153,6 +153,7 @@ exports.up = async (knex) => {
     ON inngest_logs
     FOR SELECT
     USING (team_id IS NULL OR team_id = (current_setting('app.current_team_id'))::bigint);
+  `);
 };
 
 exports.down = async (knex) => {
