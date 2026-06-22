@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const authMiddleware = require('./middleware/authMiddleware');
 const tenancyMiddleware = require('./middleware/tenancyMiddleware');
+const { handleError } = require('./services/errorService');
 
 const app = express();
 
@@ -33,10 +34,10 @@ app.use(tenancyMiddleware);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(err.statusCode || 500).json({
-    error: err.message || 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR'
+  handleError(err, req, res, {
+    team_id: req.user?.team_id,
+    user_id: req.user?.user_id,
+    path: req.path
   });
 });
 
