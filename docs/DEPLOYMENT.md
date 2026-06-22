@@ -57,9 +57,9 @@ Ensure backend has migration scripts:
 // backend/package.json
 {
   "scripts": {
-    "migrate": "knex migrate:latest --knexfile src/config/database.js",
-    "migrate:rollback": "knex migrate:rollback --knexfile src/config/database.js",
-    "seed": "knex seed:run --knexfile src/config/database.js"
+    "migrate": "knex migrate:latest --env production",
+    "migrate:rollback": "knex migrate:rollback --env production",
+    "seed": "knex seed:run --env production"
   }
 }
 ```

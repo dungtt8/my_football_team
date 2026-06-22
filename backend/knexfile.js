@@ -1,4 +1,6 @@
 // backend/knexfile.js
+require('dotenv').config();
+
 module.exports = {
   development: {
     client: 'postgresql',
