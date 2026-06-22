@@ -57,9 +57,9 @@ Ensure backend has migration scripts:
 // backend/package.json
 {
   "scripts": {
-    "migrate:latest": "knex migrate:latest --env production",
-    "migrate:rollback": "knex migrate:rollback --env production",
-    "migrate:status": "knex migrate:status --env production"
+    "migrate": "knex migrate:latest --knexfile src/config/database.js",
+    "migrate:rollback": "knex migrate:rollback --knexfile src/config/database.js",
+    "seed": "knex seed:run --knexfile src/config/database.js"
   }
 }
 ```
@@ -105,7 +105,7 @@ export SUPABASE_URL="https://..."
 export SUPABASE_SERVICE_ROLE="..."
 
 # Run migrations
-npm run migrate:latest
+npm run migrate
 
 # Deploy Edge Functions
 npx supabase functions deploy --project-id <PROJECT_ID>
