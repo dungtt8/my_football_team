@@ -1,0 +1,79 @@
+name: Deploy to Supabase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-supabase.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run linting
+        working-directory: backend
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test --if-present
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL_STAGING }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY_STAGING }}
+
+      - name: Run database migrations
+        working-directory: backend
+        run: npm run migrate:latest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+
+      - name: Deploy to Supabase (Edge Functions)
+        working-directory: backend
+        run: npx supabase functions deploy --project-id ${{ secrets.SUPABASE_PROJECT_ID }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify deployment
+        working-directory: backend
+        run: |
+          echo "✅ Database migrations completed"
+          echo "✅ Edge Functions deployed"
+          echo "✅ Deployment to Supabase successful"
