@@ -21,13 +21,13 @@ app.get('/health', (req, res) => {
 const authHandler = require('./handlers/authHandler');
 app.post('/auth/zalo/callback', authHandler);
 
+// Zalo webhook (NO AUTH - verify signature before processing)
+const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');
+app.post('/api/zalo/webhook', zaloWebhookHandler);
+
 // Protected routes (require auth + tenancy)
 app.use(authMiddleware);
 app.use(tenancyMiddleware);
-
-// Zalo webhook (verify signature before processing)
-// Placeholder - will be filled in Task 9
-// app.post('/api/zalo/webhook', require('./handlers/zaloWebhookHandler'));
 
 // Inngest webhook
 const inngestHandler = require('./handlers/inngestHandler');
