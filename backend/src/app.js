@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const authMiddleware = require('./middleware/authMiddleware');
 const tenancyMiddleware = require('./middleware/tenancyMiddleware');
+const rbacMiddleware = require('./middleware/rbacMiddleware');
 const { handleError } = require('./services/errorService');
 const inngest = require('./config/inngest');
 
@@ -32,6 +33,16 @@ app.use(tenancyMiddleware);
 // Inngest webhook
 const inngestHandler = require('./handlers/inngestHandler');
 app.use('/api/inngest', inngestHandler);
+
+// Finance routes
+const financeHandler = require('./handlers/financeHandler');
+app.post('/api/finance/transactions', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.submitTransaction);
+app.get('/api/finance/transactions', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.listTransactions);
+app.get('/api/finance/transactions/:id', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getTransaction);
+app.patch('/api/finance/transactions/:id/approve', rbacMiddleware(['co_manager', 'owner']), financeHandler.approveTransaction);
+app.patch('/api/finance/transactions/:id/reject', rbacMiddleware(['co_manager', 'owner']), financeHandler.rejectTransaction);
+app.get('/api/finance/approvals/pending', rbacMiddleware(['co_manager', 'owner']), financeHandler.getPendingApprovals);
+app.get('/api/finance/balance', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getBalance);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {

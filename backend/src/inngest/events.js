@@ -1,5 +1,6 @@
 const inngest = require('../config/inngest');
 const monthlyReminderHandler = require('./handlers/monthlyReminder');
+const { onApprovalPending, onApprovalApproved, onApprovalRejected } = require('./handlers/financeEvents');
 
 // Event definitions
 const events = {
@@ -28,5 +29,8 @@ const createCampaignDeadlineCheckFunction = inngest.createFunction(
 module.exports = {
   events,
   createMonthlyReminderFunction: monthlyReminderHandler,
-  createCampaignDeadlineCheckFunction
+  createCampaignDeadlineCheckFunction,
+  onApprovalPending,
+  onApprovalApproved,
+  onApprovalRejected
 };
