@@ -1,0 +1,92 @@
+{
+  "name": "Football Team Manager",
+  "short_name": "Team Manager",
+  "description": "Manage team finances, campaigns, attendance and gamification",
+  "start_url": "/app/finance",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#111111",
+  "background_color": "#FFFFFF",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Check In",
+      "short_name": "Check In",
+      "description": "Quick check-in for today's session",
+      "url": "/app/attendance?action=checkin",
+      "icons": [
+        {
+          "src": "/shortcuts/checkin-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Submit Expense",
+      "short_name": "Expense",
+      "description": "Submit a new expense to finance",
+      "url": "/app/finance?action=submit",
+      "icons": [
+        {
+          "src": "/shortcuts/expense-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "View Leaderboard",
+      "short_name": "Leaderboard",
+      "description": "Check team leaderboard",
+      "url": "/app/attendance?action=leaderboard",
+      "icons": [
+        {
+          "src": "/shortcuts/leaderboard-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "New Campaign",
+      "short_name": "Campaign",
+      "description": "Create a new campaign",
+      "url": "/app/campaigns?action=create",
+      "icons": [
+        {
+          "src": "/shortcuts/campaign-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "categories": ["productivity", "sports"]
+}
