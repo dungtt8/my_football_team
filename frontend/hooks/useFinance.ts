@@ -37,6 +37,7 @@ export interface UseFinanceReturn {
     getPendingApprovals: (params?: Record<string, any>) => Promise<Approval[]>
     getFinanceBalance: () => Promise<FinanceBalance>
     getClosingPeriod: () => Promise<any>
+    getPaymentDeadline: () => Promise<any>
     loading: boolean
     error: Error | null
 }
@@ -179,6 +180,9 @@ export const useFinance = (): UseFinanceReturn => {
         [request]
     )
 
+    // Alias for semantic clarity
+    const getPaymentDeadline = getClosingPeriod
+
     return {
         listTransactions,
         getTransactionDetail,
@@ -188,6 +192,7 @@ export const useFinance = (): UseFinanceReturn => {
         getPendingApprovals,
         getFinanceBalance,
         getClosingPeriod,
+        getPaymentDeadline,
         loading,
         error: error || localError,
     }

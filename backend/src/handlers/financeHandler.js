@@ -384,18 +384,18 @@ const getBalance = async (req, res) => {
 
 /**
  * GET /api/team/finance/closing-period  (auth + tenancy, all members)
- * Get active finance closing period if exists
+ * Get active payment deadline if exists (monthly recurring)
  */
 const getClosingPeriod = async (req, res) => {
   try {
     const teamId = req.user.team_id;
     const financeClosingService = require('../services/financeClosingService');
 
-    const closingPeriod = await financeClosingService.getActiveClosingPeriod(teamId);
+    const paymentDeadline = await financeClosingService.getActivePaymentDeadline(teamId);
 
     return res.json({
-      closing_period: closingPeriod,
-      is_active: closingPeriod !== null
+      payment_deadline: paymentDeadline,
+      is_active: paymentDeadline !== null
     });
   } catch (error) {
     return handleError(error, req, res, {

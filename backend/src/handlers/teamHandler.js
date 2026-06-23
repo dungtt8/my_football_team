@@ -12,10 +12,11 @@ function generateInviteCode() {
     return code;
 }
 
-function isFinanceClosingPeriodActive(fromDate, toDate) {
-    if (!fromDate || !toDate) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return today >= fromDate && today <= toDate;
+function isPaymentDeadlineActive(startDay, endDay) {
+    if (!startDay || !endDay) return false;
+    const today = new Date();
+    const currentDay = today.getDate();
+    return currentDay >= startDay && currentDay <= endDay;
 }
 
 /**
@@ -272,9 +273,14 @@ const getSettings = async (req, res) => {
             finance: {
                 closing_day: team.finance_closing_day,
                 closing_time: team.finance_closing_time,
-                closing_from_date: team.finance_closing_from_date,
-                closing_to_date: team.finance_closing_to_date,
-                is_closing_period_active: isFinanceClosingPeriodActive(team.finance_closing_from_date, team.finance_closing_to_date),
+                payment_start_day: team.finance_payment_start_day,
+                payment_end_day: team.finance_payment_end_day,
+                is_payment_deadline_active: isPaymentDeadlineActive(team.finance_payment_start_day, team.finance_payment_end_day),
+            },
+            fund: {
+                bank_account_number: team.bank_account_number,
+                bank_name: team.bank_name,
+                qr_code_url: team.fund_qr_code_url,
             },
             scheduling: {
                 auto_create_sessions: team.auto_create_sessions || false,
@@ -350,34 +356,34 @@ const updateSettings = async (req, res) => {
                 }
                 updates.finance_closing_time = finance.closing_time;
             }
-            if (finance.closing_from_date !== undefined) {
-                if (finance.closing_from_date === null) {
-                    updates.finance_closing_from_date = null;
+            if (finance.payment_start_day !== undefined) {
+                if (finance.payment_start_day === null) {
+                    updates.finance_payment_start_day = null;
                 } else {
-                    const fromDate = new Date(finance.closing_from_date);
-                    if (isNaN(fromDate.getTime())) {
-                        throw new ValidationError('Invalid closing from date format');
+                    const day = parseInt(finance.payment_start_day, 10);
+                    if (isNaN(day) || day < 1 || day > 31) {
+                        throw new ValidationError('Payment start day must be between 1 and 31');
                     }
-                    updates.finance_closing_from_date = finance.closing_from_date;
+                    updates.finance_payment_start_day = day;
                 }
             }
-            if (finance.closing_to_date !== undefined) {
-                if (finance.closing_to_date === null) {
-                    updates.finance_closing_to_date = null;
+            if (finance.payment_end_day !== undefined) {
+                if (finance.payment_end_day === null) {
+                    updates.finance_payment_end_day = null;
                 } else {
-                    const toDate = new Date(finance.closing_to_date);
-                    if (isNaN(toDate.getTime())) {
-                        throw new ValidationError('Invalid closing to date format');
+                    const day = parseInt(finance.payment_end_day, 10);
+                    if (isNaN(day) || day < 1 || day > 31) {
+                        throw new ValidationError('Payment end day must be between 1 and 31');
                     }
-                    if (finance.closing_from_date && new Date(finance.closing_to_date) < new Date(finance.closing_from_date)) {
-                        throw new ValidationError('Closing to date must be after from date');
+                    if (finance.payment_start_day && finance.payment_end_day < finance.payment_start_day) {
+                        throw new ValidationError('Payment end day must be after or equal to start day');
                     }
-                    updates.finance_closing_to_date = finance.closing_to_date;
+                    updates.finance_payment_end_day = day;
                 }
             }
-            // Reset notified flag when dates change
-            if (finance.closing_from_date !== undefined || finance.closing_to_date !== undefined) {
-                updates.finance_closing_notified = false;
+            // Reset notified month when dates change
+            if (finance.payment_start_day !== undefined || finance.payment_end_day !== undefined) {
+                updates.finance_payment_notified_month = null;
             }
         }
 
@@ -424,6 +430,44 @@ const updateSettings = async (req, res) => {
             }
         }
 
+        // Update fund settings
+        if (req.body.fund) {
+            const fund = req.body.fund;
+            if (fund.bank_account_number !== undefined) {
+                if (fund.bank_account_number && typeof fund.bank_account_number === 'string') {
+                    const accountNumber = fund.bank_account_number.trim();
+                    if (accountNumber && accountNumber.length > 50) {
+                        throw new ValidationError('Bank account number is too long (max 50 characters)');
+                    }
+                    updates.bank_account_number = accountNumber || null;
+                } else {
+                    updates.bank_account_number = null;
+                }
+            }
+            if (fund.bank_name !== undefined) {
+                if (fund.bank_name && typeof fund.bank_name === 'string') {
+                    const bankName = fund.bank_name.trim();
+                    if (bankName && bankName.length > 100) {
+                        throw new ValidationError('Bank name is too long (max 100 characters)');
+                    }
+                    updates.bank_name = bankName || null;
+                } else {
+                    updates.bank_name = null;
+                }
+            }
+            if (fund.qr_code_url !== undefined) {
+                if (fund.qr_code_url && typeof fund.qr_code_url === 'string') {
+                    const url = fund.qr_code_url.trim();
+                    if (url && url.length > 500) {
+                        throw new ValidationError('QR code URL is too long (max 500 characters)');
+                    }
+                    updates.fund_qr_code_url = url || null;
+                } else {
+                    updates.fund_qr_code_url = null;
+                }
+            }
+        }
+
         if (Object.keys(updates).length === 0) {
             return res.json({ message: 'No changes made' });
         }
@@ -447,6 +491,13 @@ const updateSettings = async (req, res) => {
             finance: {
                 closing_day: updatedTeam.finance_closing_day,
                 closing_time: updatedTeam.finance_closing_time,
+                payment_start_day: updatedTeam.finance_payment_start_day,
+                payment_end_day: updatedTeam.finance_payment_end_day,
+            },
+            fund: {
+                bank_account_number: updatedTeam.bank_account_number,
+                bank_name: updatedTeam.bank_name,
+                qr_code_url: updatedTeam.fund_qr_code_url,
             },
             scheduling: {
                 auto_create_sessions: updatedTeam.auto_create_sessions || false,

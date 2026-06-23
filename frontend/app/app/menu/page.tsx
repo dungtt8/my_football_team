@@ -23,10 +23,10 @@ export default function MenuPage() {
     const router = useRouter()
     const { user, role, team, logout } = useAuth()
     const { toast } = useToast()
-    const { getClosingPeriod } = useFinance()
+    const { getPaymentDeadline } = useFinance()
     const [inviteCode, setInviteCode] = useState<string | null>(null)
     const [loadingInvite, setLoadingInvite] = useState(false)
-    const [closingPeriod, setClosingPeriod] = useState<any>(null)
+    const [paymentDeadline, setPaymentDeadline] = useState<any>(null)
 
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const displayRole = role ? (ROLE_LABELS[role] || role) : 'Thành viên'
@@ -40,11 +40,11 @@ export default function MenuPage() {
                 .then(r => r.json()).then(d => { if (d.invite_code) setInviteCode(d.invite_code) }).catch(() => { })
         }
 
-        // Fetch closing period
-        getClosingPeriod()
-            .then(data => setClosingPeriod(data?.closing_period))
+        // Fetch payment deadline
+        getPaymentDeadline()
+            .then(data => setPaymentDeadline(data?.payment_deadline))
             .catch(() => { })
-    }, [role, getClosingPeriod])
+    }, [role, getPaymentDeadline])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)
@@ -90,8 +90,8 @@ export default function MenuPage() {
                 <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Menu</h1>
             </div>
 
-            {/* Finance Closing Period Notification */}
-            {closingPeriod && closingPeriod.is_active && (
+            {/* Finance Payment Deadline Notification */}
+            {paymentDeadline && paymentDeadline.is_active && (
                 <div style={{
                     background: 'rgba(255,107,107,0.15)',
                     border: `1px solid rgba(255,107,107,0.30)`,
@@ -106,9 +106,9 @@ export default function MenuPage() {
                 }}>
                     <div style={{ fontSize: '20px' }}>⏰</div>
                     <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FF9999' }}>Kỳ đóng quỹ đang diễn ra</p>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FF9999' }}>Thời hạn thanh toán quỹ</p>
                         <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,153,153,0.9)' }}>
-                            Vui lòng hoàn thành ghi chép tài chính trong {closingPeriod.days_remaining} ngày
+                            Vui lòng thanh toán quỹ trong khoảng ngày {paymentDeadline.start_day}-{paymentDeadline.end_day} ({paymentDeadline.days_remaining} ngày còn lại)
                         </p>
                     </div>
                 </div>
