@@ -52,8 +52,6 @@ app.post('/api/campaigns', rbacMiddleware(['co_manager', 'owner']), campaignHand
 app.get('/api/campaigns', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.listCampaigns);
 // Get single campaign details
 app.get('/api/campaigns/:id', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.getCampaign);
-// Get campaign assignments (co-managers view)
-app.get('/api/campaigns/:id/assignments', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getAssignments);
 // Member confirms participation in campaign
 app.post('/api/campaigns/:id/assignments/:userId/confirm', rbacMiddleware(['member', 'co_manager', 'owner']), campaignHandler.memberConfirm);
 // Member rejects participation in campaign
