@@ -3,224 +3,140 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/Common/Button'
 
-interface FormData {
-  description: string
-  amount: string
-  category: string
-  receipt?: File
-  notes: string
+export interface TransactionFormData {
+    description: string
+    amount: number
+    transaction_date?: string
+    bill_image_url?: string
 }
 
 interface FormErrors {
-  description?: string
-  amount?: string
-  category?: string
+    description?: string
+    amount?: string
 }
 
 interface TransactionFormProps {
-  onSubmit: (data: FormData) => void | Promise<void>
-  isLoading?: boolean
-  onCancel?: () => void
+    onSubmit: (data: TransactionFormData) => void | Promise<void>
+    isLoading?: boolean
+    onCancel?: () => void
 }
-
-const CATEGORIES = ['Food', 'Equipment', 'Travel', 'Other']
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
-  onSubmit,
-  isLoading = false,
-  onCancel,
+    onSubmit,
+    isLoading = false,
+    onCancel,
 }) => {
-  const [formData, setFormData] = useState<FormData>({
-    description: '',
-    amount: '',
-    category: '',
-    receipt: undefined,
-    notes: '',
-  })
+    const todayStr = new Date().toISOString().split('T')[0]
 
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required'
-    } else if (formData.description.trim().length < 3) {
-      newErrors.description = 'Description must be at least 3 characters'
-    }
-
-    if (!formData.amount) {
-      newErrors.amount = 'Amount is required'
-    } else if (Number(formData.amount) <= 0) {
-      newErrors.amount = 'Amount must be greater than 0'
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Category is required'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }))
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    setFormData((prev) => ({
-      ...prev,
-      receipt: file,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-      await onSubmit(formData)
-      setFormData({
+    const [formData, setFormData] = useState({
         description: '',
         amount: '',
-        category: '',
-        receipt: undefined,
-        notes: '',
-      })
-    } catch (error) {
-      console.error('Error submitting form:', error)
-    } finally {
-      setIsSubmitting(false)
+        transaction_date: todayStr,
+        bill_image_url: '',
+    })
+    const [errors, setErrors] = useState<FormErrors>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const validate = (): boolean => {
+        const errs: FormErrors = {}
+        if (!formData.description.trim()) {
+            errs.description = 'Mô tả là bắt buộc'
+        }
+        const amt = Number(formData.amount)
+        if (!formData.amount || isNaN(amt) || amt <= 0) {
+            errs.amount = 'Số tiền phải lớn hơn 0'
+        }
+        setErrors(errs)
+        return Object.keys(errs).length === 0
     }
-  }
 
-  const isSubmittingForm = isSubmitting || isLoading
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!validate()) return
+        try {
+            setIsSubmitting(true)
+            await onSubmit({
+                description: formData.description.trim(),
+                amount: Number(formData.amount),
+                transaction_date: formData.transaction_date || undefined,
+                bill_image_url: formData.bill_image_url || undefined,
+            })
+            setFormData({ description: '', amount: '', transaction_date: todayStr, bill_image_url: '' })
+        } catch (err) {
+            console.error('TransactionForm submit error:', err)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-lg p-xl border border-light-gray rounded-card bg-white max-w-md mx-auto">
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Expense Description
-        </label>
-        <input
-          type="text"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="e.g., Team lunch meeting"
-          className="w-full px-md py-lg border border-light-gray rounded-card text-body focus:outline-none focus:border-black focus:bg-white transition-colors"
-        />
-        {errors.description && (
-          <p className="text-caption text-pale-red mt-sm">{errors.description}</p>
-        )}
-      </div>
+    const inputCls = 'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors bg-white'
+    const labelCls = 'block text-xs font-semibold uppercase tracking-wide mb-1.5'
+    const busy = isSubmitting || isLoading
 
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Amount (VND)
-        </label>
-        <input
-          type="number"
-          name="amount"
-          value={formData.amount}
-          onChange={handleChange}
-          placeholder="0"
-          className="w-full px-md py-lg border border-light-gray rounded-card text-body focus:outline-none focus:border-black focus:bg-white transition-colors"
-        />
-        {errors.amount && (
-          <p className="text-caption text-pale-red mt-sm">{errors.amount}</p>
-        )}
-      </div>
+    return (
+        <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Description */}
+            <div>
+                <label className={labelCls} style={{ color: '#6B6660' }}>Mô tả khoản chi *</label>
+                <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="VD: Tiền thuê sân tháng 6"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+                {errors.description && <p className="text-xs mt-1" style={{ color: '#E53E3E' }}>{errors.description}</p>}
+            </div>
 
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Category
-        </label>
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          className="w-full px-md py-lg border border-light-gray rounded-card text-body focus:outline-none focus:border-black focus:bg-white transition-colors"
-        >
-          <option value="">Select a category</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-        {errors.category && (
-          <p className="text-caption text-pale-red mt-sm">{errors.category}</p>
-        )}
-      </div>
+            {/* Amount */}
+            <div>
+                <label className={labelCls} style={{ color: '#6B6660' }}>Số tiền (VND) *</label>
+                <input
+                    type="number"
+                    min={1}
+                    className={inputCls}
+                    placeholder="0"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                />
+                {errors.amount && <p className="text-xs mt-1" style={{ color: '#E53E3E' }}>{errors.amount}</p>}
+            </div>
 
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Receipt Image (Optional)
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="w-full px-md py-lg border border-light-gray rounded-card text-small focus:outline-none focus:border-black transition-colors"
-        />
-      </div>
+            {/* Date */}
+            <div>
+                <label className={labelCls} style={{ color: '#6B6660' }}>Ngày chi</label>
+                <input
+                    type="date"
+                    className={inputCls}
+                    value={formData.transaction_date}
+                    onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                />
+            </div>
 
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Notes (Optional)
-        </label>
-        <textarea
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          placeholder="Additional details..."
-          rows={4}
-          className="w-full px-md py-lg border border-light-gray rounded-card text-body focus:outline-none focus:border-black focus:bg-white transition-colors resize-none"
-        />
-      </div>
+            {/* Bill image URL */}
+            <div>
+                <label className={labelCls} style={{ color: '#6B6660' }}>Link ảnh hoá đơn (tuỳ chọn)</label>
+                <input
+                    type="url"
+                    className={inputCls}
+                    placeholder="https://..."
+                    value={formData.bill_image_url}
+                    onChange={(e) => setFormData({ ...formData, bill_image_url: e.target.value })}
+                />
+            </div>
 
-      <div className="flex gap-md pt-lg">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-            disabled={isSubmittingForm}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-        )}
-        <Button
-          type="submit"
-          variant="primary"
-          isLoading={isSubmittingForm}
-          className="flex-1"
-        >
-          Submit Expense
-        </Button>
-      </div>
-    </form>
-  )
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+                {onCancel && (
+                    <Button type="button" variant="secondary" onClick={onCancel} disabled={busy} className="flex-1">
+                        Huỷ
+                    </Button>
+                )}
+                <Button type="submit" variant="primary" isLoading={busy} className="flex-1">
+                    Gửi báo cáo
+                </Button>
+            </div>
+        </form>
+    )
 }
+

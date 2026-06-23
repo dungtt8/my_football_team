@@ -15,7 +15,7 @@ export interface Team {
     logo?: string
 }
 
-export type UserRole = 'member' | 'co_manager' | 'manager'
+export type UserRole = 'member' | 'co_manager' | 'manager' | 'owner'
 
 export interface AuthContextType {
     user: User | null
@@ -26,6 +26,7 @@ export interface AuthContextType {
     login: (email: string, password: string) => Promise<void>
     logout: () => void
     setAuthToken: (token: string) => void
+    setAuthData: (token: string, user: User, team: Team | null, role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -49,9 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const storedTeam = localStorage.getItem('team')
                 const storedRole = localStorage.getItem('role')
 
-                if (token && storedUser && storedTeam && storedRole) {
+                if (token && storedUser && storedRole) {
                     setUser(JSON.parse(storedUser))
-                    setTeam(JSON.parse(storedTeam))
+                    if (storedTeam) setTeam(JSON.parse(storedTeam))
                     setRole(storedRole as UserRole)
                 }
             } catch (error) {
@@ -87,11 +88,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.setItem('auth_token', data.token)
             localStorage.setItem('user', JSON.stringify(data.user))
             localStorage.setItem('team', JSON.stringify(data.team))
-            localStorage.setItem('role', data.role)
+            localStorage.setItem('role', data.user.role)
 
             setUser(data.user)
             setTeam(data.team)
-            setRole(data.role)
+            setRole(data.user.role)
         } catch (error) {
             console.error('Login error:', error)
             throw error
@@ -115,15 +116,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('auth_token', token)
     }
 
+    const setAuthData = (token: string, userData: User, teamData: Team | null, userRole: UserRole) => {
+        localStorage.setItem('auth_token', token)
+        localStorage.setItem('user', JSON.stringify(userData))
+        if (teamData) {
+            localStorage.setItem('team', JSON.stringify(teamData))
+        } else {
+            localStorage.removeItem('team')
+        }
+        localStorage.setItem('role', userRole)
+        setUser(userData)
+        setTeam(teamData)
+        setRole(userRole)
+    }
+
     const value: AuthContextType = {
         user,
         team,
         role,
-        isAuthenticated: !!user && !!localStorage.getItem('auth_token'),
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout,
         setAuthToken,
+        setAuthData,
     }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

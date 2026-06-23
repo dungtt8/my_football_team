@@ -1,223 +1,139 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import { useCampaign, Campaign } from '@/hooks/useCampaign'
-import { CampaignStatsBar } from '@/components/Campaign/CampaignStatsBar'
-import { CampaignList } from '@/components/Campaign/CampaignList'
-import { CampaignApprovalQueue } from '@/components/Campaign/CampaignApprovalQueue'
-import { Button } from '@/components/Common/Button'
 import { useToast } from '@/hooks/useToast'
-import { Plus } from 'phosphor-react'
+import { CampaignForm } from '@/components/Campaign/CampaignForm'
 
-type TabType = 'all' | 'active' | 'ended' | 'drafts' | 'pending_approval'
+type CampaignFormData = { name: string; amount_per_member: number; deadline?: string; description?: string }
 
-export default function CampaignPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const {
-    listCampaigns,
-    getPendingApprovals,
-    approveCampaign,
-    loading,
-  } = useCampaign()
+const G = {
+    glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
+    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)',
+    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+}
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([])
-  const [pendingApprovals, setPendingApprovals] = useState<Campaign[]>([])
-  const [activeTab, setActiveTab] = useState<TabType>('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [stats, setStats] = useState({
-    totalCampaigns: 0,
-    activeCampaigns: 0,
-    totalParticipants: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
+type TabType = 'all' | 'active' | 'ended'
 
-  useEffect(() => {
-    loadData()
-  }, [])
+export default function CampaignsPage() {
+    const router = useRouter()
+    const { user, role } = useAuth()
+    const { toast } = useToast()
+    const { listCampaigns, createCampaign, loading } = useCampaign()
+    const isManager = role === 'manager' || role === 'co_manager'
 
-  const loadData = async () => {
-    setIsLoading(true)
-    try {
-      const [allCampaigns, approvals] = await Promise.all([
-        listCampaigns(),
-        getPendingApprovals(),
-      ])
+    const [campaigns, setCampaigns] = useState<Campaign[]>([])
+    const [tab, setTab] = useState<TabType>('all')
+    const [showForm, setShowForm] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
-      setCampaigns(allCampaigns)
-      setPendingApprovals(approvals as any)
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const status = tab === 'active' ? 'active' : tab === 'ended' ? 'closed' : undefined
+                const res = await listCampaigns({ status })
+                setCampaigns((res as any)?.data || res || [])
+            } catch { toast('Không thể tải chiến dịch', 'error') }
+        }
+        load()
+    }, [tab])
 
-      // Calculate stats
-      const activeCampaigns = allCampaigns.filter((c) => c.status === 'active').length
-      const totalParticipants = allCampaigns.reduce(
-        (sum, c) => sum + (c.participantCount || 0),
-        0
-      )
-
-      setStats({
-        totalCampaigns: allCampaigns.length,
-        activeCampaigns,
-        totalParticipants,
-      })
-
-      // Apply initial filter
-      filterCampaigns(allCampaigns, 'all')
-    } catch (error) {
-      console.error('Error loading campaigns:', error)
-      toast('Không thể tải chiến dịch', 'error')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const filterCampaigns = (items: Campaign[], tab: TabType) => {
-    let filtered = items
-
-    if (tab === 'active') {
-      filtered = items.filter((c) => c.status === 'active')
-    } else if (tab === 'ended') {
-      filtered = items.filter((c) => c.status === 'ended')
-    } else if (tab === 'drafts') {
-      filtered = items.filter((c) => c.status === 'draft')
-    } else if (tab === 'pending_approval') {
-      filtered = items.filter((c) => c.status === 'pending_approval')
+    const handleCreate = async (data: CampaignFormData) => {
+        setIsCreating(true)
+        try {
+            await createCampaign(data)
+            toast('Đã tạo chiến dịch mới', 'success')
+            setShowForm(false)
+            const res = await listCampaigns({})
+            setCampaigns((res as any)?.data || res || [])
+        } catch (e: any) { toast(e?.message || 'Lỗi tạo chiến dịch', 'error') }
+        finally { setIsCreating(false) }
     }
 
-    setFilteredCampaigns(filtered)
-  }
+    const fmtMoney = (n: number) => n?.toLocaleString('vi-VN') + '₫'
+    const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab)
-    filterCampaigns(campaigns, tab)
-  }
+    return (
+        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
 
-  const handleCampaignClick = (id: string) => {
-    router.push(`/app/campaigns/${id}`)
-  }
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+                <div>
+                    <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '6px' }}>Cộng đồng</p>
+                    <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Chiến Dịch</h1>
+                </div>
+                {isManager && (
+                    <button onClick={() => setShowForm(true)} style={{
+                        padding: '10px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                        background: G.accent, color: '#070B14', border: 'none',
+                        boxShadow: '0 0 20px rgba(0,214,143,0.3)',
+                    }}>+ Tạo mới</button>
+                )}
+            </div>
 
-  const handleApproveCampaign = async (id: string) => {
-    try {
-      await approveCampaign(id)
-      toast('Chiến dịch được phê duyệt thành công', 'success')
-      loadData()
-    } catch (error) {
-      console.error('Error approving campaign:', error)
-      toast('Không thể phê duyệt chiến dịch', 'error')
-    }
-  }
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                {([['all', 'Tất cả'], ['active', 'Đang mở'], ['ended', 'Đã kết']] as [TabType, string][]).map(([t, l]) => (
+                    <button key={t} onClick={() => setTab(t)} style={{
+                        padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none',
+                        background: tab === t ? G.accent : G.glass,
+                        color: tab === t ? '#070B14' : G.t2,
+                        boxShadow: tab === t ? '0 0 14px rgba(0,214,143,0.3)' : 'none',
+                        backdropFilter: 'blur(8px)',
+                    }}>{l}</button>
+                ))}
+            </div>
 
-  const handleRejectCampaign = async (id: string, reason?: string) => {
-    // TODO: Implement reject endpoint
-    toast('Tính năng từ chối sắp ra mắt', 'info')
-  }
+            {/* Campaign list */}
+            {campaigns.length === 0 ? (
+                <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '36px', textAlign: 'center' }}>
+                    <p style={{ color: G.t3, fontSize: '14px', margin: 0 }}>Chưa có chiến dịch nào</p>
+                    {isManager && <button onClick={() => setShowForm(true)} style={{ marginTop: '14px', padding: '10px 20px', borderRadius: '10px', background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>+ Tạo chiến dịch đầu tiên</button>}
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {campaigns.map((c: Campaign) => (
+                        <button key={c.id} onClick={() => router.push(`/app/campaigns/${c.id}`)} style={{
+                            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px',
+                            padding: '18px', background: G.glass, border: `1px solid ${G.glassBorder}`,
+                            borderRadius: '18px', cursor: 'pointer', textAlign: 'left', width: '100%',
+                            backdropFilter: 'blur(12px)', transition: 'all 0.15s ease',
+                        }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                    <span style={{ fontSize: '16px', fontWeight: 700, color: G.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                                    <span style={{
+                                        flexShrink: 0, fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '10px',
+                                        background: c.status === 'active' ? G.accentDim : 'rgba(255,255,255,0.07)',
+                                        color: c.status === 'active' ? G.accent : G.t3,
+                                        border: `1px solid ${c.status === 'active' ? 'rgba(0,214,143,0.25)' : G.glassBorder}`,
+                                    }}>{c.status === 'active' ? 'Đang mở' : 'Kết thúc'}</span>
+                                </div>
+                                {c.description && <p style={{ margin: '0 0 8px', fontSize: '12px', color: G.t3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</p>}
+                                <p style={{ margin: 0, fontSize: '11px', color: G.t3 }}>Hạn: {c.deadline ? fmtDate(c.deadline) : 'Không giới hạn'}</p>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <p style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: G.accent }}>{fmtMoney(c.amount_per_member)}</p>
+                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>/người</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
 
-  const tabs: Array<{ id: TabType; label: string; count?: number }> = [
-    { id: 'all', label: 'Tất cả', count: campaigns.length },
-    { id: 'active', label: 'Đang hoạt động', count: stats.activeCampaigns },
-    { id: 'ended', label: 'Kết thúc' },
-    { id: 'drafts', label: 'Bản nháp' },
-    { id: 'pending_approval', label: 'Chờ duyệt' },
-  ]
-
-  return (
-    <div className="min-h-screen p-4 md:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>Chiến dịch</h1>
-        <p className="text-base font-light mb-6" style={{ color: '#6B6660' }}>Tạo và quản lý chiến dịch đội</p>
-        <Button onClick={() => router.push('/app/campaigns/new')} className="flex items-center gap-2">
-          <Plus size={20} />
-          Chiến dịch mới
-        </Button>
-      </div>
-
-      {/* Stats Section */}
-      <div className="mb-8">
-        <CampaignStatsBar
-          totalCampaigns={stats.totalCampaigns}
-          activeCampaigns={stats.activeCampaigns}
-          totalParticipants={stats.totalParticipants}
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Tabs and View Controls */}
-      <div className="mb-4 space-y-3">
-        <div className="flex gap-2 overflow-x-auto pb-3">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'text-white'
-                  : 'text-black hover:bg-slate-100'
-              }`}
-              style={{
-                background: activeTab === tab.id ? '#3D5A50' : 'transparent'
-              }}
-            >
-              {tab.label}
-              {tab.count !== undefined && ` (${tab.count})`}
-            </button>
-          ))}
+            {/* Create modal */}
+            {showForm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,11,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
+                    onClick={() => setShowForm(false)}>
+                    <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
+                        onClick={e => e.stopPropagation()}>
+                        <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: 600, color: G.t1 }}>Tạo chiến dịch mới</h2>
+                        <CampaignForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
+                    </div>
+                </div>
+            )}
         </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex gap-md justify-end items-center">
-          <span className="text-caption text-gray">Xem:</span>
-          <div className="flex gap-xs bg-bone rounded-full p-xs">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-md py-xs rounded-full text-caption font-medium transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white text-black'
-                  : 'text-gray hover:text-black'
-              }`}
-            >
-              Lưới
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-md py-xs rounded-full text-caption font-medium transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white text-black'
-                  : 'text-gray hover:text-black'
-              }`}
-            >
-              Danh sách
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Desktop: Two Column, Mobile: Single */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-xl">
-        {/* Campaign List - 70% on desktop */}
-        <div className="lg:col-span-2">
-          <CampaignList
-            campaigns={filteredCampaigns}
-            isLoading={isLoading}
-            onItemClick={handleCampaignClick}
-            emptyMessage={`Không tìm thấy chiến dịch`}
-            viewMode={viewMode}
-          />
-        </div>
-
-        {/* Approval Queue - 30% on desktop */}
-        {pendingApprovals.length > 0 && (
-          <div className="lg:col-span-1">
-            <CampaignApprovalQueue
-              campaigns={pendingApprovals}
-              isLoading={isLoading}
-              onApprove={handleApproveCampaign}
-              onReject={handleRejectCampaign}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  )
+    )
 }

@@ -29,8 +29,15 @@ app.post('/api/auth/phone/login', phoneAuthHandler);
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');
 app.post('/api/zalo/webhook', zaloWebhookHandler);
 
-// Protected routes (require auth + tenancy)
+// Protected routes (require auth, but NOT yet tenancy)
 app.use(authMiddleware);
+
+// Team onboarding — auth required but no team context yet
+const teamHandler = require('./handlers/teamHandler');
+app.post('/api/teams', teamHandler.createTeam);
+app.post('/api/teams/join', teamHandler.joinTeam);
+
+// All remaining routes require auth + team context
 app.use(tenancyMiddleware);
 
 // Inngest webhook
@@ -92,6 +99,12 @@ app.get('/api/attendance/leaderboard/:month', rbacMiddleware(['member', 'co_mana
 app.get('/api/attendance/stats/:userId', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getUserStats);
 // Get attendance history
 app.get('/api/attendance/history', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getAttendanceHistory);
+
+// Team management routes (tenancy-scoped)
+app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.listMembers);
+app.patch('/api/team/members/:userId/role', rbacMiddleware(['owner']), teamHandler.updateMemberRole);
+app.get('/api/team/invite', rbacMiddleware(['owner', 'co_manager']), teamHandler.getInviteCode);
+app.post('/api/team/invite/regenerate', rbacMiddleware(['owner']), teamHandler.regenerateInviteCode);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {

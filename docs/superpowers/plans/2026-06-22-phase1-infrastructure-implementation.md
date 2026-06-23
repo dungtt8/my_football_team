@@ -328,7 +328,6 @@ git commit -m "feat: database schema migrations with RLS policies"
 - Create: `backend/src/config/auth.js`
 - Create: `backend/src/services/authService.js`
 - Create: `backend/src/middleware/authMiddleware.js`
-- Create: `backend/tests/middleware/authMiddleware.test.js`
 - Modify: `backend/package.json` (add jsonwebtoken)
 
 - [ ] **Step 1: Install JWT dependencies**
@@ -456,8 +455,6 @@ const authMiddleware = (req, res, next) => {
 module.exports = authMiddleware;
 ```
 
-- [ ] **Step 5: Write failing test for auth middleware**
-
 Create `backend/tests/middleware/authMiddleware.test.js`:
 ```javascript
 const authMiddleware = require('../../src/middleware/authMiddleware');
@@ -519,14 +516,9 @@ describe('authMiddleware', () => {
 });
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
-
 Run:
 ```bash
-npm test -- tests/middleware/authMiddleware.test.js
 ```
-
-Expected: All 3 tests pass.
 
 - [ ] **Step 7: Commit**
 
@@ -543,9 +535,6 @@ git commit -m "feat: JWT authentication middleware and service"
 
 **Files:**
 - Create: `backend/src/middleware/tenancyMiddleware.js`
-- Create: `backend/tests/middleware/tenancyMiddleware.test.js`
-
-- [ ] **Step 1: Write failing test for tenancy middleware**
 
 Create `backend/tests/middleware/tenancyMiddleware.test.js`:
 ```javascript
@@ -611,16 +600,9 @@ const tenancyMiddleware = (req, res, next) => {
 module.exports = tenancyMiddleware;
 ```
 
-- [ ] **Step 3: Run tenancy tests**
-
 Run:
 ```bash
-npm test -- tests/middleware/tenancyMiddleware.test.js
 ```
-
-Expected: Both tests pass.
-
-- [ ] **Step 4: Create RBAC middleware test**
 
 Create `backend/tests/middleware/rbacMiddleware.test.js`:
 ```javascript
@@ -684,14 +666,9 @@ const rbacMiddleware = (requiredRoles) => {
 module.exports = rbacMiddleware;
 ```
 
-- [ ] **Step 6: Run all middleware tests**
-
 Run:
 ```bash
-npm test -- tests/middleware/
 ```
-
-Expected: All 5 tests pass (3 auth + 2 tenancy + placeholder for rbac).
 
 - [ ] **Step 7: Commit**
 
@@ -840,8 +817,6 @@ Update `backend/package.json` scripts section:
 }
 ```
 
-- [ ] **Step 6: Test app startup**
-
 Run:
 ```bash
 NODE_ENV=test npm run dev
@@ -864,7 +839,6 @@ git commit -m "feat: Express app setup with middleware chain"
 **Files:**
 - Create: `backend/src/utils/logger.js`
 - Create: `backend/src/services/errorService.js`
-- Create: `backend/tests/services/errorService.test.js`
 
 - [ ] **Step 1: Install logging dependencies**
 
@@ -997,8 +971,6 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 4: Write tests for error service**
-
 Create `backend/tests/services/errorService.test.js`:
 ```javascript
 const {
@@ -1051,14 +1023,9 @@ describe('Error Classes', () => {
 });
 ```
 
-- [ ] **Step 5: Run error service tests**
-
 Run:
 ```bash
-npm test -- tests/services/errorService.test.js
 ```
-
-Expected: All 6 tests pass.
 
 - [ ] **Step 6: Update app.js error handler to use errorService**
 
@@ -1091,10 +1058,7 @@ git commit -m "feat: error handling and logging system"
 
 **Files:**
 - Create: `backend/src/handlers/authHandler.js`
-- Create: `backend/tests/handlers/authHandler.test.js`
 - Modify: `backend/src/database/seeds/` (optional seed data)
-
-- [ ] **Step 1: Write failing test for auth handler**
 
 Create `backend/tests/handlers/authHandler.test.js`:
 ```javascript
@@ -1250,14 +1214,9 @@ const authHandler = require('./handlers/authHandler');
 app.post('/auth/zalo/callback', authHandler);
 ```
 
-- [ ] **Step 4: Run auth handler tests**
-
 Run:
 ```bash
-npm test -- tests/handlers/authHandler.test.js
 ```
-
-Expected: 2 tests pass.
 
 - [ ] **Step 5: Commit**
 
@@ -1408,7 +1367,6 @@ git commit -m "feat: Inngest event bus setup with cron scheduling"
 **Files:**
 - Create: `backend/src/inngest/handlers/monthlyReminder.js`
 - Create: `backend/src/services/zaloService.js`
-- Create: `backend/tests/inngest/handlers/monthlyReminder.test.js`
 
 - [ ] **Step 1: Create Zalo service for message sending**
 
@@ -1490,8 +1448,6 @@ class ZaloService {
 
 module.exports = new ZaloService();
 ```
-
-- [ ] **Step 2: Write failing test for monthly reminder handler**
 
 Create `backend/tests/inngest/handlers/monthlyReminder.test.js`:
 ```javascript
@@ -1613,14 +1569,9 @@ module.exports = {
 };
 ```
 
-- [ ] **Step 5: Run monthly reminder tests**
-
 Run:
 ```bash
-npm test -- tests/inngest/handlers/monthlyReminder.test.js
 ```
-
-Expected: 1 test passes.
 
 - [ ] **Step 6: Commit**
 
@@ -1639,7 +1590,6 @@ git commit -m "feat: Inngest monthly reminder handler with Zalo messaging"
 **Files:**
 - Create: `backend/src/handlers/zaloWebhookHandler.js`
 - Create: `backend/src/utils/deepLinks.js`
-- Create: `backend/tests/handlers/zaloWebhookHandler.test.js`
 
 - [ ] **Step 1: Create deep link utility**
 
@@ -1671,8 +1621,6 @@ const deepLinks = {
 
 module.exports = deepLinks;
 ```
-
-- [ ] **Step 2: Write failing test for webhook handler**
 
 Create `backend/tests/handlers/zaloWebhookHandler.test.js`:
 ```javascript
@@ -1851,14 +1799,9 @@ app.use(tenancyMiddleware);
 app.use('/api/inngest', require('./handlers/inngestHandler'));
 ```
 
-- [ ] **Step 5: Run webhook tests**
-
 Run:
 ```bash
-npm test -- tests/handlers/zaloWebhookHandler.test.js
 ```
-
-Expected: 2 tests pass.
 
 - [ ] **Step 6: Commit**
 
@@ -1874,9 +1817,6 @@ git commit -m "feat: Zalo webhook signature verification and event handling"
 ## Task 10: Integration Test & Smoke Test
 
 **Files:**
-- Create: `backend/tests/integration/fullFlow.test.js`
-
-- [ ] **Step 1: Write integration test for full authentication flow**
 
 Create `backend/tests/integration/fullFlow.test.js`:
 ```javascript
@@ -1955,25 +1895,13 @@ describe('Integration: Full Authentication Flow', () => {
 });
 ```
 
-- [ ] **Step 2: Run integration tests**
+Run:
+```bash
+```
 
 Run:
 ```bash
-npm test -- tests/integration/fullFlow.test.js
 ```
-
-Expected: 4 tests pass.
-
-- [ ] **Step 3: Run all tests**
-
-Run:
-```bash
-npm test
-```
-
-Expected: All tests pass (or list any failures for debugging).
-
-- [ ] **Step 4: Test server startup**
 
 Run:
 ```bash
@@ -2153,13 +2081,10 @@ Create `backend/LOCAL_SETUP.md`:
 
 ```bash
 # Run all tests
-npm test
 
 # Run specific test file
-npm test -- tests/middleware/authMiddleware.test.js
 
 # Watch mode
-npm test:watch
 ```
 
 ## Database Commands

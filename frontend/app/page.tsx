@@ -6,19 +6,29 @@ import { useAuth } from '@/hooks/useAuth'
 
 export default function Home() {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, role, team } = useAuth()
 
   useEffect(() => {
     if (isLoading) return
 
-    if (isAuthenticated) {
-      // Redirect to finance app if authenticated
+    if (!isAuthenticated) {
+      router.push('/login')
+      return
+    }
+
+    // Authenticated but no team → onboarding
+    if (!team) {
+      router.push('/onboarding')
+      return
+    }
+
+    // Role-based redirect
+    if (role === 'co_manager' || role === 'manager' || role === 'owner') {
       router.push('/app/finance')
     } else {
-      // Redirect to login if not authenticated
-      router.push('/login')
+      router.push('/app/attendance')
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, role, team, router])
 
   return null
 }

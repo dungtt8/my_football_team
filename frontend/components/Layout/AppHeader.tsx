@@ -21,10 +21,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6"
             style={{
                 height: '64px',
-                background: 'rgba(255, 252, 249, 0.85)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                borderBottom: '1px solid rgba(15, 14, 12, 0.06)',
+                background: 'rgba(7, 11, 20, 0.80)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255,255,255,0.07)',
             }}
         >
             {/* Left: Hamburger + Logo */}
@@ -33,7 +33,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     <button
                         onClick={onMenuClick}
                         className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
-                        style={{ color: '#0F0E0C', background: 'rgba(15, 14, 12, 0.05)' }}
+                        style={{ color: 'rgba(240,244,255,0.7)', background: 'rgba(255,255,255,0.06)' }}
                         aria-label="Open menu"
                     >
                         <List size={20} weight="bold" />
@@ -46,12 +46,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     ) : (
                         <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ background: '#3D5A50' }}
+                            style={{ background: 'linear-gradient(135deg, #00D68F, #00A36C)' }}
                         >
-                            <Football size={16} weight="fill" color="#FFFCF9" />
+                            <Football size={16} weight="fill" color="#070B14" />
                         </div>
                     )}
-                    <span className="font-semibold text-sm tracking-tight" style={{ color: '#0F0E0C' }}>
+                    <span className="font-semibold text-sm tracking-tight" style={{ color: '#F0F4FF' }}>
                         {teamName}
                     </span>
                 </div>
@@ -61,7 +61,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {showSearch && (
                 <button
                     className="flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
-                    style={{ color: '#9F9A93', background: 'rgba(15, 14, 12, 0.05)' }}
+                    style={{ color: 'rgba(240,244,255,0.4)', background: 'rgba(255,255,255,0.06)' }}
                     aria-label="Search"
                 >
                     <MagnifyingGlass size={18} weight="bold" />

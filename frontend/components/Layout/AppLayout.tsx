@@ -32,12 +32,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     }
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'linear-gradient(135deg, #FFFCF9 0%, #F5F3F0 100%)' }}>
-            {/* Ambient background decoration */}
+        <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#070B14' }}>
+            {/* Ambient gradient blobs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-teal-200/30 to-transparent rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-emerald-100/20 to-transparent rounded-full blur-3xl" />
-                <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-gradient-to-br from-gray-200/10 to-transparent rounded-full blur-2xl" />
+                <div style={{
+                    position: 'absolute', top: '-120px', right: '-80px',
+                    width: '420px', height: '420px',
+                    background: 'radial-gradient(circle, rgba(0,214,143,0.12) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                }} />
+                <div style={{
+                    position: 'absolute', bottom: '80px', left: '-100px',
+                    width: '380px', height: '380px',
+                    background: 'radial-gradient(circle, rgba(74,124,255,0.10) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                }} />
+                <div style={{
+                    position: 'absolute', top: '45%', right: '20%',
+                    width: '250px', height: '250px',
+                    background: 'radial-gradient(circle, rgba(0,214,143,0.05) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                }} />
             </div>
 
             {/* Content container */}

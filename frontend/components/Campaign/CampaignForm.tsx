@@ -1,221 +1,148 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Button } from '@/components/Common/Button'
-import { Campaign } from '@/hooks/useCampaign'
+
+interface CampaignFormData {
+    name: string
+    amount_per_member: number
+    deadline?: string
+    description?: string
+}
 
 interface CampaignFormProps {
-  onSubmit: (data: any) => void
-  initialData?: Campaign
-  isLoading?: boolean
-  onCancel?: () => void
+    onSubmit: (data: CampaignFormData) => void | Promise<void>
+    isLoading?: boolean
+    onCancel?: () => void
 }
 
 interface FormErrors {
-  [key: string]: string
+    name?: string
+    amount_per_member?: string
 }
 
 export const CampaignForm: React.FC<CampaignFormProps> = ({
-  onSubmit,
-  initialData,
-  isLoading = false,
-  onCancel,
+    onSubmit,
+    isLoading = false,
+    onCancel,
 }) => {
-  const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    description: initialData?.description || '',
-    startDate: initialData?.startDate?.split('T')[0] || '',
-    endDate: initialData?.endDate?.split('T')[0] || '',
-    type: initialData?.type || 'Promotion',
-    targetAudience: initialData?.targetAudience || 'All',
-    notes: initialData?.notes || '',
-  })
+    const [formData, setFormData] = useState({
+        name: '',
+        amount_per_member: '',
+        deadline: '',
+        description: '',
+    })
+    const [errors, setErrors] = useState<FormErrors>({})
 
-  const [errors, setErrors] = useState<FormErrors>({})
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.title || formData.title.length < 5) {
-      newErrors.title = 'Title must be at least 5 characters'
+    const validate = (): boolean => {
+        const e: FormErrors = {}
+        if (!formData.name.trim()) e.name = 'Tên chiến dịch không được để trống'
+        const amt = parseFloat(formData.amount_per_member)
+        if (isNaN(amt) || amt <= 0) e.amount_per_member = 'Số tiền phải lớn hơn 0'
+        setErrors(e)
+        return Object.keys(e).length === 0
     }
 
-    if (!formData.description || formData.description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters'
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+        if (errors[name as keyof FormErrors]) setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
 
-    if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required'
-    } else {
-      const startDate = new Date(formData.startDate)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (startDate < today) {
-        newErrors.startDate = 'Start date cannot be before today'
-      }
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!validate()) return
+        onSubmit({
+            name: formData.name.trim(),
+            amount_per_member: parseFloat(formData.amount_per_member),
+            deadline: formData.deadline || undefined,
+            description: formData.description.trim() || undefined,
+        })
     }
 
-    if (!formData.endDate) {
-      newErrors.endDate = 'End date is required'
-    } else if (formData.startDate && formData.endDate < formData.startDate) {
-      newErrors.endDate = 'End date cannot be before start date'
-    }
+    return (
+        <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name */}
+            <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                    Tên chiến dịch <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="VD: Quỹ giải đấu tháng 7"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                />
+                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+            </div>
 
-    if (!formData.type) {
-      newErrors.type = 'Campaign type is required'
-    }
+            {/* Amount per member */}
+            <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                    Số tiền / thành viên (₫) <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="number"
+                    name="amount_per_member"
+                    value={formData.amount_per_member}
+                    onChange={handleChange}
+                    placeholder="100000"
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                />
+                {errors.amount_per_member && <p className="text-xs text-red-500 mt-1">{errors.amount_per_member}</p>}
+            </div>
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+            {/* Deadline */}
+            <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                    Hạn chót (tuỳ chọn)
+                </label>
+                <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                />
+            </div>
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }))
-    }
-  }
+            {/* Description */}
+            <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                    Mô tả (tuỳ chọn)
+                </label>
+                <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Thông tin thêm về chiến dịch..."
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black resize-none"
+                />
+            </div>
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (validateForm()) {
-      onSubmit(formData)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-lg p-xl bg-white border border-light-gray rounded-lg">
-      {/* Title */}
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">Campaign Title</label>
-        <input
-          type="text"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          placeholder="Enter campaign title"
-          className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors"
-        />
-        {errors.title && <p className="text-caption text-red-600 mt-xs">{errors.title}</p>}
-      </div>
-
-      {/* Description */}
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">Description</label>
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Enter campaign description"
-          rows={4}
-          className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors resize-none"
-        />
-        {errors.description && (
-          <p className="text-caption text-red-600 mt-xs">{errors.description}</p>
-        )}
-      </div>
-
-      {/* Dates Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-        {/* Start Date */}
-        <div>
-          <label className="block text-caption text-gray mb-md font-medium">Start Date</label>
-          <input
-            type="date"
-            name="startDate"
-            value={formData.startDate}
-            onChange={handleChange}
-            className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors"
-          />
-          {errors.startDate && <p className="text-caption text-red-600 mt-xs">{errors.startDate}</p>}
-        </div>
-
-        {/* End Date */}
-        <div>
-          <label className="block text-caption text-gray mb-md font-medium">End Date</label>
-          <input
-            type="date"
-            name="endDate"
-            value={formData.endDate}
-            onChange={handleChange}
-            className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors"
-          />
-          {errors.endDate && <p className="text-caption text-red-600 mt-xs">{errors.endDate}</p>}
-        </div>
-      </div>
-
-      {/* Type and Audience Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
-        {/* Type */}
-        <div>
-          <label className="block text-caption text-gray mb-md font-medium">Campaign Type</label>
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors"
-          >
-            <option value="Promotion">Promotion</option>
-            <option value="Event">Event</option>
-            <option value="Survey">Survey</option>
-            <option value="Announcement">Announcement</option>
-          </select>
-          {errors.type && <p className="text-caption text-red-600 mt-xs">{errors.type}</p>}
-        </div>
-
-        {/* Target Audience */}
-        <div>
-          <label className="block text-caption text-gray mb-md font-medium">Target Audience</label>
-          <select
-            name="targetAudience"
-            value={formData.targetAudience}
-            onChange={handleChange}
-            className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors"
-          >
-            <option value="All">All</option>
-            <option value="Active Members">Active Members</option>
-            <option value="Recent Joiners">Recent Joiners</option>
-            <option value="Custom">Custom</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Notes */}
-      <div>
-        <label className="block text-caption text-gray mb-md font-medium">
-          Additional Notes (optional)
-        </label>
-        <textarea
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          placeholder="Add any additional notes"
-          rows={3}
-          className="w-full px-md py-md border border-light-gray rounded-lg focus:outline-none focus:border-black focus:bg-bone transition-colors resize-none"
-        />
-      </div>
-
-      {/* Buttons */}
-      <div className="flex gap-md justify-end pt-lg border-t border-light-gray">
-        {onCancel && (
-          <Button onClick={onCancel} variant="secondary" disabled={isLoading}>
-            Cancel
-          </Button>
-        )}
-        <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
-          {isLoading ? 'Saving...' : initialData ? 'Update Campaign' : 'Create Campaign'}
-        </Button>
-      </div>
-    </form>
-  )
+            <div className="flex gap-3 pt-2">
+                {onCancel && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="flex-1 py-3 rounded-xl text-sm font-medium border"
+                        style={{ borderColor: '#E5E5E5', color: '#6B6660' }}
+                    >
+                        Huỷ
+                    </button>
+                )}
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
+                    style={{ background: '#0F0E0C', color: '#FFFCF9' }}
+                >
+                    {isLoading ? 'Đang tạo...' : 'Tạo chiến dịch'}
+                </button>
+            </div>
+        </form>
+    )
 }

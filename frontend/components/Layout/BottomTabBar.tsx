@@ -57,10 +57,10 @@ export const BottomTabBar: React.FC = () => {
         <nav
             className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
             style={{
-                background: 'rgba(255, 252, 249, 0.92)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderTop: '1px solid rgba(15, 14, 12, 0.06)',
+                background: 'rgba(7, 11, 20, 0.88)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderTop: '1px solid rgba(255,255,255,0.08)',
                 paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
         >
@@ -74,28 +74,32 @@ export const BottomTabBar: React.FC = () => {
                             className="flex-1 flex flex-col items-center justify-center gap-1 relative transition-all active:scale-95"
                             aria-current={active ? 'page' : undefined}
                         >
-                            {/* Active pill indicator */}
+                            {/* Active glow dot */}
                             {active && (
                                 <span
                                     className="absolute top-1.5 w-8 h-1 rounded-full"
-                                    style={{ background: '#3D5A50' }}
+                                    style={{
+                                        background: '#00D68F',
+                                        boxShadow: '0 0 8px rgba(0,214,143,0.6)',
+                                    }}
                                 />
                             )}
 
                             <span
                                 style={{
-                                    color: active ? '#3D5A50' : '#9F9A93',
+                                    color: active ? '#00D68F' : 'rgba(240,244,255,0.35)',
                                     transition: 'color 0.2s ease',
+                                    filter: active ? 'drop-shadow(0 0 6px rgba(0,214,143,0.5))' : 'none',
                                 }}
                             >
                                 {active ? tab.iconActive : tab.icon}
                             </span>
 
                             <span
-                                className="text-[10px] font-medium whitespace-nowrap"
+                                className="text-[10px] whitespace-nowrap"
                                 style={{
-                                    color: active ? '#3D5A50' : '#9F9A93',
-                                    fontWeight: active ? 600 : 500,
+                                    color: active ? '#00D68F' : 'rgba(240,244,255,0.35)',
+                                    fontWeight: active ? 600 : 400,
                                 }}
                             >
                                 {tab.label}

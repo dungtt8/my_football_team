@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
     const router = useRouter()
-    const { isAuthenticated, isLoading } = useAuth()
+    const { isAuthenticated, isLoading, setAuthData } = useAuth()
     const [phone, setPhone] = useState('')
     const [fullName, setFullName] = useState('')
     const [isPhoneLoading, setIsPhoneLoading] = useState(false)
@@ -15,7 +15,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            router.push('/app/finance')
+            router.push('/')
         }
     }, [isAuthenticated, isLoading, router])
 
@@ -42,12 +42,11 @@ export default function LoginPage() {
                 throw new Error(data.error || 'Login failed')
             }
 
-            localStorage.setItem('auth_token', data.token)
-            localStorage.setItem('user', JSON.stringify(data.user))
-            localStorage.setItem('team', JSON.stringify(data.team))
-            localStorage.setItem('role', data.user.role)
+            // Update AuthContext state + localStorage atomically
+            setAuthData(data.token, data.user, data.team ?? null, data.user.role)
 
-            router.push('/app/finance')
+            // Redirect: no team → onboarding, else → root (role-based routing)
+            router.push(data.has_team === false ? '/onboarding' : '/')
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
             setError(message)

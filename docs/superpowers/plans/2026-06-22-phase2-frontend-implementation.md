@@ -132,7 +132,6 @@ frontend/
 - [ ] Create app icons (192x192, 512x512) or use placeholders
 - [ ] Create shortcut icons (192x192) for 4 quick actions
 - [ ] Configure `next.config.ts` with PWA plugin
-- [ ] Test: `npm run build` builds PWA
 - [ ] **Commit:** `setup: add PWA support with shortcuts`
 
 #### Task 1.3: Setup API Client + Auth Context
@@ -140,7 +139,6 @@ frontend/
 - [ ] Create `contexts/AuthContext.tsx` - Auth provider (reads JWT from localStorage)
 - [ ] Create `hooks/useAuth.ts` - Hook to access auth context
 - [ ] Create `hooks/useApi.ts` - Generic hook for API calls with auth + error handling
-- [ ] Test: Verify auth header is injected on API calls
 - [ ] **Commit:** `setup: add API client and auth context`
 
 #### Task 1.4: Create Design System Components
@@ -150,7 +148,6 @@ frontend/
 - [ ] Create `components/Common/EmptyState.tsx` (centered text + optional action)
 - [ ] Create `components/Common/LoadingSkeletons.tsx` (flat skeleton placeholders)
 - [ ] Create `components/Common/Toast.tsx` (simple toast with auto-dismiss)
-- [ ] Test: Render all components, verify colors and spacing
 - [ ] **Commit:** `feat: add core design system components`
 
 ---
@@ -172,7 +169,6 @@ frontend/
 - [ ] Create `components/Layout/AppLayout.tsx`
   - Wrapper: Header + Content Area + Bottom Tab Bar
   - Content area has padding for tab bar (pb-20 on mobile)
-- [ ] Test: Render layout, verify header/tabs fixed on scroll
 - [ ] **Commit:** `feat: add app layout with bottom tab navigation`
 
 #### Task 1.6: Create Page Structure + Routing
@@ -181,14 +177,12 @@ frontend/
 - [ ] Create `app/app/finance/page.tsx` (empty, placeholder)
 - [ ] Create `app/app/campaigns/page.tsx` (empty, placeholder)
 - [ ] Create `app/app/attendance/page.tsx` (empty, placeholder)
-- [ ] Test: Navigate between pages via URL, verify tab bar highlights correct tab
 - [ ] **Commit:** `feat: add app routing structure`
 
 #### Task 1.7: Create Toast Context + Provider
 - [ ] Create `contexts/ToastContext.tsx` with provider
 - [ ] Create hook `useToast()` for triggering notifications
 - [ ] Add `<ToastProvider>` to `app/layout.tsx`
-- [ ] Test: Call toast from a component, verify it shows + dismisses
 - [ ] **Commit:** `feat: add toast notification system`
 
 ---
@@ -206,7 +200,6 @@ frontend/
   - `useBalance()` - GET balance
 - [ ] Use `useApi()` hook for all calls
 - [ ] Add error + loading states
-- [ ] Test: Mock API responses, verify hooks return correct data
 - [ ] **Commit:** `feat: add finance hooks`
 
 #### Task 2.2: Create Finance Components (Part 1)
@@ -224,7 +217,6 @@ frontend/
   - Pull-to-refresh support
   - Infinite scroll (load more button)
   - Empty state if no transactions
-- [ ] Test: Render list, verify items display correctly
 - [ ] **Commit:** `feat: add finance transaction list components`
 
 #### Task 2.3: Create Finance Form Component
@@ -236,7 +228,6 @@ frontend/
   - Loading: Button disabled while submitting
   - Success: Toast notification + close form
   - Error: Show validation errors inline
-- [ ] Test: Fill form, submit, verify API call made
 - [ ] **Commit:** `feat: add transaction form component`
 
 #### Task 2.4: Create Finance Approval Components (Co-manager)
@@ -249,7 +240,6 @@ frontend/
   - Render list of `<ApprovalItem>`
   - Only visible if user role is co_manager or owner
   - Empty state if no pending
-- [ ] Test: Mock pending approvals, verify render + button handlers
 - [ ] **Commit:** `feat: add finance approval components`
 
 #### Task 2.5: Finance Dashboard Page
@@ -266,7 +256,6 @@ frontend/
   - [+ Button] opens `TransactionForm` in modal/sheet
   - [Submit Transaction CTA] opens same modal
 - [ ] Create modal/sheet component (simple backdrop + container)
-- [ ] Test: Render page, verify all sections show, modals open/close
 - [ ] **Commit:** `feat: build finance dashboard page`
 
 #### Task 2.6: Finance Detail Page
@@ -275,16 +264,7 @@ frontend/
   - Show full transaction details
   - If user is co-manager AND status is pending: show [Approve] [Reject] buttons
   - Back button to return to list
-- [ ] Test: Navigate to detail, verify data loads + buttons work
 - [ ] **Commit:** `feat: add finance transaction detail page`
-
-#### Task 2.7: Finance Module Testing + Polish
-- [ ] Write basic tests for hooks (mock API responses)
-- [ ] Test form validation (submit with invalid data)
-- [ ] Test error handling (API error → toast notification)
-- [ ] Mobile responsive test (viewport < 640px)
-- [ ] Fix any layout/spacing issues
-- [ ] **Commit:** `test: add finance module tests`
 
 ---
 
@@ -300,7 +280,6 @@ frontend/
   - `useApproveAssignment(id, userId)` - PATCH approve
   - `useRejectAssignment(id, userId)` - PATCH reject
   - `useExemptAssignment(id, userId)` - PATCH exempt
-- [ ] Test: Mock API, verify hook responses
 - [ ] **Commit:** `feat: add campaign hooks`
 
 #### Task 3.2: Create Campaign Components (Part 1)
@@ -313,7 +292,6 @@ frontend/
   - Asymmetric bento grid (CSS Grid with varied sizes)
   - Render `<CampaignCard>` for each
   - Empty state
-- [ ] Test: Render grid, verify layout + card styling
 - [ ] **Commit:** `feat: add campaign grid components`
 
 #### Task 3.3: Create Campaign Confirmation Components
@@ -325,7 +303,6 @@ frontend/
   - Query: Get campaigns where member has pending confirmation
   - Render list of `<ConfirmationCard>`
   - Empty state
-- [ ] Test: Render confirmations, verify buttons work
 - [ ] **Commit:** `feat: add campaign confirmation components`
 
 #### Task 3.4: Create Campaign Approval Components (Co-manager)
@@ -336,7 +313,6 @@ frontend/
   - Query: Get assignments where status is pending_approval
   - Render list of `<ApprovalCard>`
   - Visible only to co-manager/owner
-- [ ] Test: Render approvals, verify buttons
 - [ ] **Commit:** `feat: add campaign approval components`
 
 #### Task 3.5: Create Campaign Form
@@ -346,7 +322,6 @@ frontend/
   - Submit: `useCreateCampaign()`
   - Success: Toast + close modal
   - Visible only to co-manager/owner
-- [ ] Test: Fill form, submit
 - [ ] **Commit:** `feat: add campaign creation form`
 
 #### Task 3.6: Campaign Dashboard Page
@@ -360,7 +335,6 @@ frontend/
     [Closed Campaigns section]
     ```
   - [+ Button] opens `CampaignForm` (if co-manager)
-- [ ] Test: Render page, verify all sections
 - [ ] **Commit:** `feat: build campaign dashboard page`
 
 #### Task 3.7: Campaign Detail Page
@@ -372,15 +346,7 @@ frontend/
 - [ ] Create `components/Campaign/MemberAssignmentList.tsx`
   - Table: member name | status | actions (if co-manager)
   - Call hooks for approve/reject/exempt
-- [ ] Test: Navigate to detail, verify table + buttons
 - [ ] **Commit:** `feat: add campaign detail page`
-
-#### Task 3.8: Campaign Module Testing
-- [ ] Write tests for campaign hooks
-- [ ] Test form validation
-- [ ] Test error handling
-- [ ] Mobile responsive
-- [ ] **Commit:** `test: add campaign module tests`
 
 ---
 
@@ -396,7 +362,6 @@ frontend/
   - `useLeaderboard()` - GET current month
   - `useLeaderboardHistory(month)` - GET past month
   - `useUserStats(userId)` - GET personal stats
-- [ ] Test: Mock API
 - [ ] **Commit:** `feat: add attendance hooks`
 
 #### Task 4.2: Create Leaderboard Hero Component
@@ -405,7 +370,6 @@ frontend/
   - Your rank: smaller, muted, pale green background
   - Call `useLeaderboard()` + `useUserStats()`
   - Show loading skeleton
-- [ ] Test: Render hero, verify styling
 - [ ] **Commit:** `feat: add leaderboard hero component`
 
 #### Task 4.3: Create Check-In Card Component
@@ -415,7 +379,6 @@ frontend/
   - Show current status: "You checked in at HH:MM" or "Not checked in"
   - Call `useSessions()` to get today's session
   - Call `useCheckIn()` on button tap
-- [ ] Test: Render card, verify check-in works
 - [ ] **Commit:** `feat: add check-in card component`
 
 #### Task 4.4: Create Leaderboard Table Component
@@ -424,7 +387,6 @@ frontend/
   - Table: Rank | Name | Points (scrollable on mobile)
   - Each row clickable → user detail (optional)
   - Empty state
-- [ ] Test: Render table, verify data
 - [ ] **Commit:** `feat: add leaderboard table component`
 
 #### Task 4.5: Create Session History Component
@@ -434,7 +396,6 @@ frontend/
   - Upcoming: clickable cards, [Check In Now] if today
   - Past: show date + attendance status (✓/✗)
   - Empty state if no sessions
-- [ ] Test: Render list, verify sections
 - [ ] **Commit:** `feat: add session history component`
 
 #### Task 4.6: Create Month Selector (for Historical Leaderboards)
@@ -442,7 +403,6 @@ frontend/
   - Dropdown or previous/next month buttons
   - On change: call `useLeaderboardHistory(month)`
   - Show historical leaderboard
-- [ ] Test: Change month, verify leaderboard updates
 - [ ] **Commit:** `feat: add month selector component`
 
 #### Task 4.7: Create User Stats Card
@@ -450,7 +410,6 @@ frontend/
   - Show: Current rank, total points, attendance %
   - Call `useUserStats()`
   - Optional: show comparison to previous month
-- [ ] Test: Render card, verify data
 - [ ] **Commit:** `feat: add user stats card`
 
 #### Task 4.8: Create Session Form (Co-manager)
@@ -460,7 +419,6 @@ frontend/
   - Submit: `useCreateSession()`
   - Success: Toast + close modal
   - Visible only to co-manager/owner
-- [ ] Test: Fill form, submit
 - [ ] **Commit:** `feat: add session form component`
 
 #### Task 4.9: Attendance Hub Page
@@ -475,7 +433,6 @@ frontend/
     [MonthSelector]
     ```
   - [+ Button] opens `SessionForm` (if co-manager)
-- [ ] Test: Render page, verify all sections
 - [ ] **Commit:** `feat: build attendance hub page`
 
 #### Task 4.10: Session Detail Page
@@ -484,15 +441,7 @@ frontend/
   - Show session details
   - If co-manager: show [Mark Absent] option for members
   - Attendance list: members + their status
-- [ ] Test: Navigate to detail, verify data
 - [ ] **Commit:** `feat: add session detail page`
-
-#### Task 4.11: Attendance Module Testing
-- [ ] Write tests for hooks
-- [ ] Test form validation
-- [ ] Test error handling
-- [ ] Mobile responsive
-- [ ] **Commit:** `test: add attendance module tests`
 
 ---
 
@@ -500,10 +449,6 @@ frontend/
 
 #### Task 5.1: Error Handling & Edge Cases
 - [ ] Add error boundaries to main sections
-- [ ] Test: API errors → toast notifications
-- [ ] Test: Empty states (no transactions, no campaigns, no leaderboards)
-- [ ] Test: Offline mode (service worker caches, show offline message)
-- [ ] Test: Permission errors (non-co-managers can't see approval sections)
 - [ ] **Commit:** `fix: improve error handling and edge cases`
 
 #### Task 5.2: Form Validations & UX Polish
@@ -536,30 +481,6 @@ frontend/
 - [ ] Add static caching headers (if using Vercel)
 - [ ] **Commit:** `perf: optimize bundle size and loading`
 
-#### Task 5.6: PWA Testing & Shortcuts
-- [ ] Test: Install app on mobile (home screen)
-- [ ] Test: All 4 shortcuts work (tap → correct page/action)
-- [ ] Test: App icon displays correctly
-- [ ] Test: Standalone mode (no browser UI)
-- [ ] Test: Service worker caches + offline fallback
-- [ ] **Commit:** `pwa: test shortcuts and offline support`
-
-#### Task 5.7: API Integration Testing
-- [ ] Test: Connect to running backend (port 3001 or deployed)
-- [ ] Test: All API calls work (create, read, update)
-- [ ] Test: Error responses handled (400, 401, 500)
-- [ ] Test: Auth token refresh (if implemented in Phase 1 auth)
-- [ ] Test: Real data from backend (not mocks)
-- [ ] **Commit:** `test: verify API integration end-to-end`
-
-#### Task 5.8: Browser & Cross-Device Testing
-- [ ] Test on Chrome, Safari, Firefox (if possible)
-- [ ] Test on iOS Safari (PWA behavior)
-- [ ] Test on Android Chrome (PWA + shortcuts)
-- [ ] Test on tablet landscape mode
-- [ ] Fix any browser-specific issues
-- [ ] **Commit:** `test: cross-browser and device testing`
-
 #### Task 5.9: Documentation & Code Review
 - [ ] Write README for frontend (setup, run, build)
 - [ ] Add JSDoc comments to key functions
@@ -577,28 +498,6 @@ frontend/
 - [ ] **Commit:** `release: production build and deployment`
 
 ---
-
-## 🧪 TESTING STRATEGY
-
-### Unit Tests (per module)
-- **Finance:** Test hooks (list, submit, approve), form validation, components render
-- **Campaign:** Test hooks, form validation, status transitions, components render
-- **Attendance:** Test hooks, leaderboard calculations, components render
-
-### Integration Tests (cross-module)
-- Test: Finance transaction → Approval notification → Leaderboard update
-- Test: Campaign creation → Member confirmations → Co-manager approval → Finance integration
-- Test: Attendance check-in → Points added → Leaderboard updated
-
-### E2E Tests (optional, if time)
-- Test: Full user flow (submit expense → approve → see in balance)
-- Test: Full campaign flow (create → confirm → approve → close)
-- Test: Attendance flow (check-in → see points → rank update)
-
-### Testing Tools
-- Jest for unit tests
-- React Testing Library for component tests
-- Playwright or Cypress for E2E (optional)
 
 ---
 
@@ -631,7 +530,6 @@ frontend/
 - [ ] Check-in working
 - [ ] Leaderboard displaying correctly
 
-**Polish & Testing:**
 - [ ] Mobile responsive (< 640px)
 - [ ] Error handling working
 - [ ] Forms validated
