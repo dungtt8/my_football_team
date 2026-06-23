@@ -10,7 +10,10 @@ import { ArrowRight } from 'phosphor-react'
 export default function LoginPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading } = useAuth()
-  const [isZaloLoading, setIsZaloLoading] = useState(false)
+  const [phone, setPhone] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [isPhoneLoading, setIsPhoneLoading] = useState(false)
+  const [error, setError] = useState('')
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -19,18 +22,41 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  const handleZaloLogin = async () => {
-    setIsZaloLoading(true)
+  const handlePhoneLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setIsPhoneLoading(true)
+
     try {
-      // Redirect to Zalo OA login
-      const redirectUri = `${window.location.origin}/auth/callback`
-      const clientId = process.env.NEXT_PUBLIC_ZALO_CLIENT_ID || ''
-      const zaloAuthUrl = `https://oauth.zaloapp.com/v4/oa/permission?app_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=security_token`
-      
-      window.location.href = zaloAuthUrl
-    } catch (error) {
-      console.error('Zalo login error:', error)
-      setIsZaloLoading(false)
+      if (!phone || !fullName) {
+        throw new Error('Phone and name are required')
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/phone/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, full_name: fullName }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      // Store auth data
+      localStorage.setItem('auth_token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('team', JSON.stringify(data.team))
+      localStorage.setItem('role', data.user.role)
+
+      // Redirect to app
+      router.push('/app/finance')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed'
+      setError(message)
+      console.error('Phone login error:', err)
+      setIsPhoneLoading(false)
     }
   }
 
@@ -66,33 +92,66 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <Card className="py-4xl px-2xl">
-          <div className="space-y-4xl">
+          <form onSubmit={handlePhoneLogin} className="space-y-4xl">
             {/* Main CTA */}
             <div className="space-y-xl">
               <h2 className="text-heading-1 font-serif text-espresso text-center">
                 Welcome
               </h2>
               <p className="text-body text-taupe text-center">
-                Sign in with your Zalo account to continue
+                Sign in with your phone number
               </p>
             </div>
 
-            {/* Zalo Login Button */}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-error-red/10 text-error-red text-body px-lg py-md rounded-full border border-error-red/20">
+                {error}
+              </div>
+            )}
+
+            {/* Full Name Input */}
+            <div className="space-y-xs">
+              <label className="text-caption font-medium text-espresso block">Full Name</label>
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-lg py-md border border-espresso/20 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-all bg-cream text-espresso placeholder-taupe/50"
+                required
+              />
+            </div>
+
+            {/* Phone Input */}
+            <div className="space-y-xs">
+              <label className="text-caption font-medium text-espresso block">Phone Number</label>
+              <input
+                type="tel"
+                placeholder="e.g. +84 9 1234 5678"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full px-lg py-md border border-espresso/20 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-all bg-cream text-espresso placeholder-taupe/50"
+                required
+              />
+            </div>
+
+            {/* Login Button */}
             <Button
               variant="primary"
               size="md"
-              onClick={handleZaloLogin}
-              isLoading={isZaloLoading}
+              type="submit"
+              isLoading={isPhoneLoading}
               className="w-full flex items-center justify-center gap-md"
             >
-              <span>Login with Zalo</span>
+              <span>Sign In</span>
               <ArrowRight size={20} weight="bold" />
             </Button>
 
             {/* Divider */}
             <div className="flex items-center gap-lg">
               <div className="flex-1 h-px bg-espresso/10" />
-              <span className="text-caption text-taupe/60">or</span>
+              <span className="text-caption text-taupe/60">features</span>
               <div className="flex-1 h-px bg-espresso/10" />
             </div>
 
@@ -134,7 +193,7 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </form>
         </Card>
 
         {/* Footer */}

@@ -22,6 +22,9 @@ app.get('/health', (req, res) => {
 const authHandler = require('./handlers/authHandler');
 app.post('/auth/zalo/callback', authHandler);
 
+const phoneAuthHandler = require('./handlers/phoneAuthHandler');
+app.post('/auth/phone/login', phoneAuthHandler);
+
 // Zalo webhook (NO AUTH - verify signature before processing)
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');
 app.post('/api/zalo/webhook', zaloWebhookHandler);
