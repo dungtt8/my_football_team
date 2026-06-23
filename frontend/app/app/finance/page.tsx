@@ -88,13 +88,13 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="p-lg md:p-2xl space-y-xl2">
+    <div className="min-h-screen bg-cream">
+      <div className="px-lg py-4xl md:px-2xl md:py-5xl space-y-4xl">
         {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-section-title font-bold text-black mb-md">Finance</h1>
-            <p className="text-body text-gray">Manage team expenses & approvals</p>
+            <h1 className="text-hero font-serif text-espresso mb-lg">Finance</h1>
+            <p className="text-body text-taupe">Manage team expenses & approvals</p>
           </div>
           <Button variant="primary" size="md">
             + Submit Expense
@@ -102,7 +102,7 @@ export default function FinancePage() {
         </div>
 
         {/* Stats Section */}
-        <section>
+        <section className="py-4xl">
           <StatsBar
             totalBalance={balance?.totalBalance || 0}
             monthlySpent={balance?.monthlySpent || 0}
@@ -112,14 +112,14 @@ export default function FinancePage() {
         </section>
 
         {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-xl2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4xl">
           {/* Left Column - Recent Transactions (60%) */}
           <div className="lg:col-span-2">
-            <div className="mb-lg flex items-center justify-between">
-              <h2 className="text-heading-3 font-bold text-black">Recent Transactions</h2>
+            <div className="mb-2xl flex items-center justify-between">
+              <h2 className="text-heading-1 font-serif text-espresso">Recent Transactions</h2>
               <a
                 href="#"
-                className="text-small text-black hover:text-charcoal transition-colors font-medium"
+                className="text-body text-sage hover:text-sage-dark transition-colors duration-300 ease-smooth font-medium"
               >
                 View All →
               </a>

@@ -20,7 +20,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       {skeletons.map((_, index) => (
         <div
           key={index}
-          className={`bg-bone animate-pulse rounded-card ${className}`}
+          className={`bg-gradient-to-r from-cream via-taupe/5 to-cream animate-pulse rounded-xl ${className}`}
           style={{
             width: typeof width === 'number' ? `${width}px` : width,
             height: typeof height === 'number' ? `${height}px` : height,
@@ -37,7 +37,7 @@ export const CardSkeleton: React.FC<{ count?: number }> = ({ count = 1 }) => {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="space-y-md p-xl border border-light-gray rounded-card bg-white">
+        <div key={index} className="space-y-md p-xl rounded-2xl bg-taupe/5 ring-1 ring-espresso/5 shadow-soft">
           <Skeleton height={24} className="w-3/4" />
           <div className="space-y-md">
             <Skeleton height={16} />
@@ -54,7 +54,7 @@ export const ListSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) => {
   return (
     <div className="space-y-lg">
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="space-y-md p-lg border border-light-gray rounded-card bg-white">
+        <div key={index} className="space-y-md p-lg rounded-xl bg-taupe/5 ring-1 ring-espresso/5 shadow-subtle">
           <div className="flex justify-between">
             <Skeleton width="40%" height={16} />
             <Skeleton width="20%" height={16} />
@@ -90,7 +90,7 @@ export const TableRowSkeleton: React.FC<{ columns?: number; count?: number }> = 
   return (
     <div className="space-y-md">
       {Array.from({ length: count }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex gap-md items-center p-lg bg-white border border-light-gray rounded-card">
+        <div key={rowIndex} className="flex gap-md items-center p-lg bg-taupe/5 ring-1 ring-espresso/5 rounded-lg shadow-subtle">
           {Array.from({ length: columns }).map((_, colIndex) => (
             <div key={colIndex} className="flex-1">
               <Skeleton height={16} className={colIndex === columns - 1 ? 'w-2/3' : ''} />
@@ -104,7 +104,7 @@ export const TableRowSkeleton: React.FC<{ columns?: number; count?: number }> = 
 
 export const ChartSkeleton: React.FC = () => {
   return (
-    <div className="space-y-xl p-xl border border-light-gray rounded-card bg-white">
+    <div className="space-y-xl p-xl rounded-2xl bg-taupe/5 ring-1 ring-espresso/5 shadow-soft">
       <Skeleton height={24} className="w-1/2" />
       <div className="space-y-md">
         {Array.from({ length: 5 }).map((_, index) => (
@@ -123,7 +123,7 @@ export const ChartSkeleton: React.FC = () => {
 
 export const FormSkeleton: React.FC<{ fields?: number }> = ({ fields = 4 }) => {
   return (
-    <div className="space-y-lg p-xl border border-light-gray rounded-card bg-white">
+    <div className="space-y-lg p-xl rounded-2xl bg-taupe/5 ring-1 ring-espresso/5 shadow-soft">
       {Array.from({ length: fields }).map((_, index) => (
         <div key={index} className="space-y-md">
           <Skeleton height={12} className="w-1/4" />
@@ -140,7 +140,7 @@ export const FormSkeleton: React.FC<{ fields?: number }> = ({ fields = 4 }) => {
 
 export const ProfileSkeleton: React.FC = () => {
   return (
-    <div className="space-y-xl p-xl border border-light-gray rounded-card bg-white">
+    <div className="space-y-xl p-xl rounded-2xl bg-taupe/5 ring-1 ring-espresso/5 shadow-soft">
       <div className="flex flex-col items-center text-center">
         <Skeleton width={80} height={80} className="rounded-full mb-lg" />
         <Skeleton height={24} className="w-2/3 mb-md" />

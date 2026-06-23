@@ -125,7 +125,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
       {/* Drawer */}
       <div
-        className={`fixed left-0 top-0 bottom-0 w-80 md:w-72 max-w-[85vw] bg-white z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+        className={`fixed left-0 top-0 bottom-0 w-80 md:w-72 max-w-[85vw] bg-cream z-50 transform transition-transform duration-500 ease-smooth flex flex-col shadow-medium ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
@@ -135,7 +135,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
       >
         {/* Header Section */}
         {user && (
-          <div className="p-lg border-b border-light-gray">
+          <div className="p-2xl border-b border-espresso/5">
             <div className="flex items-start justify-between mb-lg">
               <div className="flex items-center gap-lg flex-1">
                 {user.avatar ? (

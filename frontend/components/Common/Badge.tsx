@@ -1,6 +1,6 @@
 import React from 'react'
 
-type BadgeVariant = 'approved' | 'pending' | 'rejected' | 'info'
+type BadgeVariant = 'approved' | 'pending' | 'rejected' | 'info' | 'draft'
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant: BadgeVariant
@@ -8,31 +8,20 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const BADGE_STYLES = {
-  approved: 'bg-pale-green text-approved',
-  pending: 'bg-pale-yellow text-pending',
-  rejected: 'bg-pale-red text-rejected',
-  info: 'bg-pale-blue text-info',
+  approved: 'bg-pale-green text-success-green',
+  pending: 'bg-pale-yellow text-warning-yellow',
+  rejected: 'bg-pale-red text-error-red',
+  info: 'bg-pale-blue text-info-blue',
+  draft: 'bg-taupe/10 text-taupe',
 }
 
-// Custom colors for text since they're not in tailwind config
-const TEXT_COLORS = {
-  approved: '#346538',
-  pending: '#956400',
-  rejected: '#9F2F2D',
-  info: '#0277BD',
-}
-
-export const Badge: React.FC<BadgeProps> = ({ variant, className, children, style, ...props }) => {
-  const baseStyles = 'inline-block rounded-pill px-md py-xs text-caption font-medium'
+export const Badge: React.FC<BadgeProps> = ({ variant, className, children, ...props }) => {
+  const baseStyles = 'inline-flex items-center rounded-full px-lg py-xs text-caption font-medium transition-all duration-300 ease-smooth'
   const bgClass = BADGE_STYLES[variant]
 
   return (
     <span
       className={`${baseStyles} ${bgClass} ${className || ''}`}
-      style={{
-        color: TEXT_COLORS[variant],
-        ...style,
-      }}
       {...props}
     >
       {children}
