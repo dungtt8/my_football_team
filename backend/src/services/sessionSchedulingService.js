@@ -4,6 +4,7 @@
  */
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const notificationService = require('./notificationService');
 const { ValidationError, NotFoundError } = require('./errorService');
 
 const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -93,6 +94,36 @@ const createAutoSession = async (teamId) => {
             session_id: session.id,
             session_type: session.session_type,
         });
+
+        // Broadcast notification to all team members
+        try {
+            const sessionTypeLabel = session.session_type === 'training' ? 'tập luyện' : 'thi đấu';
+            const sessionDate = new Date(session.session_date).toLocaleString('vi-VN', {
+                weekday: 'short',
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            await notificationService.broadcastNotification(teamId, {
+                type: 'session_created_auto',
+                title: `Có buổi ${sessionTypeLabel} mới`,
+                message: `Lịch ${sessionTypeLabel} được tạo tự động vào lúc ${sessionDate}`,
+                data: {
+                    session_id: session.id,
+                    session_date: session.session_date.toISOString(),
+                    session_type: session.session_type,
+                    deadline: session.check_in_deadline ? session.check_in_deadline.toISOString() : null
+                }
+            });
+        } catch (notifError) {
+            logger.warn('Failed to broadcast notification for auto-created session', {
+                session_id: session.id,
+                error: notifError.message
+            });
+            // Don't fail the session creation if notification broadcast fails
+        }
 
         return session;
     } catch (error) {

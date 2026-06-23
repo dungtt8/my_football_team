@@ -110,6 +110,7 @@ export interface MarkAbsentResult {
 
 export interface UseAttendanceReturn {
     createSession: (data: SessionFormData) => Promise<AttendanceSession>
+    createManualSession: (data: SessionFormData) => Promise<AttendanceSession>
     listSessions: (params?: Record<string, string | number>) => Promise<{ data: AttendanceSession[]; pagination: any }>
     getSession: (id: string) => Promise<{ session: AttendanceSession; records: AttendanceRecord[]; total_records: number }>
     closeSession: (id: string) => Promise<AttendanceSession>
@@ -139,6 +140,19 @@ export const useAttendance = (): UseAttendanceReturn => {
                 return await request<AttendanceSession>('/attendance/sessions', 'POST', data)
             } catch (err) {
                 const e = err instanceof Error ? err : new Error('Failed to create session')
+                setLocalError(e); throw e
+            }
+        },
+        [request]
+    )
+
+    const createManualSession = useCallback(
+        async (data: SessionFormData) => {
+            try {
+                setLocalError(null)
+                return await request<AttendanceSession>('/team/attendance/sessions/manual', 'POST', data)
+            } catch (err) {
+                const e = err instanceof Error ? err : new Error('Failed to create manual session')
                 setLocalError(e); throw e
             }
         },
@@ -267,6 +281,7 @@ export const useAttendance = (): UseAttendanceReturn => {
 
     return {
         createSession,
+        createManualSession,
         listSessions,
         getSession,
         closeSession,

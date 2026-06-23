@@ -96,6 +96,116 @@ const createSession = async (req, res) => {
 };
 
 /**
+ * Create a manual attendance session (manager+ only)
+ * POST /api/team/attendance/sessions/manual
+ * Body: { session_date, session_type, check_in_deadline, location?, description? }
+ */
+const createManualSession = async (req, res) => {
+    try {
+        const { session_date, session_type, check_in_deadline, location, description } = req.body;
+        const userId = req.user.id;
+        const teamId = req.team.id;
+
+        // Validate required fields
+        if (!session_date) {
+            throw new ValidationError('Session date is required');
+        }
+        if (!session_type) {
+            throw new ValidationError('Session type is required');
+        }
+        if (!check_in_deadline) {
+            throw new ValidationError('Check-in deadline is required');
+        }
+
+        // Validate session_type
+        if (!['training', 'match'].includes(session_type)) {
+            throw new ValidationError('Session type must be "training" or "match"');
+        }
+
+        // Parse and validate dates
+        const sessionDate = new Date(session_date);
+        if (isNaN(sessionDate.getTime())) {
+            throw new ValidationError('Invalid session_date format');
+        }
+
+        const deadlineDate = new Date(check_in_deadline);
+        if (isNaN(deadlineDate.getTime())) {
+            throw new ValidationError('Invalid check_in_deadline format');
+        }
+
+        // Validate deadline is before session
+        if (deadlineDate >= sessionDate) {
+            throw new ValidationError('check_in_deadline must be before session_date');
+        }
+
+        logger.info('Creating manual attendance session', {
+            user_id: userId,
+            team_id: teamId,
+            session_date: sessionDate.toISOString(),
+            session_type,
+            check_in_deadline: deadlineDate.toISOString()
+        });
+
+        // Insert session
+        const [sessionId] = await db('attendance_sessions').insert({
+            team_id: teamId,
+            created_by: userId,
+            session_date: sessionDate,
+            check_in_deadline: deadlineDate,
+            location: location || null,
+            session_type,
+            description: description || null,
+            status: 'active',
+            created_at: new Date(),
+            updated_at: new Date()
+        });
+
+        // Fetch created session
+        const session = await db('attendance_sessions')
+            .where('id', sessionId)
+            .first();
+
+        // Get creator name for notification
+        const creator = await db('users').where('id', userId).first();
+        const creatorName = creator?.name || 'Manager';
+
+        // Broadcast notification to all team members
+        try {
+            await notificationService.broadcastNotification(teamId, {
+                type: 'session_created_manual',
+                title: `Có buổi ${session_type === 'training' ? 'tập luyện' : 'thi đấu'} mới`,
+                message: `${creatorName} vừa tạo buổi ${session_type === 'training' ? 'tập luyện' : 'thi đấu'} vào lúc ${new Date(sessionDate).toLocaleString('vi-VN')}`,
+                data: {
+                    session_id: sessionId,
+                    session_date: sessionDate.toISOString(),
+                    session_type,
+                    deadline: deadlineDate.toISOString()
+                }
+            });
+        } catch (notifError) {
+            logger.warn('Failed to broadcast notification', { error: notifError.message });
+            // Don't fail the request if notification broadcast fails
+        }
+
+        logger.info('Manual attendance session created successfully', {
+            session_id: sessionId,
+            team_id: teamId,
+            user_id: userId
+        });
+
+        return res.status(201).json({
+            id: sessionId,
+            ...session
+        });
+    } catch (error) {
+        return handleError(error, req, res, {
+            endpoint: 'POST /api/team/attendance/sessions/manual',
+            method: 'POST'
+        });
+    }
+};
+
+/**
  * List attendance sessions with pagination and filtering
  * GET /api/attendance/sessions?page=1&limit=20&status=active
  */
@@ -629,6 +739,7 @@ const getAttendanceHistory = async (req, res) => {
 
 module.exports = {
     createSession,
+    createManualSession,
     listSessions,
     getSession,
     memberCheckIn,

@@ -1,13 +1,15 @@
 'use client'
 
 import React from 'react'
-import { List, MagnifyingGlass, Football } from 'phosphor-react'
+import { List, MagnifyingGlass, Football, CaretLeft, CaretRight } from 'phosphor-react'
 
 interface AppHeaderProps {
     teamName?: string
     teamLogo?: string
     onMenuClick?: () => void
     showSearch?: boolean
+    isSidebarOpen?: boolean
+    onSidebarToggle?: () => void
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -15,20 +17,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     teamLogo,
     onMenuClick,
     showSearch = false,
+    isSidebarOpen = true,
+    onSidebarToggle,
 }) => {
     return (
         <header
-            className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6 md:left-64"
+            className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6 transition-all duration-300"
             style={{
                 height: '64px',
                 background: 'rgba(7, 11, 20, 0.80)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderBottom: '1px solid rgba(255,255,255,0.07)',
+                left: isSidebarOpen ? '256px' : '0',
             }}
         >
             {/* Left: Hamburger + Logo */}
             <div className="flex items-center gap-3">
+                {/* Mobile Menu Button */}
                 {onMenuClick && (
                     <button
                         onClick={onMenuClick}
@@ -37,6 +43,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                         aria-label="Open menu"
                     >
                         <List size={20} weight="bold" />
+                    </button>
+                )}
+
+                {/* Desktop Sidebar Toggle */}
+                {onSidebarToggle && (
+                    <button
+                        onClick={onSidebarToggle}
+                        className="hidden md:flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
+                        style={{ color: 'rgba(240,244,255,0.7)', background: 'rgba(255,255,255,0.06)' }}
+                        aria-label="Toggle sidebar"
+                    >
+                        {isSidebarOpen ? <CaretLeft size={18} weight="bold" /> : <CaretRight size={18} weight="bold" />}
                     </button>
                 )}
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { CurrencyDollar, Megaphone, ChartLine, Users, SignOut } from 'phosphor-react'
+import { CurrencyDollar, Megaphone, ChartLine, Users, SignOut, CaretLeft, CaretRight } from 'phosphor-react'
 import { useAuth } from '@/hooks/useAuth'
 
 interface NavItem {
@@ -10,6 +10,11 @@ interface NavItem {
     label: string
     path: string
     icon: React.ReactNode
+}
+
+interface SidebarProps {
+    isOpen?: boolean
+    onToggle?: () => void
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -39,7 +44,7 @@ const NAV_ITEMS: NavItem[] = [
     },
 ]
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
     const pathname = usePathname()
     const router = useRouter()
     const { user, logout } = useAuth()
@@ -53,14 +58,34 @@ export const Sidebar: React.FC = () => {
 
     return (
         <aside
-            className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r z-50"
+            className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r z-50 transition-all duration-300"
             style={{
                 background: 'rgba(7, 11, 20, 0.95)',
                 backdropFilter: 'blur(20px)',
                 borderColor: 'rgba(255,255,255,0.07)',
                 paddingTop: '64px',
+                transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+                visibility: isOpen ? 'visible' : 'hidden',
+                opacity: isOpen ? 1 : 0,
+                width: '256px',
             }}
         >
+            {/* Toggle Button */}
+            {onToggle && (
+                <button
+                    onClick={onToggle}
+                    className="absolute -right-12 top-20 md:flex hidden items-center justify-center w-10 h-10 rounded-r-lg transition-all z-40"
+                    style={{
+                        background: 'rgba(7, 11, 20, 0.95)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        color: '#00D68F',
+                    }}
+                    title={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                >
+                    {isOpen ? <CaretLeft size={16} /> : <CaretRight size={16} />}
+                </button>
+            )}
+
             {/* Navigation Items */}
             <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
                 {NAV_ITEMS.map((item) => {

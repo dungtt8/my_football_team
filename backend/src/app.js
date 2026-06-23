@@ -109,6 +109,8 @@ app.get('/api/campaigns/:id/report', rbacMiddleware(['co_manager', 'owner']), ca
 const attendanceHandler = require('./handlers/attendanceHandler');
 // Create attendance session (co-managers and owners only)
 app.post('/api/attendance/sessions', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.createSession);
+// Create manual attendance session (manager+ only)
+app.post('/api/team/attendance/sessions/manual', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.createManualSession);
 // List all attendance sessions
 app.get('/api/attendance/sessions', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.listSessions);
 // Get attendance session details

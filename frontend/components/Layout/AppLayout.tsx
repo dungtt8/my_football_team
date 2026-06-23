@@ -26,6 +26,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     user,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
     const router = useRouter()
 
     const handleNavigate = (path: string) => {
@@ -35,7 +36,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     return (
         <div className="flex h-screen overflow-hidden" style={{ background: '#070B14' }}>
             {/* Desktop Sidebar */}
-            <Sidebar />
+            <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             {/* Main content area */}
             <div className="flex flex-col flex-1">
@@ -67,6 +68,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         teamName={teamName}
                         teamLogo={teamLogo}
                         onMenuClick={() => setIsMenuOpen(true)}
+                        isSidebarOpen={isSidebarOpen}
+                        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     />
 
                     {/* Menu Drawer - Mobile only */}
@@ -78,9 +81,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     />
 
                     {/* Main content area */}
-                    <main className="flex-1 overflow-y-auto md:ml-64" style={{
+                    <main className="flex-1 overflow-y-auto transition-all duration-300" style={{
                         paddingTop: '64px',
-                        paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))'
+                        paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+                        marginLeft: isSidebarOpen ? 'var(--sidebar-width, 256px)' : '0'
                     }}>
                         <div className="w-full h-full">
                             {children}

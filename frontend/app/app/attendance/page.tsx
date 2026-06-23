@@ -17,7 +17,7 @@ export default function AttendancePage() {
     const router = useRouter()
     const { user, role } = useAuth()
     const { toast } = useToast()
-    const { listSessions, memberCheckIn, createSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
+    const { listSessions, memberCheckIn, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
     const isManager = role === 'manager' || role === 'co_manager'
 
     const [stats, setStats] = useState<UserStats | null>(null)
@@ -75,7 +75,7 @@ export default function AttendancePage() {
     const handleCreate = async (data: SessionFormData) => {
         setIsCreating(true)
         try {
-            const s = await createSession(data)
+            const s = await createManualSession(data)
             setActiveSession(s)
             setAllSessions(prev => [s, ...prev])
             setShowForm(false)
