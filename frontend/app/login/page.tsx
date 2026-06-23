@@ -71,67 +71,68 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-lg py-4xl md:py-5xl">
-      {/* Background decoration */}
+    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-lg py-4xl md:py-5xl relative overflow-hidden">
+      {/* Background decoration - modern ambient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 right-10 w-96 h-96 bg-sage/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-tan/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-sage/8 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-forest/6 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-stone/5 rounded-full blur-2xl" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md">
-        {/* Logo/Title Section */}
-        <div className="text-center mb-5xl">
-          <h1 className="text-hero font-serif text-espresso mb-lg">
-            Football Team
+        {/* Logo/Title Section - Dramatic typography */}
+        <div className="text-center mb-5xl animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-smooth">
+          <h1 className="text-6xl md:text-7xl font-serif text-slate mb-md font-light">
+            Football<br />Team
           </h1>
-          <p className="text-body text-taupe">
+          <p className="text-lg text-stone">
             Manage your team with intelligence
           </p>
         </div>
 
-        {/* Login Card */}
-        <Card className="py-4xl px-2xl">
+        {/* Login Card - Double-Bezel architecture */}
+        <Card className="py-5xl px-3xl shadow-deep animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-smooth delay-100">
           <form onSubmit={handlePhoneLogin} className="space-y-4xl">
             {/* Main CTA */}
-            <div className="space-y-xl">
-              <h2 className="text-heading-1 font-serif text-espresso text-center">
+            <div className="space-y-xl animate-in fade-in duration-700 delay-200">
+              <h2 className="text-4xl font-serif text-slate text-center font-light">
                 Welcome
               </h2>
-              <p className="text-body text-taupe text-center">
+              <p className="text-body text-stone text-center">
                 Sign in with your phone number
               </p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-error-red/10 text-error-red text-body px-lg py-md rounded-full border border-error-red/20">
+              <div className="bg-errorRed/10 text-errorRed text-body px-lg py-md rounded-full border border-errorRed/20 animate-in fade-in slide-in-from-top-4 duration-300">
                 {error}
               </div>
             )}
 
             {/* Full Name Input */}
-            <div className="space-y-xs">
-              <label className="text-caption font-medium text-espresso block">Full Name</label>
+            <div className="space-y-xs animate-in fade-in duration-500 delay-300">
+              <label className="text-caption font-medium text-slate block">Full Name</label>
               <input
                 type="text"
                 placeholder="Enter your full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-lg py-md border border-espresso/20 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-all bg-cream text-espresso placeholder-taupe/50"
+                className="w-full px-lg py-md border border-slate/15 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/30 transition-all bg-cream text-slate placeholder-stone/50"
                 required
               />
             </div>
 
             {/* Phone Input */}
-            <div className="space-y-xs">
-              <label className="text-caption font-medium text-espresso block">Phone Number</label>
+            <div className="space-y-xs animate-in fade-in duration-500 delay-400">
+              <label className="text-caption font-medium text-slate block">Phone Number</label>
               <input
                 type="tel"
                 placeholder="e.g. +84 9 1234 5678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-lg py-md border border-espresso/20 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-all bg-cream text-espresso placeholder-taupe/50"
+                className="w-full px-lg py-md border border-slate/15 rounded-lg focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/30 transition-all bg-cream text-slate placeholder-stone/50"
                 required
               />
             </div>
@@ -142,54 +143,54 @@ export default function LoginPage() {
               size="md"
               type="submit"
               isLoading={isPhoneLoading}
-              className="w-full flex items-center justify-center gap-md"
+              className="w-full flex items-center justify-center gap-md group animate-in fade-in duration-500 delay-500"
             >
               <span>Sign In</span>
-              <ArrowRight size={20} weight="bold" />
+              <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
             </Button>
 
             {/* Divider */}
-            <div className="flex items-center gap-lg">
-              <div className="flex-1 h-px bg-espresso/10" />
-              <span className="text-caption text-taupe/60">features</span>
-              <div className="flex-1 h-px bg-espresso/10" />
+            <div className="flex items-center gap-lg animate-in fade-in duration-500 delay-600">
+              <div className="flex-1 h-px bg-slate/10" />
+              <span className="text-caption text-stone/60">features</span>
+              <div className="flex-1 h-px bg-slate/10" />
             </div>
 
-            {/* Features */}
+            {/* Features - Staggered reveal */}
             <div className="space-y-lg">
-              <div className="flex gap-lg">
+              <div className="flex gap-lg animate-in fade-in slide-in-from-left-4 duration-500 delay-700">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sage/20">
                     <span className="text-sage font-bold">✓</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-body font-medium text-espresso">Finance Tracking</p>
-                  <p className="text-caption text-taupe/70">Manage team expenses with ease</p>
+                  <p className="text-body font-medium text-slate">Finance Tracking</p>
+                  <p className="text-caption text-stone/70">Manage team expenses with ease</p>
                 </div>
               </div>
 
-              <div className="flex gap-lg">
+              <div className="flex gap-lg animate-in fade-in slide-in-from-left-4 duration-500 delay-800">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sage/20">
                     <span className="text-sage font-bold">✓</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-body font-medium text-espresso">Campaigns</p>
-                  <p className="text-caption text-taupe/70">Organize team activities</p>
+                  <p className="text-body font-medium text-slate">Campaigns</p>
+                  <p className="text-caption text-stone/70">Organize team activities</p>
                 </div>
               </div>
 
-              <div className="flex gap-lg">
+              <div className="flex gap-lg animate-in fade-in slide-in-from-left-4 duration-500 delay-900">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-10 w-10 rounded-full bg-sage/20">
                     <span className="text-sage font-bold">✓</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-body font-medium text-espresso">Attendance & Rewards</p>
-                  <p className="text-caption text-taupe/70">Gamified team engagement</p>
+                  <p className="text-body font-medium text-slate">Attendance & Rewards</p>
+                  <p className="text-caption text-stone/70">Gamified team engagement</p>
                 </div>
               </div>
             </div>
@@ -197,8 +198,8 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <div className="mt-4xl text-center">
-          <p className="text-caption text-taupe/60">
+        <div className="mt-4xl text-center animate-in fade-in duration-700 delay-1000">
+          <p className="text-caption text-stone/60">
             © 2026 Football Team Management. All rights reserved.
           </p>
         </div>

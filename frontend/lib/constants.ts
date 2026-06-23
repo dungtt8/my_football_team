@@ -3,37 +3,37 @@
  * Based on Phase 2 Frontend Design Spec
  */
 
-// Colors - Editorial Luxury Palette
+// Colors - Modern Premium Palette (Contemporary + Luxury)
 export const COLORS = {
-  // Primary (Editorial Luxury: warm, refined, expensive-feeling)
-  cream: '#FDFBF7',           // Off-white, warm
-  creamLight: '#FFFBF7',      // Lighter cream for subtle backgrounds
-  sage: '#9BA8A3',             // Muted sage green (accents)
-  sageDark: '#7A8681',        // Deeper sage for hover
-  espresso: '#1F1F1F',         // Deep brown-black (text, headings)
-  espressoLight: '#3D3D3D',   // Lighter espresso for secondary
-  tan: '#D4C5B9',              // Warm tan/beige (subtle accents)
-  taupe: '#B8AFA3',            // Muted taupe (tertiary)
-  white: '#FFFFFF',            // Pure white (limited use)
+  // Primary (Modern: deeper, more dramatic, premium-feeling)
+  cream: '#FFFCF9',           // Off-white, ultra-warm (background)
+  creamLight: '#FFFEF9',      // Lighter cream for layers
+  slate: '#0F0E0C',           // Ultra-dark charcoal (text, headings) - deeper than old espresso
+  slateDark: '#1A1815',       // Very dark slate for secondary text
+  sage: '#7FA89F',            // Contemporary sage (primary accent) - more saturated
+  sageDark: '#6A9289',        // Deep sage for hover states
+  forest: '#3D5A50',          // New: Deep forest green for CTAs (modern, striking)
+  stone: '#9F9A93',           // Modern stone (secondary accents)
+  white: '#FFFFFF',           // Pure white (limited use)
 
   // Legacy names (mapped to new palette for backwards compatibility)
-  black: '#1F1F1F',            // Alias: espresso
-  charcoal: '#3D3D3D',         // Alias: espressoLight
-  gray: '#9BA8A3',             // Alias: sage
-  lightGray: '#B8AFA3',        // Alias: taupe
-  bone: '#FDFBF7',             // Alias: cream
+  black: '#0F0E0C',           // Alias: slate (darker)
+  charcoal: '#1A1815',        // Alias: slateDark
+  gray: '#7FA89F',            // Alias: sage (contemporary)
+  lightGray: '#9F9A93',       // Alias: stone
+  bone: '#FFFCF9',            // Alias: cream
 
-  // Status Colors (refined, muted palette)
-  successGreen: '#6B9B7F',    // Muted success
-  errorRed: '#C85A54',         // Muted error
-  warningYellow: '#D4A574',    // Muted warning
-  infoBluee: '#7A9DBE',        // Muted info
+  // Status Colors (vibrant, contemporary palette)
+  successGreen: '#44A366',    // Vibrant success (modern)
+  errorRed: '#D64545',        // Contemporary red (warmer, brighter)
+  warningYellow: '#E8B34B',   // Modern warm gold
+  infoBlue: '#5B9BD5',        // Contemporary blue
 
-  // Pale/background variants
-  paleRed: '#EDD8D4',          // Pale error background
-  paleGreen: '#D9E8DE',        // Pale success background
-  paleYellow: '#E8DCC9',       // Pale warning background
-  paleBlue: '#D8E4F0',         // Pale info background
+  // Pale/background variants (muted, soft)
+  paleRed: '#F5DEDE',         // Pale error background
+  paleGreen: '#D8E8DC',       // Pale success background
+  paleYellow: '#F0E6CC',      // Pale warning background
+  paleBlue: '#DCE8F5',        // Pale info background
 } as const
 
 // Typography - Premium, Editorial Luxury
@@ -97,14 +97,16 @@ export const SPACING = {
   xl5: '80px',    // Hero sections
 } as const
 
-// Shadows - Diffused, soft ambient (Editorial Luxury aesthetic)
+// Shadows - Modern ambient, deeper depth perception
 export const SHADOWS = {
   none: 'none',
-  subtle: '0 2px 4px rgba(31, 31, 31, 0.04)',
-  soft: '0 4px 12px rgba(31, 31, 31, 0.08)',
-  medium: '0 8px 24px rgba(31, 31, 31, 0.12)',
-  glow: '0 0 32px rgba(155, 168, 163, 0.15)',     // Sage glow
-  insetLight: 'inset 0 1px 2px rgba(255, 255, 255, 0.4)',
+  subtle: '0 2px 6px rgba(15, 14, 12, 0.06)',
+  soft: '0 6px 16px rgba(15, 14, 12, 0.10)',
+  medium: '0 12px 32px rgba(15, 14, 12, 0.14)',
+  deep: '0 20px 48px rgba(15, 14, 12, 0.18)',    // New: deeper shadow for elevated elements
+  glow: '0 0 40px rgba(127, 168, 159, 0.20)',    // Enhanced sage glow
+  insetLight: 'inset 0 1px 2px rgba(255, 255, 255, 0.25)',
+  insetDark: 'inset 0 1px 2px rgba(15, 14, 12, 0.10)',
 } as const
 
 // Blur values for backdrop effects
@@ -149,14 +151,14 @@ export const BADGE_VARIANTS = {
     accent: COLORS.errorRed,     // #C85A54
   },
   info: {
-    bg: COLORS.paleBlue,         // #D8E4F0
-    text: '#5A7A9E',             // Muted dark blue
-    accent: COLORS.infoBluee,    // #7A9DBE
+    bg: COLORS.paleBlue,         // #DCE8F5
+    text: '#5B7A9E',             // Muted dark blue
+    accent: COLORS.infoBlue,     // #5B9BD5
   },
   draft: {
-    bg: COLORS.taupe,            // #B8AFA3
+    bg: COLORS.stone,            // #9F9A93
     text: COLORS.white,          // #FFFFFF
-    accent: COLORS.espresso,     // #1F1F1F
+    accent: COLORS.slate,        // #0F0E0C
   },
 } as const
 

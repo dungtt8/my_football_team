@@ -9,35 +9,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Editorial Luxury palette
-        cream: '#FDFBF7',
-        'cream-light': '#FFFBF7',
-        sage: '#9BA8A3',
-        'sage-dark': '#7A8681',
-        espresso: '#1F1F1F',
-        'espresso-light': '#3D3D3D',
-        tan: '#D4C5B9',
-        taupe: '#B8AFA3',
+        // Modern premium palette
+        cream: '#FFFCF9',
+        'cream-light': '#FFFEF9',
+        slate: '#0F0E0C',
+        'slate-dark': '#1A1815',
+        sage: '#7FA89F',
+        'sage-dark': '#6A9289',
+        forest: '#3D5A50',
+        stone: '#9F9A93',
         white: '#FFFFFF',
         
         // Legacy names for backwards compatibility
-        black: '#1F1F1F',
-        charcoal: '#3D3D3D',
-        gray: '#9BA8A3',
-        'light-gray': '#B8AFA3',
-        bone: '#FDFBF7',
+        black: '#0F0E0C',
+        charcoal: '#1A1815',
+        gray: '#7FA89F',
+        'light-gray': '#9F9A93',
+        bone: '#FFFCF9',
+        espresso: '#0F0E0C',
+        'espresso-light': '#1A1815',
+        tan: '#9F9A93',
+        taupe: '#9F9A93',
         
-        // Status colors (refined, muted palette)
-        'success-green': '#6B9B7F',
-        'error-red': '#C85A54',
-        'warning-yellow': '#D4A574',
-        'info-blue': '#7A9DBE',
+        // Status colors (vibrant, contemporary)
+        'success-green': '#44A366',
+        'error-red': '#D64545',
+        'errorRed': '#D64545',  // Alternative name
+        'warning-yellow': '#E8B34B',
+        'info-blue': '#5B9BD5',
         
         // Pale backgrounds
-        'pale-red': '#EDD8D4',
-        'pale-green': '#D9E8DE',
-        'pale-yellow': '#E8DCC9',
-        'pale-blue': '#D8E4F0',
+        'pale-red': '#F5DEDE',
+        'pale-green': '#D8E8DC',
+        'pale-yellow': '#F0E6CC',
+        'pale-blue': '#DCE8F5',
       },
       fontFamily: {
         serif: ['Instrument Serif', 'serif'],
@@ -93,12 +98,14 @@ const config: Config = {
         'pill': '9999px',
       },
       boxShadow: {
-        // Editorial Luxury soft, diffused shadows
-        'subtle': '0 2px 4px rgba(31, 31, 31, 0.04)',
-        'soft': '0 4px 12px rgba(31, 31, 31, 0.08)',
-        'medium': '0 8px 24px rgba(31, 31, 31, 0.12)',
-        'glow': '0 0 32px rgba(155, 168, 163, 0.15)',
-        'inset-light': 'inset 0 1px 2px rgba(255, 255, 255, 0.4)',
+        // Modern premium, deeper shadows
+        'subtle': '0 2px 6px rgba(15, 14, 12, 0.06)',
+        'soft': '0 6px 16px rgba(15, 14, 12, 0.10)',
+        'medium': '0 12px 32px rgba(15, 14, 12, 0.14)',
+        'deep': '0 20px 48px rgba(15, 14, 12, 0.18)',
+        'glow': '0 0 40px rgba(127, 168, 159, 0.20)',
+        'inset-light': 'inset 0 1px 2px rgba(255, 255, 255, 0.25)',
+        'inset-dark': 'inset 0 1px 2px rgba(15, 14, 12, 0.10)',
       },
       backdropBlur: {
         // Premium blur values for glass effects
