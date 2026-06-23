@@ -54,6 +54,7 @@ export default function TeamSettingsPage() {
     const [tab, setTab] = useState<TabType>('general')
     const [loading, setLoading] = useState(false)
     const [inviteCode, setInviteCode] = useState<string>('')
+    const [loadingInvite, setLoadingInvite] = useState(false)
     const [copied, setCopied] = useState(false)
 
     const [settings, setSettings] = useState<TeamSettings>({
@@ -112,15 +113,44 @@ export default function TeamSettingsPage() {
                     checkin_start_day: data.scheduling?.checkin_start_day || 'fri',
                     checkin_end_day: data.scheduling?.checkin_end_day || 'tue',
                 })
-                setInviteCode(data.invite?.code || '')
+                const code = data.invite?.code
+                setInviteCode(code || '')
+                // Auto-generate invite code if empty
+                if (!code && isOwner) {
+                    handleRegenerateInvite()
+                }
             }
         } catch (error) {
             console.error('Failed to load settings:', error)
         }
     }
 
+    const handleRegenerateInvite = async () => {
+        setLoadingInvite(true)
+        try {
+            const token = localStorage.getItem('auth_token')
+            const res = await fetch(`${API_URL}/team/invite/regenerate`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            if (res.ok) {
+                const data = await res.json()
+                setInviteCode(data.invite_code)
+                toast('Đã tạo mã mời', 'success')
+            }
+        } catch (error) {
+            console.error('Failed to regenerate invite code:', error)
+            toast('Lỗi tạo mã mời', 'error')
+        } finally {
+            setLoadingInvite(false)
+        }
+    }
+
     const handleCopyInvite = () => {
-        if (!inviteCode) return
+        if (!inviteCode) {
+            toast('Chưa có mã mời, vui lòng tạo mới', 'error')
+            return
+        }
         const inviteUrl = `${window.location.origin}/onboarding/join?code=${inviteCode}`
         navigator.clipboard.writeText(inviteUrl)
         setCopied(true)
@@ -1108,29 +1138,29 @@ export default function TeamSettingsPage() {
 
                         {isOwner && (
                             <button
-                                onClick={loadSettings}
+                                onClick={handleRegenerateInvite}
+                                disabled={loadingInvite}
                                 style={{
                                     width: '100%',
                                     padding: '10px 14px',
                                     borderRadius: '10px',
-                                    background: G.glass,
-                                    border: `1px solid ${G.glassBorder}`,
-                                    color: G.t2,
-                                    cursor: 'pointer',
+                                    background: G.accent,
+                                    border: 'none',
+                                    color: '#070B14',
+                                    cursor: loadingInvite ? 'default' : 'pointer',
                                     fontSize: '13px',
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     transition: 'all 0.2s ease',
+                                    opacity: loadingInvite ? 0.6 : 1,
                                 }}
                                 onMouseEnter={(e) => {
-                                    (e.currentTarget as any).style.background = G.accentDim;
-                                    (e.currentTarget as any).style.color = G.accent;
+                                    if (!loadingInvite) (e.currentTarget as any).style.opacity = '0.8';
                                 }}
                                 onMouseLeave={(e) => {
-                                    (e.currentTarget as any).style.background = G.glass;
-                                    (e.currentTarget as any).style.color = G.t2;
+                                    (e.currentTarget as any).style.opacity = loadingInvite ? '0.6' : '1';
                                 }}
                             >
-                                🔄 Tạo mã mời mới
+                                {loadingInvite ? 'Đang tạo...' : '🔄 Tạo mã mời mới'}
                             </button>
                         )}
                     </div>

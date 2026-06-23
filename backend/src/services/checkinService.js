@@ -138,7 +138,7 @@ const checkAndCreateCheckInNotifications = async () => {
             // For now, we assume session is created for this date
             const session = await db('attendance_sessions')
                 .where('team_id', team.id)
-                .where(db.raw(`DATE(session_time AT TIME ZONE 'UTC') = ?`, [
+                .where(db.raw(`DATE(session_date AT TIME ZONE 'UTC') = ?`, [
                     sessionDate.toISOString().split('T')[0]
                 ]))
                 .first();
@@ -148,8 +148,11 @@ const checkAndCreateCheckInNotifications = async () => {
                 continue;
             }
 
-            // Get all team members
-            const members = await db('team_members').where('team_id', team.id);
+            // Get all active team members
+            const members = await db('team_members')
+                .where('team_id', team.id)
+                .where('status', 'active')
+                .whereNull('deleted_at');
 
             // Create check-in record for each member
             const checkInData = members.map(member => ({
@@ -169,10 +172,11 @@ const checkAndCreateCheckInNotifications = async () => {
             });
 
             // Send notification to all members
+            const sessionDateTime = new Date(session.session_date).toLocaleString('vi-VN');
             await notificationService.broadcastNotification(
                 team.id,
-                `Điểm danh cho sự kiện ${session.session_type} - ${session.session_time}`,
-                `Vui lòng báo sẽ tham gia hay không tham gia sự kiện tại ${session.session_location}`
+                `Điểm danh cho sự kiện ${session.session_type} - ${sessionDateTime}`,
+                `Vui lòng báo sẽ tham gia hay không tham gia sự kiện tại ${session.location}`
             );
 
             logger.info(`Check-in notifications created for team ${team.id}, session ${session.id}`);
@@ -202,9 +206,9 @@ const getActiveCheckIn = async (teamId, memberId) => {
             .join('attendance_sessions', 'attendance_checkins.session_id', '=', 'attendance_sessions.id')
             .where('attendance_checkins.team_id', teamId)
             .where('attendance_checkins.member_id', memberId)
-            .where('attendance_sessions.session_date', '>=', db.raw('DATE(NOW())'))
+            .where('attendance_sessions.session_date', '>=', db.raw('NOW()'))
             .orderBy('attendance_sessions.session_date', 'asc')
-            .select('attendance_checkins.*', 'attendance_sessions.session_time', 'attendance_sessions.session_location', 'attendance_sessions.session_type')
+            .select('attendance_checkins.*', 'attendance_sessions.session_date as session_time', 'attendance_sessions.location as session_location', 'attendance_sessions.session_type')
             .first();
 
         return checkIn || null;
