@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { Gear, Clock, CurrencyDollar, CalendarPlus, Copy, CheckCircle } from 'phosphor-react'
+import { Gear, Clock, CurrencyDollar, CalendarPlus, Copy, CheckCircle, Calendar } from 'phosphor-react'
 
 const G = {
     glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
@@ -14,7 +14,7 @@ const G = {
     red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
 }
 
-type TabType = 'general' | 'attendance' | 'finance' | 'invite'
+type TabType = 'general' | 'attendance' | 'finance' | 'scheduling' | 'invite'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
@@ -27,6 +27,12 @@ interface TeamSettings {
     fund_closing_day?: number // day of month
     fund_closing_time?: string // HH:mm
     max_members?: number
+    auto_create_sessions?: boolean
+    session_frequency?: 'disabled' | 'daily' | 'weekly' | 'custom'
+    session_days?: string // 'mon,wed,fri'
+    session_time?: string // HH:mm
+    session_type?: 'training' | 'match' | 'both'
+    session_location?: string
 }
 
 export default function TeamSettingsPage() {
@@ -55,17 +61,32 @@ export default function TeamSettingsPage() {
     }, [team])
 
     const loadSettings = async () => {
-        // For now, use default settings - in production would fetch from backend
         try {
             const token = localStorage.getItem('auth_token')
-            const res = await fetch(`${API_URL}/team/invite`, {
+            const res = await fetch(`${API_URL}/team/settings`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             if (res.ok) {
                 const data = await res.json()
-                setInviteCode(data.invite_code || '')
+                setSettings({
+                    team_name: data.general?.name || team?.name || '',
+                    team_description: data.general?.description || '',
+                    attendance_enabled: data.attendance?.enabled !== false,
+                    attendance_cooldown: data.attendance?.cooldown_minutes || 5,
+                    fund_closing_day: data.finance?.closing_day || 1,
+                    fund_closing_time: data.finance?.closing_time || '23:59',
+                    auto_create_sessions: data.scheduling?.auto_create_sessions || false,
+                    session_frequency: data.scheduling?.session_frequency || 'disabled',
+                    session_days: data.scheduling?.session_days || '',
+                    session_time: data.scheduling?.session_time || '18:00',
+                    session_type: data.scheduling?.session_type || 'training',
+                    session_location: data.scheduling?.session_location || '',
+                })
+                setInviteCode(data.invite?.code || '')
             }
-        } catch { }
+        } catch (error) {
+            console.error('Failed to load settings:', error)
+        }
     }
 
     const handleCopyInvite = () => {
@@ -84,7 +105,64 @@ export default function TeamSettingsPage() {
         }
         setLoading(true)
         try {
-            // In production: POST /api/team/settings
+            const token = localStorage.getItem('auth_token')
+            const payload: any = {};
+
+            if (tab === 'general') {
+                payload.general = {
+                    name: settings.team_name,
+                    description: settings.team_description,
+                }
+            } else if (tab === 'attendance') {
+                payload.attendance = {
+                    enabled: settings.attendance_enabled,
+                    cooldown_minutes: settings.attendance_cooldown,
+                }
+            } else if (tab === 'finance') {
+                payload.finance = {
+                    closing_day: settings.fund_closing_day,
+                    closing_time: settings.fund_closing_time,
+                }
+            } else if (tab === 'scheduling') {
+                payload.scheduling = {
+                    auto_create_sessions: settings.auto_create_sessions,
+                    session_frequency: settings.session_frequency,
+                    session_days: settings.session_days,
+                    session_time: settings.session_time,
+                    session_type: settings.session_type,
+                    session_location: settings.session_location,
+                }
+            }
+
+            const res = await fetch(`${API_URL}/team/settings`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            })
+
+            if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || 'Lỗi lưu cài đặt')
+            }
+
+            const data = await res.json()
+            // Update settings with response data
+            if (data.general) {
+                setSettings((prev) => ({ ...prev, team_name: data.general.name, team_description: data.general.description }))
+            }
+            if (data.attendance) {
+                setSettings((prev) => ({ ...prev, attendance_enabled: data.attendance.enabled, attendance_cooldown: data.attendance.cooldown_minutes }))
+            }
+            if (data.finance) {
+                setSettings((prev) => ({ ...prev, fund_closing_day: data.finance.closing_day, fund_closing_time: data.finance.closing_time }))
+            }
+            if (data.scheduling) {
+                setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location }))
+            }
+
             toast('Cài đặt đã được lưu', 'success')
         } catch (e: any) {
             toast(e?.message || 'Lỗi lưu cài đặt', 'error')
@@ -110,6 +188,7 @@ export default function TeamSettingsPage() {
                     { id: 'general', label: 'Thông tin', icon: <Gear size={16} /> },
                     { id: 'attendance', label: 'Điểm danh', icon: <Clock size={16} /> },
                     { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={16} /> },
+                    { id: 'scheduling', label: 'Lịch trình', icon: <Calendar size={16} /> },
                     { id: 'invite', label: 'Mời thành viên', icon: <CalendarPlus size={16} /> },
                 ].map((t) => (
                     <button
@@ -353,6 +432,193 @@ export default function TeamSettingsPage() {
                     </div>
                 )}
 
+                {/* Scheduling Settings */}
+                {tab === 'scheduling' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{
+                            background: G.glass,
+                            border: `1px solid ${G.glassBorder}`,
+                            borderRadius: '16px',
+                            padding: '20px',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                <label style={{ fontSize: '14px', fontWeight: 600, color: G.t1 }}>Tự động tạo sự kiện yêu cầu điểm danh</label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.auto_create_sessions}
+                                    onChange={(e) => setSettings({ ...settings, auto_create_sessions: e.target.checked })}
+                                    disabled={!isOwner}
+                                    style={{ width: '18px', height: '18px', cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6 }}
+                                />
+                            </div>
+
+                            {settings.auto_create_sessions && (
+                                <>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        Tần suất
+                                    </label>
+                                    <select
+                                        value={settings.session_frequency || 'disabled'}
+                                        onChange={(e) => setSettings({ ...settings, session_frequency: e.target.value as any })}
+                                        disabled={!isOwner}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 14px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: `1px solid ${G.glassBorder}`,
+                                            color: G.t1,
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            marginBottom: '16px',
+                                            opacity: isOwner ? 1 : 0.6,
+                                        }}
+                                    >
+                                        <option value="disabled">Vô hiệu hóa</option>
+                                        <option value="daily">Hàng ngày</option>
+                                        <option value="weekly">Hàng tuần</option>
+                                    </select>
+
+                                    {settings.session_frequency === 'weekly' && (
+                                        <>
+                                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                                Chọn ngày
+                                            </label>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                                                {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => {
+                                                    const dayLabels: any = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' };
+                                                    const sessionDays = (settings.session_days || '').split(',').map((d) => d.trim());
+                                                    const isSelected = sessionDays.includes(day);
+                                                    return (
+                                                        <button
+                                                            key={day}
+                                                            onClick={() => {
+                                                                const days = (settings.session_days || '').split(',').map((d) => d.trim());
+                                                                if (isSelected) {
+                                                                    setSettings({ ...settings, session_days: days.filter((d) => d !== day).join(',') });
+                                                                } else {
+                                                                    setSettings({ ...settings, session_days: [...days, day].filter(Boolean).join(',') });
+                                                                }
+                                                            }}
+                                                            disabled={!isOwner}
+                                                            style={{
+                                                                padding: '10px 16px',
+                                                                borderRadius: '10px',
+                                                                border: `2px solid ${isSelected ? G.accent : G.glassBorder}`,
+                                                                background: isSelected ? 'rgba(0,214,143,0.1)' : 'transparent',
+                                                                color: isSelected ? G.accent : G.t2,
+                                                                fontWeight: isSelected ? 600 : 500,
+                                                                cursor: isOwner ? 'pointer' : 'default',
+                                                                opacity: isOwner ? 1 : 0.6,
+                                                                fontSize: '13px',
+                                                            }}
+                                                        >
+                                                            {dayLabels[day]}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        Thời gian tạo sự kiện (giờ:phút)
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={settings.session_time || '18:00'}
+                                        onChange={(e) => setSettings({ ...settings, session_time: e.target.value })}
+                                        disabled={!isOwner}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 14px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: `1px solid ${G.glassBorder}`,
+                                            color: G.t1,
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            marginBottom: '16px',
+                                            opacity: isOwner ? 1 : 0.6,
+                                        }}
+                                    />
+
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        Loại sự kiện
+                                    </label>
+                                    <select
+                                        value={settings.session_type || 'training'}
+                                        onChange={(e) => setSettings({ ...settings, session_type: e.target.value as any })}
+                                        disabled={!isOwner}
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 14px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: `1px solid ${G.glassBorder}`,
+                                            color: G.t1,
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            marginBottom: '16px',
+                                            opacity: isOwner ? 1 : 0.6,
+                                        }}
+                                    >
+                                        <option value="training">Tập luyện</option>
+                                        <option value="match">Trận đấu</option>
+                                        <option value="both">Cả hai</option>
+                                    </select>
+
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        Địa điểm (tùy chọn)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={settings.session_location || ''}
+                                        onChange={(e) => setSettings({ ...settings, session_location: e.target.value })}
+                                        disabled={!isOwner}
+                                        placeholder="Sân bóng, địa chỉ..."
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 14px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: `1px solid ${G.glassBorder}`,
+                                            color: G.t1,
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            boxSizing: 'border-box',
+                                            opacity: isOwner ? 1 : 0.6,
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </div>
+
+                        {isOwner && settings.auto_create_sessions && (
+                            <button
+                                onClick={handleSaveSettings}
+                                disabled={loading}
+                                style={{
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: G.accent,
+                                    color: '#070B14',
+                                    fontWeight: 600,
+                                    cursor: loading ? 'default' : 'pointer',
+                                    opacity: loading ? 0.6 : 1,
+                                }}
+                            >
+                                {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Invite Settings */}
                 {tab === 'invite' && (
                     <div style={{
@@ -428,12 +694,12 @@ export default function TeamSettingsPage() {
                                     transition: 'all 0.2s ease',
                                 }}
                                 onMouseEnter={(e) => {
-                                    (e.currentTarget as any).style.background = G.accentDim
-                                        (e.currentTarget as any).style.color = G.accent
+                                    (e.currentTarget as any).style.background = G.accentDim;
+                                    (e.currentTarget as any).style.color = G.accent;
                                 }}
                                 onMouseLeave={(e) => {
-                                    (e.currentTarget as any).style.background = G.glass
-                                        (e.currentTarget as any).style.color = G.t2
+                                    (e.currentTarget as any).style.background = G.glass;
+                                    (e.currentTarget as any).style.color = G.t2;
                                 }}
                             >
                                 🔄 Tạo mã mời mới

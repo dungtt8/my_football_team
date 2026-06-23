@@ -246,43 +246,42 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               </button>
             ))}
           </nav>
-        </div  className="w-full flex items-center gap-lg px-md py-lg text-black hover:bg-bone transition-colors rounded-card text-left"
-              >
-        <span className="text-gray flex-shrink-0">{item.icon}</span>
-        <span className="text-body font-medium flex-1">{item.label}</span>
-      </button>
-            ))}
-    </nav >
-        </div >
+        </div>
 
-  {/* Footer Section */ }
-  < div className = "p-lg border-t border-light-gray" >
-    <Button
-      variant="secondary"
-      size="md"
-      className="w-full !text-red-600 !border-red-200"
-      onClick={() => {
-        // Logout logic will be handled by parent component
-        onClose()
-      }}
-    >
-      <SignOut size={20} weight="bold" className="mr-md" />
-      Logout
-    </Button>
-        </div >
-      </div >
-
-  {/* Styles for animations */ }
-  < style jsx > {`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style >
+        {/* Footer Section */}
+        <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <button
+            onClick={() => {
+              onClose()
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              background: 'rgba(255,107,107,0.1)',
+              border: '1px solid rgba(255,107,107,0.3)',
+              color: '#FF6B6B',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as any).style.background = 'rgba(255,107,107,0.2)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as any).style.background = 'rgba(255,107,107,0.1)'
+            }}
+          >
+            <SignOut size={20} weight="bold" />
+            Logout
+          </button>
+        </div>
+      </div>
     </>
   )
 }

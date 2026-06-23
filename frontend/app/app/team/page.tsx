@@ -93,12 +93,12 @@ export default function TeamMembersPage() {
                             transition: 'all 0.2s ease',
                         }}
                         onMouseEnter={(e) => {
-                            (e.currentTarget as any).style.background = G.accentDim
-                                (e.currentTarget as any).style.color = G.accent
+                            (e.currentTarget as any).style.background = G.accentDim;
+                            (e.currentTarget as any).style.color = G.accent;
                         }}
                         onMouseLeave={(e) => {
-                            (e.currentTarget as any).style.background = G.glass
-                                (e.currentTarget as any).style.color = G.t2
+                            (e.currentTarget as any).style.background = G.glass;
+                            (e.currentTarget as any).style.color = G.t2;
                         }}
                     >
                         ⚙️ Cài đặt

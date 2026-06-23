@@ -267,6 +267,14 @@ const getSettings = async (req, res) => {
                 closing_day: team.finance_closing_day,
                 closing_time: team.finance_closing_time,
             },
+            scheduling: {
+                auto_create_sessions: team.auto_create_sessions || false,
+                session_frequency: team.session_frequency || 'disabled',
+                session_days: team.session_days || '',
+                session_time: team.session_time || '18:00',
+                session_type: team.session_type || 'training',
+                session_location: team.session_location || '',
+            },
             invite: {
                 code: team.invite_code,
             },
@@ -335,6 +343,49 @@ const updateSettings = async (req, res) => {
             }
         }
 
+        // Update scheduling settings
+        if (req.body.scheduling) {
+            const scheduling = req.body.scheduling;
+            if (scheduling.hasOwnProperty('auto_create_sessions')) {
+                updates.auto_create_sessions = Boolean(scheduling.auto_create_sessions);
+            }
+            if (scheduling.session_frequency !== undefined) {
+                const validFrequencies = ['disabled', 'daily', 'weekly', 'custom'];
+                if (!validFrequencies.includes(scheduling.session_frequency)) {
+                    throw new ValidationError('Session frequency must be one of: disabled, daily, weekly, custom');
+                }
+                updates.session_frequency = scheduling.session_frequency;
+            }
+            if (scheduling.session_days !== undefined) {
+                if (scheduling.session_days && typeof scheduling.session_days === 'string') {
+                    const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                    const days = scheduling.session_days.split(',').map(d => d.trim().toLowerCase());
+                    const invalidDays = days.filter(d => !validDays.includes(d));
+                    if (invalidDays.length > 0) {
+                        throw new ValidationError(`Invalid days: ${invalidDays.join(', ')}. Valid days are: mon, tue, wed, thu, fri, sat, sun`);
+                    }
+                }
+                updates.session_days = scheduling.session_days || null;
+            }
+            if (scheduling.session_time !== undefined) {
+                const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
+                if (scheduling.session_time && !timeRegex.test(scheduling.session_time)) {
+                    throw new ValidationError('Session time must be in HH:mm format');
+                }
+                updates.session_time = scheduling.session_time || '18:00';
+            }
+            if (scheduling.session_type !== undefined) {
+                const validTypes = ['training', 'match', 'both'];
+                if (!validTypes.includes(scheduling.session_type)) {
+                    throw new ValidationError('Session type must be one of: training, match, both');
+                }
+                updates.session_type = scheduling.session_type;
+            }
+            if (scheduling.session_location !== undefined) {
+                updates.session_location = scheduling.session_location || null;
+            }
+        }
+
         if (Object.keys(updates).length === 0) {
             return res.json({ message: 'No changes made' });
         }
@@ -358,6 +409,14 @@ const updateSettings = async (req, res) => {
             finance: {
                 closing_day: updatedTeam.finance_closing_day,
                 closing_time: updatedTeam.finance_closing_time,
+            },
+            scheduling: {
+                auto_create_sessions: updatedTeam.auto_create_sessions || false,
+                session_frequency: updatedTeam.session_frequency || 'disabled',
+                session_days: updatedTeam.session_days || '',
+                session_time: updatedTeam.session_time || '18:00',
+                session_type: updatedTeam.session_type || 'training',
+                session_location: updatedTeam.session_location || '',
             },
         });
     } catch (error) {

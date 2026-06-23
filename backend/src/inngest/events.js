@@ -171,6 +171,28 @@ const onAttendanceSessionClosedHandler = inngest.createFunction(
   onAttendanceSessionClosed
 );
 
+/**
+ * Auto-Create Sessions Scheduled Job
+ * Runs daily at 3 AM UTC to check and create scheduled attendance sessions
+ * Processes all teams with auto_create_sessions enabled
+ */
+const autoCreateSessionsScheduledJob = inngest.createFunction(
+  {
+    id: 'attendance.auto-create-sessions',
+    retryOptions: { maxRetries: 2, initialDelayMs: 10000 }
+  },
+  { cron: '0 3 * * *' }, // Daily at 3 AM UTC
+  async ({ step }) => {
+    const sessionSchedulingService = require('../services/sessionSchedulingService');
+
+    const result = await step.run('process-auto-sessions', async () => {
+      return await sessionSchedulingService.processAutoSessions();
+    });
+
+    return result;
+  }
+);
+
 module.exports = {
   events,
   createMonthlyReminderFunction: monthlyReminderHandler,
@@ -184,5 +206,6 @@ module.exports = {
   onCampaignClosedHandler,
   onAttendanceSessionCreatedHandler,
   onAttendanceCheckInHandler,
-  onAttendanceSessionClosedHandler
+  onAttendanceSessionClosedHandler,
+  autoCreateSessionsScheduledJob
 };

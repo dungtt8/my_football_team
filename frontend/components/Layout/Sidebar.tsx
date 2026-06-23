@@ -97,10 +97,10 @@ export const Sidebar: React.FC = () => {
                             Tài khoản
                         </p>
                         <p style={{ fontSize: '14px', color: '#F0F4FF', fontWeight: 500, marginBottom: '2px' }}>
-                            {user.full_name}
+                            {user.name}
                         </p>
                         <p style={{ fontSize: '12px', color: 'rgba(240,244,255,0.5)' }}>
-                            {user.phone}
+                            {user.email}
                         </p>
                     </div>
                 )}

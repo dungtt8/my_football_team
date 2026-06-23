@@ -210,6 +210,42 @@ export default function AttendancePage() {
                 </div>
             )}
 
+            {/* Recent records */}
+            {recentRecords.length > 0 && (
+                <div style={{ marginBottom: '28px' }}>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: G.t2, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>Điểm danh gần đây</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {recentRecords.slice(0, 5).map((record, idx) => (
+                            <button key={record.id || idx} onClick={() => router.push(`/app/attendance/records/${record.id}`)} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '12px 14px', background: G.glass, border: `1px solid ${G.glassBorder}`,
+                                borderRadius: '12px', cursor: 'pointer', textAlign: 'left', width: '100%',
+                                backdropFilter: 'blur(12px)', transition: 'all 0.15s ease',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                    <span style={{ fontSize: '20px' }}>
+                                        {(['attended', 'present', 'late'].includes(record.status) ? '✅' : record.status === 'absent' || record.status === 'marked_absent' ? '❌' : '⏳')}
+                                    </span>
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: G.t1 }}>
+                                            {record.session_type === 'match' ? '⚽' : '🏃'} {record.session_date ? new Date(record.session_date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }) : 'N/A'}
+                                        </p>
+                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
+                                            {['attended', 'present', 'late'].includes(record.status) ? (record.checked_in_at ? `${new Date(record.checked_in_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Checked in') : record.status === 'absent' || record.status === 'marked_absent' ? 'Vắng' : 'Chưa điểm danh'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={() => router.push('/app/attendance/history')} style={{
+                        width: '100%', marginTop: '10px', padding: '11px', borderRadius: '12px',
+                        background: 'transparent', border: `1px solid ${G.glassBorder}`,
+                        color: G.t2, fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                    }}>Xem lịch sử đầy đủ →</button>
+                </div>
+            )}
+
             {/* Leaderboard */}
             {leaderboard.length > 0 && (
                 <div>
@@ -232,11 +268,11 @@ export default function AttendancePage() {
                             )
                         })}
                     </div>
-                    <button onClick={() => router.push('/app/attendance/history')} style={{
+                    <button onClick={() => router.push('/app/attendance/leaderboard')} style={{
                         width: '100%', marginTop: '10px', padding: '11px', borderRadius: '12px',
                         background: 'transparent', border: `1px solid ${G.glassBorder}`,
                         color: G.t2, fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                    }}>Xem lịch sử đầy đủ →</button>
+                    }}>Xem bảng xếp hạng đầy đủ →</button>
                 </div>
             )}
 
