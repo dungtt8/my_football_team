@@ -36,17 +36,17 @@ export const CampaignStatsBar: React.FC<CampaignStatsBarProps> = ({
 
   const stats = [
     {
-      title: 'Total Campaigns',
+      title: 'Tổng chiến dịch',
       value: totalCampaigns.toString(),
       id: 'total',
     },
     {
-      title: 'Active Campaigns',
+      title: 'Chiến dịch hoạt động',
       value: activeCampaigns.toString(),
       id: 'active',
     },
     {
-      title: 'Total Participants',
+      title: 'Tổng người tham gia',
       value: totalParticipants.toString(),
       id: 'participants',
     },

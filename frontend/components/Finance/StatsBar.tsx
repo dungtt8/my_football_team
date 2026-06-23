@@ -46,17 +46,17 @@ export const StatsBar: React.FC<StatsBarProps> = ({
 
   const stats = [
     {
-      title: 'Total Balance',
+      title: 'Tổng số dư',
       value: formatCurrency(totalBalance),
       id: 'total',
     },
     {
-      title: 'Monthly Spent',
+      title: 'Chi tiêu hàng tháng',
       value: formatCurrency(monthlySpent),
       id: 'spent',
     },
     {
-      title: 'Pending Approvals',
+      title: 'Chờ duyệt',
       value: pendingCount.toString(),
       id: 'pending',
     },

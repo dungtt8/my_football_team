@@ -143,7 +143,7 @@ export default function MenuPage() {
       {/* Header */}
       <div className="px-lg md:px-2xl pt-2xl md:pt-3xl mb-2xl border-b border-light-gray">
         <h1 className="text-section-title font-bold text-black mb-md">Menu</h1>
-        <p className="text-body text-gray mb-2xl">Team settings & preferences</p>
+        <p className="text-body text-gray mb-2xl">Cài đặt & tùy chỉnh đội</p>
       </div>
 
       <div className="max-w-2xl mx-auto px-lg md:px-2xl">
@@ -173,47 +173,47 @@ export default function MenuPage() {
 
         {/* Account Settings Group */}
         <div className="mb-2xl">
-          <h3 className="text-caption font-bold text-gray px-lg mb-md">ACCOUNT</h3>
+          <h3 className="text-caption font-bold text-gray px-lg mb-md">TÀI KHOẢN</h3>
           <Card className="p-0 overflow-hidden">
-            <SettingItem label="Profile Settings" description="Edit your profile info" />
-            <SettingItem label="Change Password" description="Update your password" />
-            <SettingItem label="Privacy Settings" description="Manage privacy options" />
+            <SettingItem label="Cài đặt hồ sơ" description="Chỉnh sửa thông tin hồ sơ" />
+            <SettingItem label="Đổi mật khẩu" description="Cập nhật mật khẩu" />
+            <SettingItem label="Cài đặt riêng tư" description="Quản lý tùy chọn riêng tư" />
           </Card>
         </div>
 
         {/* Notification Settings Group */}
         <div className="mb-2xl">
-          <h3 className="text-caption font-bold text-gray px-lg mb-md">NOTIFICATIONS</h3>
+          <h3 className="text-caption font-bold text-gray px-lg mb-md">THÔNG BÁO</h3>
           <Card className="p-0 overflow-hidden">
             <ToggleItem
-              label="Push Notifications"
-              description="Receive push alerts"
+              label="Thông báo đẩy"
+              description="Nhận cảnh báo đẩy"
               enabled={pushEnabled}
               onChange={setPushEnabled}
               icon={<Bell size={20} weight="bold" />}
             />
             <ToggleItem
-              label="Email Notifications"
-              description="Receive email updates"
+              label="Thông báo email"
+              description="Nhận cập nhật qua email"
               enabled={emailEnabled}
               onChange={setEmailEnabled}
               icon={<Bell size={20} weight="bold" />}
             />
             <ToggleItem
-              label="SMS Alerts"
-              description="Receive SMS notifications"
+              label="Cảnh báo SMS"
+              description="Nhận thông báo SMS"
               enabled={smsEnabled}
               onChange={setSmsEnabled}
               icon={<Bell size={20} weight="bold" />}
             />
             <DropdownItem
-              label="Notification Frequency"
+              label="Tần suất thông báo"
               value={notificationFreq}
               onChange={setNotificationFreq}
               options={[
-                { value: 'immediate', label: 'Immediate' },
-                { value: 'daily', label: 'Daily' },
-                { value: 'weekly', label: 'Weekly' },
+                { value: 'immediate', label: 'Ngay lập tức' },
+                { value: 'daily', label: 'Hàng ngày' },
+                { value: 'weekly', label: 'Hàng tuần' },
               ]}
               icon={<Bell size={20} weight="bold" />}
             />
@@ -222,26 +222,26 @@ export default function MenuPage() {
 
         {/* Team Settings Group */}
         <div className="mb-2xl">
-          <h3 className="text-caption font-bold text-gray px-lg mb-md">TEAM</h3>
+          <h3 className="text-caption font-bold text-gray px-lg mb-md">ĐỘI</h3>
           <Card className="p-0 overflow-hidden">
             <SettingItem
-              label="Current Team"
+              label="Đội hiện tại"
               value={user.team}
               icon={<Users size={20} weight="bold" />}
             />
             <SettingItem
-              label="Switch Team"
-              description="Change to another team"
+              label="Chuyển đến đội khác"
+              description="Chuyển sang đội khác"
               icon={<Users size={20} weight="bold" />}
             />
             <SettingItem
-              label="Team Members"
-              description="View team information"
+              label="Thành viên đội"
+              description="Xem thông tin đội"
               icon={<Users size={20} weight="bold" />}
             />
             <SettingItem
-              label="Leave Team"
-              description="Remove yourself from team"
+              label="Rời khỏi đội"
+              description="Xóa bản thân khỏi đội"
               icon={<Users size={20} weight="bold" />}
               className="!text-red-600"
             />
@@ -250,17 +250,17 @@ export default function MenuPage() {
 
         {/* App Settings Group */}
         <div className="mb-2xl">
-          <h3 className="text-caption font-bold text-gray px-lg mb-md">APP</h3>
+          <h3 className="text-caption font-bold text-gray px-lg mb-md">ỨNG DỤNG</h3>
           <Card className="p-0 overflow-hidden">
             <ToggleItem
-              label="Dark Mode"
-              description="Enable dark theme (optional)"
+              label="Chế độ tối"
+              description="Bật chủ đề tối (tùy chọn)"
               enabled={darkMode}
               onChange={setDarkMode}
               icon={<Palette size={20} weight="bold" />}
             />
             <DropdownItem
-              label="Language"
+              label="Ngôn ngữ"
               value={language}
               onChange={setLanguage}
               options={[
@@ -270,13 +270,13 @@ export default function MenuPage() {
               icon={<Globe size={20} weight="bold" />}
             />
             <SettingItem
-              label="Version"
+              label="Phiên bản"
               value="1.0.0"
               icon={<Eye size={20} weight="bold" />}
             />
             <SettingItem
-              label="Check for Updates"
-              description="Update to latest version"
+              label="Kiểm tra cập nhật"
+              description="Cập nhật lên phiên bản mới nhất"
               icon={<Eye size={20} weight="bold" />}
             />
           </Card>
@@ -285,16 +285,16 @@ export default function MenuPage() {
         {/* Bottom Actions */}
         <div className="space-y-md mb-2xl">
           <Button variant="secondary" size="lg" className="w-full !text-red-600">
-            Logout
+            Đăng xuất
           </Button>
 
           <div className="flex gap-lg justify-center text-small text-gray">
             <Link href="/about" className="hover:text-black transition-colors">
-              About & Help
+              Về & Trợ giúp
             </Link>
             <span>•</span>
             <Link href="/privacy" className="hover:text-black transition-colors">
-              Privacy Policy
+              Chính sách bảo mật
             </Link>
           </div>
         </div>

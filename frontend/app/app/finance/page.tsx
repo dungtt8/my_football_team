@@ -93,11 +93,11 @@ export default function FinancePage() {
         {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-5xl md:text-6xl font-serif font-light" style={{ color: '#0F0E0C' }}>Finance</h1>
-            <p className="text-lg font-light mt-2" style={{ color: '#6B6660' }}>Manage team expenses & approvals</p>
+            <h1 className="text-5xl md:text-6xl font-serif font-light" style={{ color: '#0F0E0C' }}>Tài Chính</h1>
+            <p className="text-base font-light mt-2" style={{ color: '#6B6660' }}>Quản lý chi phí & duyệt duyệt</p>
           </div>
           <Button variant="primary" size="md">
-            + Submit Expense
+            + Báo cáo chi phí
           </Button>
         </div>
 
@@ -116,18 +116,18 @@ export default function FinancePage() {
           {/* Left Column - Recent Transactions (60%) */}
           <div className="lg:col-span-2">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl font-serif font-light" style={{ color: '#0F0E0C' }}>Recent Transactions</h2>
+              <h2 className="text-3xl font-serif font-light" style={{ color: '#0F0E0C' }}>Giao dịch gần đây</h2>
               <a
                 href="#"
                 className="font-medium transition-colors duration-300" style={{ color: '#7FA89F' }}
               >
-                View All →
+                Xem tất cả →
               </a>
             </div>
             <TransactionList
               transactions={transactions}
               isLoading={transactionsLoading}
-              emptyMessage="No transactions yet"
+              emptyMessage="Không có giao dịch"
             />
           </div>
 
@@ -138,26 +138,26 @@ export default function FinancePage() {
               isLoading={approvalsLoading}
               onApprove={handleApprove}
               onReject={handleReject}
-              emptyMessage="All caught up!"
+              emptyMessage="Đã hoàn tất!"
             />
           </div>
         </div>
 
         {/* Bottom Section - Quick Actions */}
         <section className="mt-12 pt-12" style={{ borderTop: '1px solid #D9D4D0' }}>
-          <h2 className="text-2xl font-serif font-light mb-6" style={{ color: '#0F0E0C' }}>Quick Actions</h2>
+          <h2 className="text-2xl font-serif font-light mb-6" style={{ color: '#0F0E0C' }}>Hành động nhanh</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button className="p-lg border border-light-gray rounded-card bg-white hover:bg-bone transition-colors text-center">
               <span className="text-lg mb-md block">📊</span>
-              <p className="text-body font-medium text-black">Download Report</p>
+              <p className="text-body font-medium text-black">Tải báo cáo</p>
             </button>
             <button className="p-lg border border-light-gray rounded-card bg-white hover:bg-bone transition-colors text-center">
               <span className="text-lg mb-md block">📜</span>
-              <p className="text-body font-medium text-black">View History</p>
+              <p className="text-body font-medium text-black">Xem lịch sử</p>
             </button>
             <button className="p-lg border border-light-gray rounded-card bg-white hover:bg-bone transition-colors text-center">
               <span className="text-lg mb-md block">⚙️</span>
-              <p className="text-body font-medium text-black">Settings</p>
+              <p className="text-body font-medium text-black">Cài đặt</p>
             </button>
           </div>
         </section>

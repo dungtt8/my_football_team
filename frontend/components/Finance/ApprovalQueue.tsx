@@ -19,15 +19,15 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
   isLoading,
   onApprove,
   onReject,
-  emptyMessage = 'No pending approvals',
+  emptyMessage = 'Không có yêu cầu duyệt',
 }) => {
   if (isLoading) {
     return (
       <div>
         <div className="flex items-center gap-md mb-lg">
-          <h3 className="text-heading-3 font-bold text-black">Pending Approvals</h3>
+          <h3 className="text-heading-3 font-bold text-black">Chờ duyệt</h3>
           <span className="inline-block px-md py-sm bg-pale-yellow rounded-pill text-caption font-medium">
-            {approvals.length} Pending
+            {approvals.length} Chờ duyệt
           </span>
         </div>
         <ListSkeleton count={2} />
@@ -38,10 +38,10 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
   return (
     <div>
       <div className="flex items-center gap-md mb-lg">
-        <h3 className="text-heading-3 font-bold text-black">Pending Approvals</h3>
+        <h3 className="text-heading-3 font-bold text-black">Chờ duyệt</h3>
         {approvals.length > 0 && (
           <span className="inline-block px-md py-sm bg-pale-yellow rounded-pill text-caption font-medium">
-            {approvals.length} Pending
+            {approvals.length} Chờ duyệt
           </span>
         )}
       </div>

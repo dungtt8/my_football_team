@@ -26,7 +26,7 @@ export default function LoginPage() {
 
     try {
       if (!phone || !fullName) {
-        throw new Error('Phone and name are required')
+        throw new Error('Vui lòng nhập đầy đủ thông tin')
       }
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
@@ -80,44 +80,44 @@ export default function LoginPage() {
       {/* Content */}
       <div className="relative z-10 w-full max-w-md">
         {/* Logo/Title Section - Dramatic typography */}
-        <div className="text-center mb-16 animate-fade-up">
-          <h1 className="text-7xl md:text-8xl font-serif font-light leading-tight mb-2" style={{ color: '#0F0E0C' }}>
+        <div className="text-center mb-12 animate-fade-up">
+          <h1 className="text-6xl md:text-7xl font-serif font-light leading-tight mb-4" style={{ color: '#0F0E0C' }}>
             Football<br />Team
           </h1>
-          <p className="text-xl font-light mt-4" style={{ color: '#5F5A54' }}>
-            Manage your team with intelligence
+          <p className="text-base font-light" style={{ color: '#6B6660' }}>
+            Quản lý đội bóng thông minh
           </p>
         </div>
 
         {/* Login Card - Premium styling */}
-        <div className="rounded-2xl p-8 md:p-10 mb-8 animate-fade-up" style={{ background: '#FFFFFF', boxShadow: '0 20px 48px rgba(15, 14, 12, 0.18)' }}>
+        <div className="rounded-2xl p-8 md:p-10 animate-fade-up" style={{ background: '#FFFFFF', boxShadow: '0 20px 48px rgba(15, 14, 12, 0.18)' }}>
           <form onSubmit={handlePhoneLogin} className="space-y-6">
             {/* Main CTA */}
-            <div className="space-y-2 mb-8">
-              <h2 className="text-4xl md:text-5xl font-serif font-light" style={{ color: '#0F0E0C' }}>
-                Welcome
+            <div className="space-y-1 mb-6">
+              <h2 className="text-3xl md:text-4xl font-serif font-light" style={{ color: '#0F0E0C' }}>
+                Chào mừng
               </h2>
-              <p className="text-lg font-light" style={{ color: '#6B6660' }}>
-                Sign in with your phone number
+              <p className="text-sm font-light" style={{ color: '#6B6660' }}>
+                Đăng nhập bằng số điện thoại
               </p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="px-6 py-4 rounded-full text-center font-medium animate-pulse" style={{ background: '#FFE8E8', color: '#D64545', border: '1px solid #D64545' }}>
+              <div className="px-4 py-3 rounded-lg text-sm font-medium animate-pulse" style={{ background: '#FFE8E8', color: '#D64545', border: '1px solid #D64545' }}>
                 {error}
               </div>
             )}
 
             {/* Full Name Input */}
-            <div className="space-y-2 animate-fade-up">
-              <label className="text-sm font-medium block" style={{ color: '#0F0E0C' }}>Full Name</label>
+            <div className="space-y-2">
+              <label className="text-xs font-medium block uppercase tracking-wide" style={{ color: '#0F0E0C' }}>Họ và tên</label>
               <input
                 type="text"
-                placeholder="Enter your full name"
+                placeholder="Nhập họ và tên"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all text-sm"
                 style={{ borderColor: '#D9D4D0', background: '#FFFCF9', color: '#0F0E0C' }}
                 onFocus={(e) => { e.target.style.borderColor = '#7FA89F'; e.target.style.boxShadow = '0 0 0 3px rgba(127, 168, 159, 0.1)' }}
                 onBlur={(e) => { e.target.style.borderColor = '#D9D4D0'; e.target.style.boxShadow = 'none' }}
@@ -126,14 +126,14 @@ export default function LoginPage() {
             </div>
 
             {/* Phone Input */}
-            <div className="space-y-2 animate-fade-up">
-              <label className="text-sm font-medium block" style={{ color: '#0F0E0C' }}>Phone Number</label>
+            <div className="space-y-2">
+              <label className="text-xs font-medium block uppercase tracking-wide" style={{ color: '#0F0E0C' }}>Số điện thoại</label>
               <input
                 type="tel"
-                placeholder="e.g. +84 9 1234 5678"
+                placeholder="Ví dụ: +84 901 234 567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all"
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all text-sm"
                 style={{ borderColor: '#D9D4D0', background: '#FFFCF9', color: '#0F0E0C' }}
                 onFocus={(e) => { e.target.style.borderColor = '#7FA89F'; e.target.style.boxShadow = '0 0 0 3px rgba(127, 168, 159, 0.1)' }}
                 onBlur={(e) => { e.target.style.borderColor = '#D9D4D0'; e.target.style.boxShadow = 'none' }}
@@ -145,59 +145,19 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPhoneLoading}
-              className="w-full px-6 py-3 rounded-full font-medium flex items-center justify-center gap-2 transition-all hover:shadow-lg active:scale-95 mt-6"
+              className="w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:shadow-lg active:scale-95 mt-8"
               style={{ background: '#3D5A50', color: '#FFFFFF', opacity: isPhoneLoading ? 0.7 : 1 }}
             >
-              <span>{isPhoneLoading ? 'Signing in...' : 'Sign In'}</span>
+              <span>{isPhoneLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}</span>
               {!isPhoneLoading && <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="15" y2="12" /><polyline points="8 9 15 12 8 15" /></svg>}
             </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-8">
-              <div className="flex-1 h-px" style={{ background: '#D9D4D0' }} />
-              <span className="text-xs font-medium" style={{ color: '#9F9A93' }}>FEATURES</span>
-              <div className="flex-1 h-px" style={{ background: '#D9D4D0' }} />
-            </div>
-
-            {/* Features - Staggered reveal */}
-            <div className="space-y-4">
-              <div className="flex gap-3 animate-fade-up">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#E8F5F2' }}>
-                  <span style={{ color: '#3D5A50' }}>✓</span>
-                </div>
-                <div>
-                  <p className="font-medium" style={{ color: '#0F0E0C' }}>Finance Tracking</p>
-                  <p className="text-sm" style={{ color: '#9F9A93' }}>Manage team expenses with ease</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 animate-fade-up">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#E8F5F2' }}>
-                  <span style={{ color: '#3D5A50' }}>✓</span>
-                </div>
-                <div>
-                  <p className="font-medium" style={{ color: '#0F0E0C' }}>Campaigns</p>
-                  <p className="text-sm" style={{ color: '#9F9A93' }}>Organize team activities</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 animate-fade-up">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: '#E8F5F2' }}>
-                  <span style={{ color: '#3D5A50' }}>✓</span>
-                </div>
-                <div>
-                  <p className="font-medium" style={{ color: '#0F0E0C' }}>Attendance & Rewards</p>
-                  <p className="text-sm" style={{ color: '#9F9A93' }}>Gamified team engagement</p>
-                </div>
-              </div>
-            </div>
           </form>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6">
           <p className="text-xs" style={{ color: '#9F9A93' }}>
-            © 2026 Football Team Management. All rights reserved.
+            © 2026 Quản lý đội bóng. Bảo lưu mọi quyền.
           </p>
         </div>
       </div>

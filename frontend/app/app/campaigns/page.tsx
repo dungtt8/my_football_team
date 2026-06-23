@@ -66,7 +66,7 @@ export default function CampaignPage() {
       filterCampaigns(allCampaigns, 'all')
     } catch (error) {
       console.error('Error loading campaigns:', error)
-      toast('Failed to load campaigns', 'error')
+      toast('Không thể tải chiến dịch', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -100,36 +100,36 @@ export default function CampaignPage() {
   const handleApproveCampaign = async (id: string) => {
     try {
       await approveCampaign(id)
-      toast('Campaign approved successfully', 'success')
+      toast('Chiến dịch được phê duyệt thành công', 'success')
       loadData()
     } catch (error) {
       console.error('Error approving campaign:', error)
-      toast('Failed to approve campaign', 'error')
+      toast('Không thể phê duyệt chiến dịch', 'error')
     }
   }
 
   const handleRejectCampaign = async (id: string, reason?: string) => {
     // TODO: Implement reject endpoint
-    toast('Rejection feature coming soon', 'info')
+    toast('Tính năng từ chối sắp ra mắt', 'info')
   }
 
   const tabs: Array<{ id: TabType; label: string; count?: number }> = [
-    { id: 'all', label: 'All', count: campaigns.length },
-    { id: 'active', label: 'Active', count: stats.activeCampaigns },
-    { id: 'ended', label: 'Ended' },
-    { id: 'drafts', label: 'Drafts' },
-    { id: 'pending_approval', label: 'Pending Approval' },
+    { id: 'all', label: 'Tất cả', count: campaigns.length },
+    { id: 'active', label: 'Đang hoạt động', count: stats.activeCampaigns },
+    { id: 'ended', label: 'Kết thúc' },
+    { id: 'drafts', label: 'Bản nháp' },
+    { id: 'pending_approval', label: 'Chờ duyệt' },
   ]
 
   return (
     <div className="min-h-screen p-4 md:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>Campaigns</h1>
-        <p className="text-lg font-light mb-6" style={{ color: '#6B6660' }}>Create and manage team campaigns</p>
+        <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>Chiến dịch</h1>
+        <p className="text-base font-light mb-6" style={{ color: '#6B6660' }}>Tạo và quản lý chiến dịch đội</p>
         <Button onClick={() => router.push('/app/campaigns/new')} className="flex items-center gap-2">
           <Plus size={20} />
-          New Campaign
+          Chiến dịch mới
         </Button>
       </div>
 
@@ -167,7 +167,7 @@ export default function CampaignPage() {
 
         {/* View Mode Toggle */}
         <div className="flex gap-md justify-end items-center">
-          <span className="text-caption text-gray">View:</span>
+          <span className="text-caption text-gray">Xem:</span>
           <div className="flex gap-xs bg-bone rounded-full p-xs">
             <button
               onClick={() => setViewMode('grid')}
@@ -177,7 +177,7 @@ export default function CampaignPage() {
                   : 'text-gray hover:text-black'
               }`}
             >
-              Grid
+              Lưới
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -187,7 +187,7 @@ export default function CampaignPage() {
                   : 'text-gray hover:text-black'
               }`}
             >
-              List
+              Danh sách
             </button>
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function CampaignPage() {
             campaigns={filteredCampaigns}
             isLoading={isLoading}
             onItemClick={handleCampaignClick}
-            emptyMessage={`No ${activeTab} campaigns found`}
+            emptyMessage={`Không tìm thấy chiến dịch`}
             viewMode={viewMode}
           />
         </div>

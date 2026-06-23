@@ -112,11 +112,11 @@ export default function AttendancePage() {
       if (result) {
         setCheckInStatus('checked_in')
         setCheckedInTime(new Date())
-        toast('Checked in successfully', 'success')
+        toast('Điểm danh thành công', 'success')
       }
     } catch (error) {
       console.error('Check-in error:', error)
-      toast('Failed to check in', 'error')
+      toast('Không thể điểm danh', 'error')
     } finally {
       setIsCheckingIn(false)
     }
@@ -129,12 +129,12 @@ export default function AttendancePage() {
         const result = await checkOut(recentRecords[0].id)
         if (result) {
           setCheckInStatus('checked_out')
-          toast('Checked out successfully', 'success')
+          toast('Kết thúc điểm danh thành công', 'success')
         }
       }
     } catch (error) {
       console.error('Check-out error:', error)
-      toast('Failed to check out', 'error')
+      toast('Không thể kết thúc điểm danh', 'error')
     } finally {
       setIsCheckingIn(false)
     }
@@ -145,10 +145,10 @@ export default function AttendancePage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>
-          Attendance & Leaderboard
+          Điểm danh & Bảng xếp hạng
         </h1>
-        <p className="text-lg font-light" style={{ color: '#6B6660' }}>
-          Track check-ins and compete with teammates
+        <p className="text-base font-light" style={{ color: '#6B6660' }}>
+          Theo dõi điểm danh và so tài với đồng đội
         </p>
       </div>
 
@@ -174,7 +174,7 @@ export default function AttendancePage() {
             color: COLORS.black,
           }}
         >
-          Your Statistics
+          Thống kê của bạn
         </h2>
         <AttendanceStatsCard
           totalPresent={stats.totalPresent}
@@ -204,7 +204,7 @@ export default function AttendancePage() {
               color: COLORS.black,
             }}
           >
-            Recent Check-Ins
+            Điểm danh gần đây
           </h3>
           <AttendanceList
             records={recentRecords}
@@ -226,7 +226,7 @@ export default function AttendancePage() {
               width: '100%',
             }}
           >
-            View All History →
+            Xem tất cả lịch sử →
           </button>
         </div>
 
@@ -255,7 +255,7 @@ export default function AttendancePage() {
                 color: COLORS.black,
               }}
             >
-              Points & Level
+              Điểm & Cấp độ
             </h3>
             <PointsCard
               currentPoints={gamification.currentPoints}
@@ -285,7 +285,7 @@ export default function AttendancePage() {
                 color: COLORS.black,
               }}
             >
-              Badges
+              Huy hiệu
             </h3>
             <BadgeDisplay
               badges={gamification.badges}
@@ -317,7 +317,7 @@ export default function AttendancePage() {
             cursor: 'pointer',
           }}
         >
-          Download Report
+          Tải báo cáo
         </button>
         <button
           onClick={() => router.push('/app/menu')}
