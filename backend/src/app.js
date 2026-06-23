@@ -19,7 +19,7 @@ if (process.env.NODE_ENV !== 'production') {
     ALLOWED_ORIGINS.push('http://localhost:3000', 'http://127.0.0.1:3000');
 }
 
-app.use(cors({
+const corsOptions = {
     origin: (origin, callback) => {
         // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin) return callback(null, true);
@@ -31,10 +31,12 @@ app.use(cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Handle preflight for all routes
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
