@@ -22,11 +22,18 @@
   --color-pale-green: #EDF3EC;
   --color-pale-yellow: #FBF3DB;
   --color-pale-blue: #E1F3FE;
+  
+  /* Safe area insets for notched devices */
+  --safe-area-inset-top: 0;
+  --safe-area-inset-right: 0;
+  --safe-area-inset-bottom: 0;
+  --safe-area-inset-left: 0;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -94,12 +101,31 @@ button {
   background: transparent;
   cursor: pointer;
   font-family: 'Geist Sans', sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-black);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Inputs */
 input, textarea, select {
   font-family: 'Geist Sans', sans-serif;
   font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-black);
 }
 
 /* Scrollbar styling */
@@ -115,8 +141,54 @@ input, textarea, select {
 ::-webkit-scrollbar-thumb {
   background: var(--color-light-gray);
   border-radius: 4px;
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-gray);
+}
+
+/* Smooth transitions for modals and drawers */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Touch-friendly minimum sizes */
+@supports (min-height: max-content) {
+  button, a, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
