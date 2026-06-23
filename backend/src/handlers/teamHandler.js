@@ -12,6 +12,12 @@ function generateInviteCode() {
     return code;
 }
 
+function isFinanceClosingPeriodActive(fromDate, toDate) {
+    if (!fromDate || !toDate) return false;
+    const today = new Date().toISOString().split('T')[0];
+    return today >= fromDate && today <= toDate;
+}
+
 /**
  * POST /api/teams  (auth required, NO tenancy)
  * Create a new team — caller becomes owner
@@ -266,6 +272,9 @@ const getSettings = async (req, res) => {
             finance: {
                 closing_day: team.finance_closing_day,
                 closing_time: team.finance_closing_time,
+                closing_from_date: team.finance_closing_from_date,
+                closing_to_date: team.finance_closing_to_date,
+                is_closing_period_active: isFinanceClosingPeriodActive(team.finance_closing_from_date, team.finance_closing_to_date),
             },
             scheduling: {
                 auto_create_sessions: team.auto_create_sessions || false,
@@ -340,6 +349,35 @@ const updateSettings = async (req, res) => {
                     throw new ValidationError('Finance closing time must be in HH:mm format');
                 }
                 updates.finance_closing_time = finance.closing_time;
+            }
+            if (finance.closing_from_date !== undefined) {
+                if (finance.closing_from_date === null) {
+                    updates.finance_closing_from_date = null;
+                } else {
+                    const fromDate = new Date(finance.closing_from_date);
+                    if (isNaN(fromDate.getTime())) {
+                        throw new ValidationError('Invalid closing from date format');
+                    }
+                    updates.finance_closing_from_date = finance.closing_from_date;
+                }
+            }
+            if (finance.closing_to_date !== undefined) {
+                if (finance.closing_to_date === null) {
+                    updates.finance_closing_to_date = null;
+                } else {
+                    const toDate = new Date(finance.closing_to_date);
+                    if (isNaN(toDate.getTime())) {
+                        throw new ValidationError('Invalid closing to date format');
+                    }
+                    if (finance.closing_from_date && new Date(finance.closing_to_date) < new Date(finance.closing_from_date)) {
+                        throw new ValidationError('Closing to date must be after from date');
+                    }
+                    updates.finance_closing_to_date = finance.closing_to_date;
+                }
+            }
+            // Reset notified flag when dates change
+            if (finance.closing_from_date !== undefined || finance.closing_to_date !== undefined) {
+                updates.finance_closing_notified = false;
             }
         }
 

@@ -65,7 +65,7 @@ export default function TeamMembersPage() {
     const initials = (name: string) => name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase()
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
+        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '28px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

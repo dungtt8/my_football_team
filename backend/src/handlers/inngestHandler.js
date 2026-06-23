@@ -3,14 +3,16 @@ const inngest = require('../config/inngest');
 const {
   createMonthlyReminderFunction,
   createCampaignDeadlineCheckFunction,
-  autoCreateSessionsScheduledJob
+  autoCreateSessionsScheduledJob,
+  financeClosingCheckScheduledJob
 } = require('../inngest/events');
 
 // Register all functions
 const functions = [
   createMonthlyReminderFunction,
   createCampaignDeadlineCheckFunction,
-  autoCreateSessionsScheduledJob
+  autoCreateSessionsScheduledJob,
+  financeClosingCheckScheduledJob
 ];
 
 // Export handler

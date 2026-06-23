@@ -193,6 +193,35 @@ const autoCreateSessionsScheduledJob = inngest.createFunction(
   }
 );
 
+/**
+ * Finance Closing Period Check Scheduled Job
+ * Runs daily at 1 AM UTC to check and send notifications for finance closing periods
+ * Sends notification on first day of closing period and resets flag when period ends
+ */
+const financeClosingCheckScheduledJob = inngest.createFunction(
+  {
+    id: 'finance.closing-period-check',
+    retryOptions: { maxRetries: 2, initialDelayMs: 10000 }
+  },
+  { cron: '0 1 * * *' }, // Daily at 1 AM UTC
+  async ({ step }) => {
+    const financeClosingService = require('../services/financeClosingService');
+
+    // Check for first-day closing periods and send notifications
+    await step.run('check-and-notify-first-day', async () => {
+      return await financeClosingService.checkAndNotifyFirstDay();
+    });
+
+    // Reset notification flags for expired closing periods
+    await step.run('reset-expired-closing-notifications', async () => {
+      return await financeClosingService.resetExpiredClosingNotifications();
+    });
+
+    return { status: 'completed' };
+  }
+);
+
+
 module.exports = {
   events,
   createMonthlyReminderFunction: monthlyReminderHandler,
@@ -207,5 +236,6 @@ module.exports = {
   onAttendanceSessionCreatedHandler,
   onAttendanceCheckInHandler,
   onAttendanceSessionClosedHandler,
-  autoCreateSessionsScheduledJob
+  autoCreateSessionsScheduledJob,
+  financeClosingCheckScheduledJob
 };

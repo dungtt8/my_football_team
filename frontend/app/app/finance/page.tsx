@@ -82,7 +82,7 @@ export default function FinancePage() {
     const fmtDate = (d: string | undefined) => d ? new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : ''
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
+        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>

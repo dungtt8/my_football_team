@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
+import { useFinance } from '@/hooks/useFinance'
 
 const G = {
     glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
@@ -22,8 +23,10 @@ export default function MenuPage() {
     const router = useRouter()
     const { user, role, team, logout } = useAuth()
     const { toast } = useToast()
+    const { getClosingPeriod } = useFinance()
     const [inviteCode, setInviteCode] = useState<string | null>(null)
     const [loadingInvite, setLoadingInvite] = useState(false)
+    const [closingPeriod, setClosingPeriod] = useState<any>(null)
 
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const displayRole = role ? (ROLE_LABELS[role] || role) : 'Thành viên'
@@ -36,7 +39,12 @@ export default function MenuPage() {
             fetch(`${API_URL}/team/invite`, { headers: { Authorization: `Bearer ${token}` } })
                 .then(r => r.json()).then(d => { if (d.invite_code) setInviteCode(d.invite_code) }).catch(() => { })
         }
-    }, [role])
+
+        // Fetch closing period
+        getClosingPeriod()
+            .then(data => setClosingPeriod(data?.closing_period))
+            .catch(() => { })
+    }, [role, getClosingPeriod])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)
@@ -74,13 +82,37 @@ export default function MenuPage() {
     ]
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
+        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
 
             {/* Header */}
             <div style={{ marginBottom: '28px' }}>
                 <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '6px' }}>Tài khoản</p>
                 <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Menu</h1>
             </div>
+
+            {/* Finance Closing Period Notification */}
+            {closingPeriod && closingPeriod.is_active && (
+                <div style={{
+                    background: 'rgba(255,107,107,0.15)',
+                    border: `1px solid rgba(255,107,107,0.30)`,
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    marginBottom: '24px',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 24px rgba(255,107,107,0.10)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                }}>
+                    <div style={{ fontSize: '20px' }}>⏰</div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FF9999' }}>Kỳ đóng quỹ đang diễn ra</p>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,153,153,0.9)' }}>
+                            Vui lòng hoàn thành ghi chép tài chính trong {closingPeriod.days_remaining} ngày
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Profile card */}
             <div style={{

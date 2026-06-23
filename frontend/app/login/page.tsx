@@ -67,7 +67,7 @@ export default function LoginPage() {
 
             {/* ── Left panel: Branding (hidden on mobile) ─────────── */}
             <div
-                className="hidden md:flex md:w-5/12 lg:w-1/4 flex-col justify-between relative overflow-hidden"
+                className="hidden md:flex md:w-5/12 lg:w-1/3 flex-col justify-between relative overflow-hidden"
                 style={{ background: 'linear-gradient(160deg, #1B3A30 0%, #0F2318 60%, #091810 100%)', padding: '20px 50px' }}
             >
                 {/* Decorative pitch lines */}

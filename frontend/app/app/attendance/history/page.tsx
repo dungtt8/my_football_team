@@ -101,6 +101,8 @@ export default function AttendanceHistoryPage() {
                 paddingBottom: '100px',
                 backgroundColor: COLORS.white,
                 minHeight: '100vh',
+                width: '100%',
+                boxSizing: 'border-box',
             }}
         >
             {/* Header */}

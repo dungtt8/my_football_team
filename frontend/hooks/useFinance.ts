@@ -36,6 +36,7 @@ export interface UseFinanceReturn {
     rejectTransaction: (id: string, reason: string) => Promise<Transaction>
     getPendingApprovals: (params?: Record<string, any>) => Promise<Approval[]>
     getFinanceBalance: () => Promise<FinanceBalance>
+    getClosingPeriod: () => Promise<any>
     loading: boolean
     error: Error | null
 }
@@ -162,6 +163,22 @@ export const useFinance = (): UseFinanceReturn => {
         [request]
     )
 
+    const getClosingPeriod = useCallback(
+        async () => {
+            try {
+                setLocalError(null)
+                const data = await request<any>('/team/finance/closing-period', 'GET')
+                return data
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to fetch closing period')
+                setLocalError(error)
+                console.error('Error fetching closing period:', error)
+                throw error
+            }
+        },
+        [request]
+    )
+
     return {
         listTransactions,
         getTransactionDetail,
@@ -170,6 +187,7 @@ export const useFinance = (): UseFinanceReturn => {
         rejectTransaction,
         getPendingApprovals,
         getFinanceBalance,
+        getClosingPeriod,
         loading,
         error: error || localError,
     }

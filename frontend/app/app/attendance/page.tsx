@@ -88,7 +88,7 @@ export default function AttendancePage() {
     const isDeadlinePassed = activeSession?.check_in_deadline ? new Date() > new Date(activeSession.check_in_deadline) : false
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px 24px', color: G.t1 }}>
+        <div style={{ minHeight: '100vh', padding: '24px 20px 24px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>

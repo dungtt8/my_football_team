@@ -81,6 +81,7 @@ app.patch('/api/finance/transactions/:id/approve', rbacMiddleware(['co_manager',
 app.patch('/api/finance/transactions/:id/reject', rbacMiddleware(['co_manager', 'owner']), financeHandler.rejectTransaction);
 app.get('/api/finance/approvals/pending', rbacMiddleware(['co_manager', 'owner']), financeHandler.getPendingApprovals);
 app.get('/api/finance/balance', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getBalance);
+app.get('/api/team/finance/closing-period', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getClosingPeriod);
 
 // Campaign routes
 const campaignHandler = require('./handlers/campaignHandler');

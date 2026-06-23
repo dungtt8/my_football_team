@@ -26,6 +26,8 @@ interface TeamSettings {
     attendance_cooldown?: number // minutes before can check in
     fund_closing_day?: number // day of month
     fund_closing_time?: string // HH:mm
+    fund_closing_from_date?: string // YYYY-MM-DD
+    fund_closing_to_date?: string // YYYY-MM-DD
     max_members?: number
     auto_create_sessions?: boolean
     session_frequency?: 'disabled' | 'daily' | 'weekly' | 'custom'
@@ -51,6 +53,8 @@ export default function TeamSettingsPage() {
         attendance_enabled: true,
         fund_closing_day: 1,
         fund_closing_time: '23:59',
+        fund_closing_from_date: '',
+        fund_closing_to_date: '',
     })
 
     const [schedule, setSchedule] = useState<Array<{ day: number; time: string }>>([])
@@ -75,6 +79,8 @@ export default function TeamSettingsPage() {
                     attendance_cooldown: data.attendance?.cooldown_minutes || 5,
                     fund_closing_day: data.finance?.closing_day || 1,
                     fund_closing_time: data.finance?.closing_time || '23:59',
+                    fund_closing_from_date: data.finance?.closing_from_date || '',
+                    fund_closing_to_date: data.finance?.closing_to_date || '',
                     auto_create_sessions: data.scheduling?.auto_create_sessions || false,
                     session_frequency: data.scheduling?.session_frequency || 'disabled',
                     session_days: data.scheduling?.session_days || '',
@@ -122,6 +128,8 @@ export default function TeamSettingsPage() {
                 payload.finance = {
                     closing_day: settings.fund_closing_day,
                     closing_time: settings.fund_closing_time,
+                    closing_from_date: settings.fund_closing_from_date || null,
+                    closing_to_date: settings.fund_closing_to_date || null,
                 }
             } else if (tab === 'scheduling') {
                 payload.scheduling = {
@@ -157,7 +165,7 @@ export default function TeamSettingsPage() {
                 setSettings((prev) => ({ ...prev, attendance_enabled: data.attendance.enabled, attendance_cooldown: data.attendance.cooldown_minutes }))
             }
             if (data.finance) {
-                setSettings((prev) => ({ ...prev, fund_closing_day: data.finance.closing_day, fund_closing_time: data.finance.closing_time }))
+                setSettings((prev) => ({ ...prev, fund_closing_day: data.finance.closing_day, fund_closing_time: data.finance.closing_time, fund_closing_from_date: data.finance.closing_from_date || '', fund_closing_to_date: data.finance.closing_to_date || '' }))
             }
             if (data.scheduling) {
                 setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location }))
@@ -172,7 +180,7 @@ export default function TeamSettingsPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
+        <div style={{ minHeight: '100vh', padding: '24px 20px', paddingTop: '88px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
                 <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px' }}>‹</button>
@@ -429,6 +437,91 @@ export default function TeamSettingsPage() {
                                 }}
                             />
                         </div>
+
+                        <div style={{
+                            background: G.glass,
+                            border: `1px solid ${G.glassBorder}`,
+                            borderRadius: '16px',
+                            padding: '20px',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                Kỳ đóng quỹ: Từ ngày
+                            </label>
+                            <input
+                                type="date"
+                                value={settings.fund_closing_from_date || ''}
+                                onChange={(e) => setSettings({ ...settings, fund_closing_from_date: e.target.value })}
+                                disabled={!isOwner}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: `1px solid ${G.glassBorder}`,
+                                    color: G.t1,
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                    opacity: isOwner ? 1 : 0.6,
+                                }}
+                            />
+                            <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
+                                Thành viên sẽ nhận thông báo vào ngày đầu tiên
+                            </p>
+                        </div>
+
+                        <div style={{
+                            background: G.glass,
+                            border: `1px solid ${G.glassBorder}`,
+                            borderRadius: '16px',
+                            padding: '20px',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                Kỳ đóng quỹ: Đến ngày
+                            </label>
+                            <input
+                                type="date"
+                                value={settings.fund_closing_to_date || ''}
+                                onChange={(e) => setSettings({ ...settings, fund_closing_to_date: e.target.value })}
+                                disabled={!isOwner}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: `1px solid ${G.glassBorder}`,
+                                    color: G.t1,
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                    opacity: isOwner ? 1 : 0.6,
+                                }}
+                            />
+                            <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
+                                ℹ️ Để trống để vô hiệu hóa kỳ đóng quỹ
+                            </p>
+                        </div>
+
+                        {isOwner && (
+                            <button
+                                onClick={handleSaveSettings}
+                                disabled={loading}
+                                style={{
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    border: 'none',
+                                    background: G.accent,
+                                    color: '#070B14',
+                                    fontWeight: 600,
+                                    cursor: loading ? 'default' : 'pointer',
+                                    opacity: loading ? 0.6 : 1,
+                                }}
+                            >
+                                {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
+                            </button>
+                        )}
                     </div>
                 )}
 

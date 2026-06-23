@@ -382,6 +382,28 @@ const getBalance = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/team/finance/closing-period  (auth + tenancy, all members)
+ * Get active finance closing period if exists
+ */
+const getClosingPeriod = async (req, res) => {
+  try {
+    const teamId = req.user.team_id;
+    const financeClosingService = require('../services/financeClosingService');
+
+    const closingPeriod = await financeClosingService.getActiveClosingPeriod(teamId);
+
+    return res.json({
+      closing_period: closingPeriod,
+      is_active: closingPeriod !== null
+    });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: 'GET /api/team/finance/closing-period'
+    });
+  }
+};
+
 module.exports = {
   submitTransaction,
   listTransactions,
@@ -389,5 +411,6 @@ module.exports = {
   approveTransaction,
   rejectTransaction,
   getPendingApprovals,
-  getBalance
+  getBalance,
+  getClosingPeriod
 };

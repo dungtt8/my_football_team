@@ -119,7 +119,7 @@ export default function LeaderboardPage() {
     }
 
     return (
-        <div style={{ background: G.bg, minHeight: '100vh', padding: '16px' }}>
+        <div style={{ background: G.bg, minHeight: '100vh', padding: '16px', width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
