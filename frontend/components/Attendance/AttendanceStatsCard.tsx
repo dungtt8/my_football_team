@@ -29,21 +29,22 @@ export const AttendanceStatsCard: React.FC<AttendanceStatsCardProps> = ({
   }) => (
     <div
       style={{
-        padding: '12px',
-        border: `1px solid ${COLORS.lightGray}`,
-        borderRadius: '8px',
-        backgroundColor: COLORS.bone,
+        padding: '16px',
+        borderRadius: '12px',
+        background: '#FFFFFF',
+        boxShadow: '0 6px 16px rgba(15, 14, 12, 0.10)',
         textAlign: 'center',
       }}
     >
-      <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
+      <p style={{ margin: 0, fontSize: '14px', color: '#9F9A93' }}>
         {label}
       </p>
       <p
         style={{
           margin: '8px 0 0 0',
-          fontSize: TYPOGRAPHY.sizes.heading3,
-          fontWeight: TYPOGRAPHY.weights.semibold,
+          fontSize: '24px',
+          fontWeight: 300,
+          fontFamily: 'serif',
           color,
         }}
       >
