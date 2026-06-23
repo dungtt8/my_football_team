@@ -2,14 +2,23 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Home() {
   const router = useRouter()
+  const { isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
-    // Redirect to finance app on load
-    router.push('/app/finance')
-  }, [router])
+    if (isLoading) return
+
+    if (isAuthenticated) {
+      // Redirect to finance app if authenticated
+      router.push('/app/finance')
+    } else {
+      // Redirect to login if not authenticated
+      router.push('/login')
+    }
+  }, [isAuthenticated, isLoading, router])
 
   return null
 }
