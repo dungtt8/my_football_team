@@ -18,7 +18,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
     return (
         <header
-            className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6"
+            className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6 md:left-64"
             style={{
                 height: '64px',
                 background: 'rgba(7, 11, 20, 0.80)',

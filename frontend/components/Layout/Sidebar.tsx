@@ -53,7 +53,7 @@ export const Sidebar: React.FC = () => {
 
     return (
         <aside
-            className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r"
+            className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r z-50"
             style={{
                 background: 'rgba(7, 11, 20, 0.95)',
                 backdropFilter: 'blur(20px)',

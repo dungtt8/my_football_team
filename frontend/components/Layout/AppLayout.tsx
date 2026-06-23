@@ -38,7 +38,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <Sidebar />
 
             {/* Main content area */}
-            <div className="flex flex-col flex-1 md:ml-64">
+            <div className="flex flex-col flex-1">
                 {/* Ambient gradient blobs */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
                     <div style={{
@@ -78,7 +78,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     />
 
                     {/* Main content area */}
-                    <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}>
+                    <main className="flex-1 overflow-y-auto md:ml-64" style={{
+                        paddingTop: '64px',
+                        paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))'
+                    }}>
                         <div className="w-full h-full">
                             {children}
                         </div>
