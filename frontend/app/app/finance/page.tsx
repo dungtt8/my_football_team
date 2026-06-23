@@ -88,13 +88,13 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="px-lg py-4xl md:px-2xl md:py-5xl space-y-4xl">
+    <div className="min-h-screen">
+      <div className="px-4 py-8 md:px-8 md:py-12 space-y-8">
         {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-hero font-serif text-espresso mb-lg">Finance</h1>
-            <p className="text-body text-taupe">Manage team expenses & approvals</p>
+            <h1 className="text-5xl md:text-6xl font-serif font-light" style={{ color: '#0F0E0C' }}>Finance</h1>
+            <p className="text-lg font-light mt-2" style={{ color: '#6B6660' }}>Manage team expenses & approvals</p>
           </div>
           <Button variant="primary" size="md">
             + Submit Expense
@@ -102,7 +102,7 @@ export default function FinancePage() {
         </div>
 
         {/* Stats Section */}
-        <section className="py-4xl">
+        <section className="py-8">
           <StatsBar
             totalBalance={balance?.totalBalance || 0}
             monthlySpent={balance?.monthlySpent || 0}
@@ -112,14 +112,14 @@ export default function FinancePage() {
         </section>
 
         {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Recent Transactions (60%) */}
           <div className="lg:col-span-2">
-            <div className="mb-2xl flex items-center justify-between">
-              <h2 className="text-heading-1 font-serif text-espresso">Recent Transactions</h2>
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl font-serif font-light" style={{ color: '#0F0E0C' }}>Recent Transactions</h2>
               <a
                 href="#"
-                className="text-body text-sage hover:text-sage-dark transition-colors duration-300 ease-smooth font-medium"
+                className="font-medium transition-colors duration-300" style={{ color: '#7FA89F' }}
               >
                 View All →
               </a>
@@ -144,9 +144,9 @@ export default function FinancePage() {
         </div>
 
         {/* Bottom Section - Quick Actions */}
-        <section className="mt-xl2 pt-xl2 border-t border-light-gray">
-          <h2 className="text-heading-3 font-bold text-black mb-lg">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+        <section className="mt-12 pt-12" style={{ borderTop: '1px solid #D9D4D0' }}>
+          <h2 className="text-2xl font-serif font-light mb-6" style={{ color: '#0F0E0C' }}>Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button className="p-lg border border-light-gray rounded-card bg-white hover:bg-bone transition-colors text-center">
               <span className="text-lg mb-md block">📊</span>
               <p className="text-body font-medium text-black">Download Report</p>

@@ -122,19 +122,19 @@ export default function CampaignPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white p-lg md:p-xl">
+    <div className="min-h-screen p-4 md:p-8">
       {/* Header */}
-      <div className="mb-xl">
-        <h1 className="text-section-title font-bold text-black mb-sm">Campaigns</h1>
-        <p className="text-body text-gray mb-lg">Create and manage team campaigns</p>
-        <Button onClick={() => router.push('/app/campaigns/new')} className="flex items-center gap-md">
+      <div className="mb-8">
+        <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>Campaigns</h1>
+        <p className="text-lg font-light mb-6" style={{ color: '#6B6660' }}>Create and manage team campaigns</p>
+        <Button onClick={() => router.push('/app/campaigns/new')} className="flex items-center gap-2">
           <Plus size={20} />
           New Campaign
         </Button>
       </div>
 
       {/* Stats Section */}
-      <div className="mb-xl">
+      <div className="mb-8">
         <CampaignStatsBar
           totalCampaigns={stats.totalCampaigns}
           activeCampaigns={stats.activeCampaigns}
@@ -144,17 +144,20 @@ export default function CampaignPage() {
       </div>
 
       {/* Tabs and View Controls */}
-      <div className="mb-lg space-y-md">
-        <div className="flex gap-md overflow-x-auto pb-md">
+      <div className="mb-4 space-y-3">
+        <div className="flex gap-2 overflow-x-auto pb-3">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`whitespace-nowrap px-lg py-sm rounded-full text-caption font-medium transition-colors ${
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-black text-white'
-                  : 'bg-bone text-black hover:bg-light-gray'
+                  ? 'text-white'
+                  : 'text-black hover:bg-slate-100'
               }`}
+              style={{
+                background: activeTab === tab.id ? '#3D5A50' : 'transparent'
+              }}
             >
               {tab.label}
               {tab.count !== undefined && ` (${tab.count})`}

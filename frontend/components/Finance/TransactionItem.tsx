@@ -68,26 +68,27 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 
   return (
     <div
-      className="p-lg border border-light-gray rounded-card bg-white hover:bg-bone transition-colors cursor-pointer flex items-center justify-between gap-lg"
+      className="p-5 rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer flex items-center justify-between gap-4"
+      style={{ background: '#FFFFFF', boxShadow: '0 6px 16px rgba(15, 14, 12, 0.10)' }}
       onClick={() => onClick?.(transaction.id)}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-md mb-md">
-          <p className="font-bold text-black truncate">
+        <div className="flex items-center gap-3 mb-2">
+          <p className="font-medium" style={{ color: '#0F0E0C' }}>
             {transaction.description}
           </p>
           {transaction.category && (
             <Badge variant="info">{transaction.category}</Badge>
           )}
         </div>
-        <p className="text-caption text-gray">
+        <p className="text-sm" style={{ color: '#9F9A93' }}>
           {formatDate(transaction.createdAt)}
         </p>
       </div>
 
-      <div className="flex items-center gap-lg">
+      <div className="flex items-center gap-4">
         <div className="text-right">
-          <p className={`text-lg font-bold ${getAmountColor(transaction.status)}`}>
+          <p className="text-lg font-serif" style={{ color: '#3D5A50' }}>
             {formatCurrency(transaction.amount)}
           </p>
           <Badge variant={statusVariant}>
@@ -97,7 +98,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         </div>
 
         {showApprovalButtons && transaction.status === 'pending' && (
-          <div className="flex gap-sm ml-lg">
+          <div className="flex gap-2 ml-4">
             <button
               onClick={(e) => {
                 e.stopPropagation()

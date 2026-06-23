@@ -31,7 +31,7 @@ export const BottomTabBar: React.FC = () => {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-light-gray z-40 md:hidden h-20">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden h-20" style={{ background: '#FFFFFF', borderTop: '1px solid #D9D4D0', boxShadow: '0 -6px 16px rgba(15, 14, 12, 0.10)' }}>
       <div className="flex h-full">
         {TAB_ITEMS.map((tab) => {
           const active = isActive(tab.path)
@@ -39,23 +39,20 @@ export const BottomTabBar: React.FC = () => {
             <Link
               key={tab.id}
               href={tab.path}
-              className={`flex-1 flex flex-col items-center justify-center gap-xs transition-all ${
-                active
-                  ? 'text-black'
-                  : 'text-gray hover:text-charcoal'
-              }`}
+              className="flex-1 flex flex-col items-center justify-center gap-1 transition-all relative"
+              style={{ color: active ? '#0F0E0C' : '#9F9A93' }}
               aria-current={active ? 'page' : undefined}
             >
-              <span className={`transition-colors ${active ? 'text-black' : 'text-gray'}`}>
+              <span style={{ color: active ? '#3D5A50' : '#9F9A93' }}>
                 {tab.icon}
               </span>
-              <span className={`text-caption font-medium whitespace-nowrap ${
-                active ? 'font-bold' : 'font-medium'
+              <span className={`text-xs font-medium whitespace-nowrap ${
+                active ? 'font-semibold' : 'font-medium'
               }`}>
                 {tab.label}
               </span>
               {active && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black rounded-t-card" />
+                <div className="absolute bottom-0 left-0 right-0 h-1 rounded-t" style={{ background: '#3D5A50' }} />
               )}
             </Link>
           )

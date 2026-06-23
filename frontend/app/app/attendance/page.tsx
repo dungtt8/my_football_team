@@ -141,33 +141,13 @@ export default function AttendancePage() {
   }
 
   return (
-    <div
-      style={{
-        padding: '24px 16px',
-        paddingBottom: '100px',
-        backgroundColor: COLORS.white,
-        minHeight: '100vh',
-      }}
-    >
+    <div className="p-4 md:p-8 pb-24 md:pb-8 min-h-screen">
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: TYPOGRAPHY.sizes.hero,
-            fontWeight: TYPOGRAPHY.weights.semibold,
-            color: COLORS.black,
-          }}
-        >
+      <div className="mb-8">
+        <h1 className="text-5xl md:text-6xl font-serif font-light mb-2" style={{ color: '#0F0E0C' }}>
           Attendance & Leaderboard
         </h1>
-        <p
-          style={{
-            margin: '8px 0 0 0',
-            fontSize: TYPOGRAPHY.sizes.body,
-            color: COLORS.gray,
-          }}
-        >
+        <p className="text-lg font-light" style={{ color: '#6B6660' }}>
           Track check-ins and compete with teammates
         </p>
       </div>

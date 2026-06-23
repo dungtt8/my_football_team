@@ -17,15 +17,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   showSearch = false,
 }) => {
   return (
-    <header className="fixed top-0 left-0 right-0 bg-cream shadow-subtle z-40 h-20 flex items-center px-lg md:px-2xl py-lg transition-all duration-300 ease-smooth">
+    <header className="fixed top-0 left-0 right-0 z-40 h-20 flex items-center px-4 md:px-8 py-4 transition-all duration-300" style={{ background: '#FFFFFF', boxShadow: '0 6px 16px rgba(15, 14, 12, 0.10)' }}>
       <div className="flex items-center justify-between w-full">
         {/* Left: Logo & Team Name */}
-        <div className="flex items-center gap-md flex-1">
+        <div className="flex items-center gap-3 flex-1">
           {/* Hamburger menu - mobile only */}
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="md:hidden p-md text-espresso hover:bg-taupe/10 transition-colors rounded-full"
+              className="md:hidden p-2 transition-colors rounded-lg"
+              style={{ color: '#0F0E0C' }}
               aria-label="Open menu"
             >
               <List size={24} weight="bold" />
@@ -33,9 +34,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           )}
 
           {teamLogo && (
-            <img src={teamLogo} alt={teamName} className="w-12 h-12 rounded-xl object-cover" />
+            <img src={teamLogo} alt={teamName} className="w-12 h-12 rounded-lg object-cover" />
           )}
-          <h1 className="text-heading-2 text-espresso font-serif hidden md:block">
+          <h1 className="hidden md:block font-serif font-light text-2xl" style={{ color: '#0F0E0C' }}>
             {teamName}
           </h1>
         </div>
@@ -43,7 +44,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* Right: Search (optional) */}
         {showSearch && (
           <button
-            className="p-md text-taupe hover:text-espresso transition-colors duration-300 ease-smooth"
+            className="p-2 transition-colors duration-300 rounded-lg"
+            style={{ color: '#9F9A93' }}
             aria-label="Search"
           >
             <MagnifyingGlass size={24} weight="bold" />
