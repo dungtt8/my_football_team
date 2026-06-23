@@ -242,4 +242,127 @@ const updateMemberRole = async (req, res) => {
     }
 };
 
-module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole };
+/**
+ * GET /api/team/settings  (auth + tenancy, all members)
+ * Get current team settings (general info, attendance, finance)
+ */
+const getSettings = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const team = await db('teams').where({ id: teamId }).first();
+
+        if (!team) throw new NotFoundError('Team not found');
+
+        return res.json({
+            general: {
+                name: team.name,
+                description: team.description,
+                owner_id: team.owner_id,
+            },
+            attendance: {
+                enabled: team.attendance_enabled,
+                cooldown_minutes: team.attendance_cooldown_minutes,
+            },
+            finance: {
+                closing_day: team.finance_closing_day,
+                closing_time: team.finance_closing_time,
+            },
+            invite: {
+                code: team.invite_code,
+            },
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'GET /api/team/settings' });
+    }
+};
+
+/**
+ * PUT /api/team/settings  (auth + tenancy, owner only)
+ * Update team settings (name, description, attendance rules, finance rules)
+ * Body: { general?, attendance?, finance? }
+ */
+const updateSettings = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const { general, attendance, finance } = req.body;
+
+        // Only owner can update settings
+        if (req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'Only team owner can update settings' });
+        }
+
+        const updates = {};
+
+        // Update general info
+        if (general) {
+            if (general.name && general.name.trim()) {
+                updates.name = general.name.trim();
+            }
+            if (general.hasOwnProperty('description')) {
+                updates.description = general.description || null;
+            }
+        }
+
+        // Update attendance settings
+        if (attendance) {
+            if (attendance.hasOwnProperty('enabled')) {
+                updates.attendance_enabled = Boolean(attendance.enabled);
+            }
+            if (attendance.cooldown_minutes !== undefined) {
+                const cooldown = parseInt(attendance.cooldown_minutes, 10);
+                if (isNaN(cooldown) || cooldown < 1 || cooldown > 60) {
+                    throw new ValidationError('Attendance cooldown must be between 1 and 60 minutes');
+                }
+                updates.attendance_cooldown_minutes = cooldown;
+            }
+        }
+
+        // Update finance settings
+        if (finance) {
+            if (finance.closing_day !== undefined) {
+                const day = parseInt(finance.closing_day, 10);
+                if (isNaN(day) || day < 1 || day > 31) {
+                    throw new ValidationError('Finance closing day must be between 1 and 31');
+                }
+                updates.finance_closing_day = day;
+            }
+            if (finance.closing_time) {
+                const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
+                if (!timeRegex.test(finance.closing_time)) {
+                    throw new ValidationError('Finance closing time must be in HH:mm format');
+                }
+                updates.finance_closing_time = finance.closing_time;
+            }
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.json({ message: 'No changes made' });
+        }
+
+        await db('teams').where({ id: teamId }).update(updates);
+
+        logger.info('Team settings updated', { team_id: teamId, by: req.user.user_id, changes: Object.keys(updates) });
+
+        const updatedTeam = await db('teams').where({ id: teamId }).first();
+
+        return res.json({
+            message: 'Settings updated successfully',
+            general: {
+                name: updatedTeam.name,
+                description: updatedTeam.description,
+            },
+            attendance: {
+                enabled: updatedTeam.attendance_enabled,
+                cooldown_minutes: updatedTeam.attendance_cooldown_minutes,
+            },
+            finance: {
+                closing_day: updatedTeam.finance_closing_day,
+                closing_time: updatedTeam.finance_closing_time,
+            },
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PUT /api/team/settings' });
+    }
+};
+
+module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings };

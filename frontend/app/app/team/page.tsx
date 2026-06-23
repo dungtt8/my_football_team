@@ -67,12 +67,43 @@ export default function TeamMembersPage() {
     return (
         <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1 }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-                <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px' }}>‹</button>
-                <div>
-                    <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '4px' }}>Đội bóng</p>
-                    <h1 style={{ fontSize: '24px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Quản lý thành viên</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px' }}>‹</button>
+                    <div>
+                        <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '4px' }}>Đội bóng</p>
+                        <h1 style={{ fontSize: '24px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Quản lý thành viên</h1>
+                    </div>
                 </div>
+                {isOwner && (
+                    <button
+                        onClick={() => router.push('/app/team/settings')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 16px',
+                            borderRadius: '12px',
+                            background: G.glass,
+                            border: `1px solid ${G.glassBorder}`,
+                            color: G.t2,
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                            (e.currentTarget as any).style.background = G.accentDim
+                                (e.currentTarget as any).style.color = G.accent
+                        }}
+                        onMouseLeave={(e) => {
+                            (e.currentTarget as any).style.background = G.glass
+                                (e.currentTarget as any).style.color = G.t2
+                        }}
+                    >
+                        ⚙️ Cài đặt
+                    </button>
+                )}
             </div>
 
             {/* Count */}

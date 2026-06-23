@@ -40,9 +40,9 @@ const TAB_ITEMS: TabItem[] = [
         iconActive: <ChartLine size={22} weight="fill" />,
     },
     {
-        id: 'menu',
-        label: 'Menu',
-        path: '/app/menu',
+        id: 'team',
+        label: 'Đội bóng',
+        path: '/app/team',
         icon: <Gear size={22} weight="regular" />,
         iconActive: <Gear size={22} weight="fill" />,
     },

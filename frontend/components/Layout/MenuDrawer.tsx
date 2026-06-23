@@ -125,19 +125,20 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
       {/* Drawer */}
       <div
-        className={`fixed left-0 top-0 bottom-0 w-80 md:w-72 max-w-[85vw] bg-cream z-50 transform transition-transform duration-500 ease-smooth flex flex-col shadow-medium ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] z-50 transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         style={{
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
+          background: 'rgba(7, 11, 20, 0.98)',
+          backdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
+          paddingTop: '72px',
         }}
       >
         {/* Header Section */}
         {user && (
-          <div className="p-2xl border-b border-espresso/5">
-            <div className="flex items-start justify-between mb-lg">
-              <div className="flex items-center gap-lg flex-1">
+          <div className="px-4 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3 flex-1">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -145,27 +146,28 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-bone flex items-center justify-center">
-                    <span className="text-lg font-bold text-black">
-                      {user.name.charAt(0).toUpperCase()}
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,214,143,0.2)' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#00D68F' }}>
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
                     </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-heading-3 text-black font-bold truncate">
+                  <p style={{ margin: '0 0 2px', fontSize: '15px', fontWeight: 600, color: '#F0F4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.name}
-                  </h3>
-                  <p className="text-caption text-gray truncate">
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(240,244,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.role || user.email}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-md text-gray hover:text-black transition-colors flex-shrink-0"
+                className="flex-shrink-0 transition-colors"
+                style={{ color: 'rgba(240,244,255,0.6)', background: 'rgba(255,255,255,0.06)', width: '36px', height: '36px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 aria-label="Close menu"
               >
-                <X size={24} weight="bold" />
+                <X size={20} />
               </button>
             </div>
           </div>
@@ -173,57 +175,105 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
         {/* Scrollable Menu Content */}
         <div className="flex-1 overflow-y-auto">
-          {/* Main Menu Items */}
-          <nav className="p-md space-y-xs">
+          {/* Main Menu Itex-3 py-4 space-y-1">
             {MENU_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.path)}
-                className="w-full flex items-center gap-lg px-md py-lg text-black hover:bg-bone transition-colors rounded-card text-left"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(240,244,255,0.7)',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as any).style.background = 'rgba(0,214,143,0.1)'
+                  (e.currentTarget as any).style.color = '#00D68F'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as any).style.background = 'transparent'
+                  (e.currentTarget as any).style.color = 'rgba(240,244,255,0.7)'
+                }}
               >
-                <span className="text-gray flex-shrink-0">{item.icon}</span>
-                <span className="text-body font-medium flex-1">{item.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{item.icon}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </nav>
 
           {/* Separator */}
-          <div className="my-lg mx-md border-t border-light-gray" />
+          <div style={{ margin: '12px 16px', height: '1px', background: 'rgba(255,255,255,0.07)' }} />
 
           {/* Footer Menu Items */}
-          <nav className="p-md space-y-xs">
+          <nav className="px-3 py-4 space-y-1">
             {FOOTER_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.path)}
-                className="w-full flex items-center gap-lg px-md py-lg text-black hover:bg-bone transition-colors rounded-card text-left"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(240,244,255,0.6)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as any).style.background = 'rgba(255,255,255,0.06)'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as any).style.background = 'transparent'
+                }}
               >
-                <span className="text-gray flex-shrink-0">{item.icon}</span>
-                <span className="text-body font-medium flex-1">{item.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{item.icon}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </nav>
-        </div>
+        </div  className="w-full flex items-center gap-lg px-md py-lg text-black hover:bg-bone transition-colors rounded-card text-left"
+              >
+        <span className="text-gray flex-shrink-0">{item.icon}</span>
+        <span className="text-body font-medium flex-1">{item.label}</span>
+      </button>
+            ))}
+    </nav >
+        </div >
 
-        {/* Footer Section */}
-        <div className="p-lg border-t border-light-gray">
-          <Button
-            variant="secondary"
-            size="md"
-            className="w-full !text-red-600 !border-red-200"
-            onClick={() => {
-              // Logout logic will be handled by parent component
-              onClose()
-            }}
-          >
-            <SignOut size={20} weight="bold" className="mr-md" />
-            Logout
-          </Button>
-        </div>
-      </div>
+  {/* Footer Section */ }
+  < div className = "p-lg border-t border-light-gray" >
+    <Button
+      variant="secondary"
+      size="md"
+      className="w-full !text-red-600 !border-red-200"
+      onClick={() => {
+        // Logout logic will be handled by parent component
+        onClose()
+      }}
+    >
+      <SignOut size={20} weight="bold" className="mr-md" />
+      Logout
+    </Button>
+        </div >
+      </div >
 
-      {/* Styles for animations */}
-      <style jsx>{`
+  {/* Styles for animations */ }
+  < style jsx > {`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -232,7 +282,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
             opacity: 1;
           }
         }
-      `}</style>
+      `}</style >
     </>
   )
 }

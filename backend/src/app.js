@@ -133,6 +133,8 @@ app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), 
 app.patch('/api/team/members/:userId/role', rbacMiddleware(['owner']), teamHandler.updateMemberRole);
 app.get('/api/team/invite', rbacMiddleware(['owner', 'co_manager']), teamHandler.getInviteCode);
 app.post('/api/team/invite/regenerate', rbacMiddleware(['owner']), teamHandler.regenerateInviteCode);
+app.get('/api/team/settings', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.getSettings);
+app.put('/api/team/settings', rbacMiddleware(['owner']), teamHandler.updateSettings);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
