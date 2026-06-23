@@ -11,7 +11,7 @@ const config = {
         database: process.env.DB_NAME,
         ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
     },
-    pool: { min: 2, max: 10 },
+    pool: { min: 0, max: 10 },
     migrations: {
         directory: './src/database/migrations',
         extension: 'js'
