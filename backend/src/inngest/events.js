@@ -173,15 +173,16 @@ const onAttendanceSessionClosedHandler = inngest.createFunction(
 
 /**
  * Auto-Create Sessions Scheduled Job
- * Runs daily at 3 AM UTC to check and create scheduled attendance sessions
- * Processes all teams with auto_create_sessions enabled
+ * Runs hourly to check and create scheduled attendance sessions
+ * Each team can configure custom creation time (auto_session_creation_time in HH:mm format UTC)
+ * Sessions are only created during the configured hour window for each team
  */
 const autoCreateSessionsScheduledJob = inngest.createFunction(
   {
     id: 'attendance.auto-create-sessions',
     retryOptions: { maxRetries: 2, initialDelayMs: 10000 }
   },
-  { cron: '0 3 * * *' }, // Daily at 3 AM UTC
+  { cron: '0 * * * *' }, // Hourly at top of each hour
   async ({ step }) => {
     const sessionSchedulingService = require('../services/sessionSchedulingService');
 
@@ -215,6 +216,27 @@ const financeClosingCheckScheduledJob = inngest.createFunction(
     return { status: 'completed' };
   }
 );
+/**
+ * Auto-Create Check-in Notifications Scheduled Job
+ * Runs daily to create check-in notifications for upcoming sessions
+ * Each team can configure when check-in notifications are created
+ */
+const checkInNotificationScheduledJob = inngest.createFunction(
+  {
+    id: 'attendance.checkin-notifications',
+    retryOptions: { maxRetries: 2, initialDelayMs: 10000 }
+  },
+  { cron: '0 * * * *' }, // Hourly at top of each hour
+  async ({ step }) => {
+    const checkinService = require('../services/checkinService');
+
+    const result = await step.run('create-checkin-notifications', async () => {
+      return await checkinService.checkAndCreateCheckInNotifications();
+    });
+
+    return result;
+  }
+);
 
 
 module.exports = {
@@ -232,5 +254,6 @@ module.exports = {
   onAttendanceCheckInHandler,
   onAttendanceSessionClosedHandler,
   autoCreateSessionsScheduledJob,
-  financeClosingCheckScheduledJob
+  financeClosingCheckScheduledJob,
+  checkInNotificationScheduledJob,
 };

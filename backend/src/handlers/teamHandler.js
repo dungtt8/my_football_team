@@ -289,6 +289,11 @@ const getSettings = async (req, res) => {
                 session_time: team.session_time || '18:00',
                 session_type: team.session_type || 'training',
                 session_location: team.session_location || '',
+                auto_session_creation_time: team.auto_session_creation_time || '03:00',
+                checkin_creation_day: team.checkin_creation_day || 'mon',
+                checkin_creation_time: team.checkin_creation_time || '20:00',
+                checkin_start_day: team.checkin_start_day || 'fri',
+                checkin_end_day: team.checkin_end_day || 'tue',
             },
             invite: {
                 code: team.invite_code,
@@ -428,6 +433,49 @@ const updateSettings = async (req, res) => {
             if (scheduling.session_location !== undefined) {
                 updates.session_location = scheduling.session_location || null;
             }
+            if (scheduling.auto_session_creation_time !== undefined) {
+                if (scheduling.auto_session_creation_time) {
+                    const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
+                    if (!timeRegex.test(scheduling.auto_session_creation_time)) {
+                        throw new ValidationError('Auto-session creation time must be in HH:mm format (UTC)');
+                    }
+                    updates.auto_session_creation_time = scheduling.auto_session_creation_time;
+                } else {
+                    updates.auto_session_creation_time = '03:00'; // Default to 3 AM UTC
+                }
+            }
+            if (scheduling.checkin_creation_day !== undefined) {
+                const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                if (scheduling.checkin_creation_day && !validDays.includes(scheduling.checkin_creation_day.toLowerCase())) {
+                    throw new ValidationError('Invalid check-in creation day. Must be: mon, tue, wed, thu, fri, sat, sun');
+                }
+                updates.checkin_creation_day = scheduling.checkin_creation_day || 'mon';
+            }
+            if (scheduling.checkin_creation_time !== undefined) {
+                if (scheduling.checkin_creation_time) {
+                    const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
+                    if (!timeRegex.test(scheduling.checkin_creation_time)) {
+                        throw new ValidationError('Check-in creation time must be in HH:mm format (UTC)');
+                    }
+                    updates.checkin_creation_time = scheduling.checkin_creation_time;
+                } else {
+                    updates.checkin_creation_time = '20:00'; // Default to 8 PM UTC
+                }
+            }
+            if (scheduling.checkin_start_day !== undefined) {
+                const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                if (scheduling.checkin_start_day && !validDays.includes(scheduling.checkin_start_day.toLowerCase())) {
+                    throw new ValidationError('Invalid check-in start day. Must be: mon, tue, wed, thu, fri, sat, sun');
+                }
+                updates.checkin_start_day = scheduling.checkin_start_day || 'fri';
+            }
+            if (scheduling.checkin_end_day !== undefined) {
+                const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                if (scheduling.checkin_end_day && !validDays.includes(scheduling.checkin_end_day.toLowerCase())) {
+                    throw new ValidationError('Invalid check-in end day. Must be: mon, tue, wed, thu, fri, sat, sun');
+                }
+                updates.checkin_end_day = scheduling.checkin_end_day || 'tue';
+            }
         }
 
         // Update fund settings
@@ -506,6 +554,11 @@ const updateSettings = async (req, res) => {
                 session_time: updatedTeam.session_time || '18:00',
                 session_type: updatedTeam.session_type || 'training',
                 session_location: updatedTeam.session_location || '',
+                auto_session_creation_time: updatedTeam.auto_session_creation_time || '03:00',
+                checkin_creation_day: updatedTeam.checkin_creation_day || 'mon',
+                checkin_creation_time: updatedTeam.checkin_creation_time || '20:00',
+                checkin_start_day: updatedTeam.checkin_start_day || 'fri',
+                checkin_end_day: updatedTeam.checkin_end_day || 'tue',
             },
         });
     } catch (error) {

@@ -131,6 +131,15 @@ app.get('/api/attendance/stats/:userId', rbacMiddleware(['member', 'co_manager',
 // Get attendance history
 app.get('/api/attendance/history', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getAttendanceHistory);
 
+// Check-in routes (member pre-attendance confirmation)
+const checkinHandler = require('./handlers/checkinHandler');
+// Get active check-in for member
+app.get('/api/attendance/checkin/active', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.getActiveCheckIn);
+// Member responds to check-in (Có/Không)
+app.post('/api/attendance/checkin/:checkInId/respond', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.respondToCheckIn);
+// Get check-in stats for session (owner only)
+app.get('/api/attendance/session/:sessionId/checkin-stats', rbacMiddleware(['owner']), checkinHandler.getCheckInStats);
+
 // Team management routes (tenancy-scoped)
 app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.listMembers);
 app.patch('/api/team/members/:userId/role', rbacMiddleware(['owner']), teamHandler.updateMemberRole);

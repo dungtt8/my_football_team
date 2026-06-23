@@ -10,14 +10,40 @@ const { ValidationError, NotFoundError } = require('./errorService');
 const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 /**
+ * Check if current UTC time matches team's configured auto-session creation time
+ * Allows 1-hour window (matches if within the hour)
+ */
+function isTimeWindowActive(configuredTime) {
+    if (!configuredTime) return true; // If no time set, always active
+
+    try {
+        const [configHour, configMinute] = configuredTime.split(':').map(Number);
+        const now = new Date();
+        const currentHour = now.getUTCHours();
+
+        // Active during the configured hour
+        return currentHour === configHour;
+    } catch (error) {
+        logger.warn('Invalid auto_session_creation_time format:', configuredTime);
+        return true; // Default to active if parsing fails
+    }
+}
+
+/**
  * Check if a session should be auto-created for a team today
  * Returns true if:
  * - auto_create_sessions is enabled
  * - frequency matches today (daily, or weekly on matching day)
+ * - current time is within the configured creation time window
  * - session hasn't been created today yet
  */
 const shouldCreateSession = (team) => {
     if (!team.auto_create_sessions || team.session_frequency === 'disabled') {
+        return false;
+    }
+
+    // Check if current time matches configured auto-session creation time
+    if (!isTimeWindowActive(team.auto_session_creation_time || '03:00')) {
         return false;
     }
 

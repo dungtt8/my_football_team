@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
 import { useFinance } from '@/hooks/useFinance'
+import { useCheckin, type ActiveCheckIn } from '@/hooks/useCheckin'
 
 const G = {
     glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
@@ -24,9 +25,12 @@ export default function MenuPage() {
     const { user, role, team, logout } = useAuth()
     const { toast } = useToast()
     const { getPaymentDeadline } = useFinance()
+    const { getActiveCheckIn, respondToCheckIn } = useCheckin()
     const [inviteCode, setInviteCode] = useState<string | null>(null)
     const [loadingInvite, setLoadingInvite] = useState(false)
     const [paymentDeadline, setPaymentDeadline] = useState<any>(null)
+    const [activeCheckIn, setActiveCheckIn] = useState<ActiveCheckIn | null>(null)
+    const [respondingCheckIn, setRespondingCheckIn] = useState(false)
 
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const displayRole = role ? (ROLE_LABELS[role] || role) : 'Thành viên'
@@ -44,7 +48,16 @@ export default function MenuPage() {
         getPaymentDeadline()
             .then(data => setPaymentDeadline(data?.payment_deadline))
             .catch(() => { })
-    }, [role, getPaymentDeadline])
+
+        // Fetch active check-in
+        getActiveCheckIn()
+            .then(data => {
+                if (data.check_in) {
+                    setActiveCheckIn(data.check_in)
+                }
+            })
+            .catch(() => { })
+    }, [role, getPaymentDeadline, getActiveCheckIn])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)
@@ -62,6 +75,20 @@ export default function MenuPage() {
         if (!inviteCode) return
         navigator.clipboard.writeText(inviteCode)
         toast('Đã sao chép mã mời', 'success')
+    }
+
+    const handleCheckInResponse = async (response: 'yes' | 'no') => {
+        if (!activeCheckIn || respondingCheckIn) return
+        setRespondingCheckIn(true)
+        try {
+            await respondToCheckIn(activeCheckIn.id, response)
+            setActiveCheckIn({ ...activeCheckIn, response, responded_at: new Date().toISOString() })
+            toast(response === 'yes' ? 'Bạn sẽ tham gia ✓' : 'Bạn sẽ không tham gia', 'success')
+        } catch {
+            toast('Lỗi khi lưu lựa chọn', 'error')
+        } finally {
+            setRespondingCheckIn(false)
+        }
     }
 
     const handleLogout = async () => {
@@ -111,6 +138,94 @@ export default function MenuPage() {
                             Vui lòng thanh toán quỹ trong khoảng ngày {paymentDeadline.start_day}-{paymentDeadline.end_day} ({paymentDeadline.days_remaining} ngày còn lại)
                         </p>
                     </div>
+                </div>
+            )}
+
+            {/* Check-in Notification */}
+            {activeCheckIn && !activeCheckIn.responded_at && (
+                <div style={{
+                    background: 'rgba(0,214,143,0.12)',
+                    border: `1px solid rgba(0,214,143,0.30)`,
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    marginBottom: '24px',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 24px rgba(0,214,143,0.10)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <div style={{ fontSize: '18px', marginTop: '2px' }}>📋</div>
+                        <div style={{ flex: 1 }}>
+                            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.accent }}>Điểm danh tham gia</p>
+                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(0,214,143,0.85)' }}>
+                                {activeCheckIn.session_type === 'training' ? '🏋️ Tập luyện' : '⚽ Trận đấu'} - {activeCheckIn.session_time} tại {activeCheckIn.session_location}
+                            </p>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                                <button
+                                    onClick={() => handleCheckInResponse('yes')}
+                                    disabled={respondingCheckIn}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 12px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(0,214,143,0.20)',
+                                        border: `1px solid rgba(0,214,143,0.40)`,
+                                        color: G.accent,
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        cursor: respondingCheckIn ? 'default' : 'pointer',
+                                        opacity: respondingCheckIn ? 0.6 : 1,
+                                    }}
+                                >
+                                    ✓ Có
+                                </button>
+                                <button
+                                    onClick={() => handleCheckInResponse('no')}
+                                    disabled={respondingCheckIn}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 12px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(255,107,107,0.15)',
+                                        border: `1px solid rgba(255,107,107,0.30)`,
+                                        color: '#FF9999',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        cursor: respondingCheckIn ? 'default' : 'pointer',
+                                        opacity: respondingCheckIn ? 0.6 : 1,
+                                    }}
+                                >
+                                    ✗ Không
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Check-in Confirmed */}
+            {activeCheckIn && activeCheckIn.responded_at && (
+                <div style={{
+                    background: activeCheckIn.response === 'yes' ? 'rgba(0,214,143,0.08)' : 'rgba(255,107,107,0.08)',
+                    border: `1px solid ${activeCheckIn.response === 'yes' ? 'rgba(0,214,143,0.25)' : 'rgba(255,107,107,0.25)'}`,
+                    borderRadius: '16px',
+                    padding: '12px 16px',
+                    marginBottom: '24px',
+                    backdropFilter: 'blur(12px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                }}>
+                    <div style={{ fontSize: '16px' }}>
+                        {activeCheckIn.response === 'yes' ? '✓' : '✗'}
+                    </div>
+                    <p style={{
+                        margin: 0,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        color: activeCheckIn.response === 'yes' ? G.accent : '#FF9999'
+                    }}>
+                        Bạn đã báo {activeCheckIn.response === 'yes' ? 'sẽ tham gia' : 'không tham gia'}
+                    </p>
                 </div>
             )}
 
