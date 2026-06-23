@@ -29,7 +29,8 @@ export default function LoginPage() {
         throw new Error('Phone and name are required')
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/phone/login`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+      const response = await fetch(`${apiUrl}/auth/phone/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, full_name: fullName }),

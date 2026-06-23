@@ -20,10 +20,10 @@ app.get('/health', (req, res) => {
 
 // Auth routes (no tenancy required)
 const authHandler = require('./handlers/authHandler');
-app.post('/auth/zalo/callback', authHandler);
+app.post('/api/auth/zalo/callback', authHandler);
 
 const phoneAuthHandler = require('./handlers/phoneAuthHandler');
-app.post('/auth/phone/login', phoneAuthHandler);
+app.post('/api/auth/phone/login', phoneAuthHandler);
 
 // Zalo webhook (NO AUTH - verify signature before processing)
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');

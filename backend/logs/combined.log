@@ -90,3 +90,4 @@
 {"level":"info","member_id":1,"message":"Leaderboard summary sent to member","service":"football-backend","team_id":2,"timestamp":"2026-06-22T10:25:52.886Z","zalo_user_id":"zuid-001"}
 {"level":"info","member_id":2,"message":"Leaderboard summary sent to member","service":"football-backend","team_id":2,"timestamp":"2026-06-22T10:25:52.886Z","zalo_user_id":"zuid-002"}
 {"leaderboardsArchived":2,"level":"info","message":"Monthly reminder job completed","notificationsSent":8,"service":"football-backend","teamsProcessed":2,"timestamp":"2026-06-22T10:25:52.886Z"}
+{"code":"VALIDATION_ERROR","endpoint":"/auth/phone/login","level":"warn","message":"Business error: VALIDATION_ERROR Invalid phone number format","service":"football-backend","statusCode":400,"timestamp":"2026-06-23T03:36:24.001Z"}
