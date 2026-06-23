@@ -34,7 +34,7 @@ export default function MenuPage() {
         if (role === 'owner' || role === 'co_manager') {
             const token = localStorage.getItem('auth_token')
             fetch(`${API_URL}/team/invite`, { headers: { Authorization: `Bearer ${token}` } })
-                .then(r => r.json()).then(d => { if (d.invite_code) setInviteCode(d.invite_code) }).catch(() => {})
+                .then(r => r.json()).then(d => { if (d.invite_code) setInviteCode(d.invite_code) }).catch(() => { })
         }
     }, [role])
 

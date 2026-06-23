@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check (no auth required)
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Auth routes (no tenancy required)
@@ -108,11 +108,11 @@ app.post('/api/team/invite/regenerate', rbacMiddleware(['owner']), teamHandler.r
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
-  handleError(err, req, res, {
-    team_id: req.user?.team_id,
-    user_id: req.user?.user_id,
-    path: req.path
-  });
+    handleError(err, req, res, {
+        team_id: req.user?.team_id,
+        user_id: req.user?.user_id,
+        path: req.path
+    });
 });
 
 module.exports = app;
