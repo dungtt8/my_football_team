@@ -34,7 +34,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const loadSettings = async () => {
         try {
             setLoading(true)
-            const response = await request<any>('/api/team/settings', 'GET')
+            const response = await request<any>('/team/settings', 'GET')
             if (response?.fund) {
                 setSettings(response.fund)
                 setBankAccount(response.fund.bank_account_number || '')
@@ -88,7 +88,8 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             const formData = new FormData()
             formData.append('qr_code', selectedFile)
 
-            const response = await fetch('/api/team/settings/qr-code/upload', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+            const response = await fetch(`${apiUrl}/team/settings/qr-code/upload`, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -121,7 +122,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
         try {
             setLoading(true)
-            const response = await request<any>('/api/team/settings/qr-code', 'DELETE')
+            const response = await request<any>('/team/settings/qr-code', 'DELETE')
 
             if (response?.message) {
                 setSettings(prev => ({ ...prev, qr_code_url: undefined }))
@@ -139,7 +140,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const handleSaveBankInfo = async () => {
         try {
             setLoading(true)
-            await request<any>('/api/team/settings', 'PUT', {
+            await request<any>('/team/settings', 'PUT', {
                 fund: {
                     bank_account_number: bankAccount || null,
                     bank_name: bankName || null

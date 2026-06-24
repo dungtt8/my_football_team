@@ -25,7 +25,7 @@ export const PaymentQRDisplay: React.FC = () => {
         try {
             setLoading(true)
             // First get team settings which includes fund info
-            const settingsResponse = await request<any>('/api/team/settings', 'GET')
+            const settingsResponse = await request<any>('/team/settings', 'GET')
 
             if (settingsResponse?.finance?.is_payment_deadline_active && settingsResponse?.fund) {
                 setDeadline({
