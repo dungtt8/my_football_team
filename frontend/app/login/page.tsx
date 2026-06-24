@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { isAuthenticated, isLoading, setAuthData } = useAuth()
     const [phone, setPhone] = useState('')
     const [fullName, setFullName] = useState('')
@@ -15,9 +16,10 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            router.push('/')
+            const redirect = searchParams.get('redirect')
+            router.push(redirect || '/')
         }
-    }, [isAuthenticated, isLoading, router])
+    }, [isAuthenticated, isLoading, router, searchParams])
 
     const handlePhoneLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -45,8 +47,13 @@ export default function LoginPage() {
             // Update AuthContext state + localStorage atomically
             setAuthData(data.token, data.user, data.team ?? null, data.user.role)
 
-            // Redirect: no team → onboarding, else → root (role-based routing)
-            router.push(data.has_team === false ? '/onboarding' : '/')
+            // Redirect: check redirect parameter, fallback to onboarding or home
+            const redirect = searchParams.get('redirect')
+            if (redirect) {
+                router.push(redirect)
+            } else {
+                router.push(data.has_team === false ? '/onboarding' : '/')
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
             setError(message)

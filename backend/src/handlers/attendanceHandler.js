@@ -212,7 +212,11 @@ const createManualSession = async (req, res) => {
 const listSessions = async (req, res) => {
     try {
         const { page = 1, limit = 20, status } = req.query;
-        const teamId = req.team.id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
 
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
@@ -568,7 +572,12 @@ const closeSession = async (req, res) => {
  */
 const getLeaderboard = async (req, res) => {
     try {
-        const teamId = req.team.id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
+
         const currentMonth = gamificationService.getCurrentMonth();
 
         logger.info('Fetching current month leaderboard', {
@@ -603,7 +612,11 @@ const getLeaderboard = async (req, res) => {
 const getHistoricalLeaderboard = async (req, res) => {
     try {
         const { month } = req.params;
-        const teamId = req.team.id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
 
         // Validate month format
         if (!/^\d{4}-\d{2}$/.test(month)) {
@@ -643,7 +656,11 @@ const getUserStats = async (req, res) => {
     try {
         const { userId } = req.params;
         const { month } = req.query;
-        const teamId = req.team.id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
 
         const targetMonth = month || gamificationService.getCurrentMonth();
 
@@ -683,8 +700,8 @@ const getUserStats = async (req, res) => {
  */
 const getAttendanceHistory = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const teamId = req.team.id;
+        const userId = req.user?.id || req.user?.user_id;
+        const teamId = req.team?.id || req.user?.team_id;
         const { month } = req.query;
 
         const targetMonth = month || gamificationService.getCurrentMonth();
