@@ -364,7 +364,7 @@ const getBalance = async (req, res) => {
     const result = await db('fund_transactions')
       .where('team_id', teamId)
       .where('status', 'approved')
-      .sum('amount as total_balance')
+      .sum({ total_balance: 'amount' })
       .first();
 
     const balance = result.total_balance || 0;

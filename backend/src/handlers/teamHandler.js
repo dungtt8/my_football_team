@@ -566,4 +566,86 @@ const updateSettings = async (req, res) => {
     }
 };
 
-module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings };
+/**
+ * POST /api/team/settings/qr-code/upload  (auth + tenancy, owner only)
+ * Upload QR code image for fund payments
+ * Form data: { qr_code: File }
+ */
+const uploadQRCode = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const userId = req.user.id;
+
+        if (!req.file) {
+            throw new ValidationError('QR code image is required');
+        }
+
+        const storageService = require('../services/storageService');
+        const { url, path } = await storageService.uploadQRCode(
+            req.file.buffer,
+            req.file.originalname,
+            teamId
+        );
+
+        // Update team with new QR code URL
+        await db('teams').where({ id: teamId }).update({
+            fund_qr_code_url: url,
+            updated_at: new Date()
+        });
+
+        logger.info('QR code uploaded', {
+            team_id: teamId,
+            uploaded_by: userId,
+            file_name: req.file.originalname,
+            storage_path: path
+        });
+
+        return res.status(200).json({
+            message: 'QR code uploaded successfully',
+            qr_code_url: url
+        });
+    } catch (error) {
+        return handleError(error, req, res, {
+            endpoint: 'POST /api/team/settings/qr-code/upload'
+        });
+    }
+};
+
+/**
+ * DELETE /api/team/settings/qr-code  (auth + tenancy, owner only)
+ * Remove QR code image for fund payments
+ */
+const deleteQRCode = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const userId = req.user.id;
+
+        const team = await db('teams').where({ id: teamId }).first();
+
+        if (!team || !team.fund_qr_code_url) {
+            throw new NotFoundError('QR code not found');
+        }
+
+        // Delete from storage if possible (optional - mainly for cleanup)
+        // Storage paths can be extracted from URLs if needed, but for now we'll just clear the URL
+        await db('teams').where({ id: teamId }).update({
+            fund_qr_code_url: null,
+            updated_at: new Date()
+        });
+
+        logger.info('QR code deleted', {
+            team_id: teamId,
+            deleted_by: userId
+        });
+
+        return res.json({
+            message: 'QR code deleted successfully'
+        });
+    } catch (error) {
+        return handleError(error, req, res, {
+            endpoint: 'DELETE /api/team/settings/qr-code'
+        });
+    }
+};
+
+module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode };

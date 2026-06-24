@@ -1,10 +1,25 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 const authMiddleware = require('./middleware/authMiddleware');
 const tenancyMiddleware = require('./middleware/tenancyMiddleware');
 const rbacMiddleware = require('./middleware/rbacMiddleware');
 const { handleError } = require('./services/errorService');
 const inngest = require('./config/inngest');
+
+// Multer configuration for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'));
+        }
+    }
+});
 
 const app = express();
 
@@ -147,6 +162,8 @@ app.get('/api/team/invite', rbacMiddleware(['owner', 'co_manager']), teamHandler
 app.post('/api/team/invite/regenerate', rbacMiddleware(['owner']), teamHandler.regenerateInviteCode);
 app.get('/api/team/settings', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.getSettings);
 app.put('/api/team/settings', rbacMiddleware(['owner']), teamHandler.updateSettings);
+app.post('/api/team/settings/qr-code/upload', rbacMiddleware(['owner']), upload.single('qr_code'), teamHandler.uploadQRCode);
+app.delete('/api/team/settings/qr-code', rbacMiddleware(['owner']), teamHandler.deleteQRCode);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {

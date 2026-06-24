@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useFinance, Transaction, Approval, FinanceBalance } from '@/hooks/useFinance'
 import { useToast } from '@/hooks/useToast'
 import { TransactionForm, TransactionFormData } from '@/components/Finance/TransactionForm'
+import { PaymentQRDisplay } from '@/components/Finance/PaymentQRDisplay'
+import { QRCodeSettings } from '@/components/Finance/QRCodeSettings'
 
 const G = {
     glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
@@ -95,6 +97,12 @@ export default function FinancePage() {
                     background: 'rgba(255,255,255,0.08)', color: G.t1, border: `1px solid rgba(255,255,255,0.12)`,
                 }}>+ Báo cáo</button>
             </div>
+
+            {/* Payment QR Display - Show when payment deadline is active */}
+            <PaymentQRDisplay />
+
+            {/* QR Code Settings - Show for owners */}
+            {role === 'owner' && <QRCodeSettings isOwner={role === 'owner'} />}
 
             {/* Balance stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>

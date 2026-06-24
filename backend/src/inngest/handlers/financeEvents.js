@@ -195,7 +195,7 @@ const onApprovalApprovedLogic = async ({ event, step }) => {
     const previousBalance = await db('fund_transactions')
       .where('team_id', team_id)
       .where('status', 'approved')
-      .sum('amount as total')
+      .sum({ total: 'amount' })
       .first();
 
     const newBalance = (previousBalance.total || 0) + transaction.amount;

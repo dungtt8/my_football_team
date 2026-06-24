@@ -272,7 +272,7 @@ const onCampaignChargedLogic = async ({ event, step }) => {
     const previousBalanceResult = await db('fund_transactions')
       .where('team_id', team_id)
       .where('status', 'approved')
-      .sum('amount as total')
+      .sum({ total: 'amount' })
       .first();
 
     const previousBalance = previousBalanceResult.total || 0;
