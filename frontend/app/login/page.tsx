@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function LoginPage() {
+function LoginFormContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { isAuthenticated, isLoading, setAuthData } = useAuth()
@@ -14,6 +14,7 @@ export default function LoginPage() {
     const [error, setError] = useState('')
     const [focusedField, setFocusedField] = useState<string | null>(null)
 
+    // Auto-redirect if already authenticated (from previous session)
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             const redirect = searchParams.get('redirect')
@@ -47,13 +48,18 @@ export default function LoginPage() {
             // Update AuthContext state + localStorage atomically
             setAuthData(data.token, data.user, data.team ?? null, data.user.role)
 
-            // Redirect: check redirect parameter, fallback to onboarding or home
-            const redirect = searchParams.get('redirect')
-            if (redirect) {
-                router.push(redirect)
-            } else {
-                router.push(data.has_team === false ? '/onboarding' : '/')
-            }
+            // Redirect after context update completes
+            // Use setTimeout to ensure context state updates before navigation
+            setTimeout(() => {
+                const redirect = searchParams.get('redirect')
+                if (redirect) {
+                    // Redirect to the preserved invite link (with code param)
+                    router.push(redirect)
+                } else {
+                    // No redirect param: check team status
+                    router.push(data.has_team === false ? '/onboarding' : '/')
+                }
+            }, 0)
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
             setError(message)
@@ -311,5 +317,17 @@ export default function LoginPage() {
             </div>
 
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[100dvh] flex items-center justify-center" style={{ background: '#0F1A17' }}>
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+        }>
+            <LoginFormContent />
+        </Suspense>
     )
 }

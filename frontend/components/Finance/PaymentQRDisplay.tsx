@@ -13,7 +13,7 @@ interface PaymentDeadlineInfo {
 }
 
 export const PaymentQRDisplay: React.FC = () => {
-    const apiCall = useApi()
+    const { request } = useApi()
     const [deadline, setDeadline] = useState<PaymentDeadlineInfo | null>(null)
     const [loading, setLoading] = useState(false)
 
@@ -25,9 +25,7 @@ export const PaymentQRDisplay: React.FC = () => {
         try {
             setLoading(true)
             // First get team settings which includes fund info
-            const settingsResponse = await apiCall('/api/team/settings', {
-                method: 'GET'
-            })
+            const settingsResponse = await request<any>('/api/team/settings', 'GET')
 
             if (settingsResponse?.finance?.is_payment_deadline_active && settingsResponse?.fund) {
                 setDeadline({

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
@@ -12,7 +12,7 @@ const G = {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
-export default function JoinTeamPage() {
+function JoinTeamFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setAuthData, user, isLoading: authLoading, isAuthenticated } = useAuth()
@@ -21,17 +21,21 @@ export default function JoinTeamPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Auto-fill invite code from URL parameter & check auth
+  // Auto-fill invite code from URL parameter & redirect to login if needed
   useEffect(() => {
     const codeFromUrl = searchParams.get('code')
     if (codeFromUrl) {
       setCode(codeFromUrl.toUpperCase())
     }
 
-    // If not authenticated and loading is done, redirect to login
-    if (!authLoading && !isAuthenticated) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(`/onboarding/join?code=${codeFromUrl || ''}`)}`
-      router.push(redirectUrl)
+    // Only redirect after auth loading is complete
+    if (authLoading) return
+
+    // If not authenticated, redirect to login with preserved invite link
+    if (!isAuthenticated) {
+      const inviteUrl = `/onboarding/join?code=${codeFromUrl || ''}`
+      const loginUrl = `/login?redirect=${encodeURIComponent(inviteUrl)}`
+      router.replace(loginUrl) // Use replace to avoid back button issues
     }
   }, [searchParams, authLoading, isAuthenticated, router])
 
@@ -112,5 +116,17 @@ export default function JoinTeamPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function JoinTeamPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100dvh', background: '#070B14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '24px', height: '24px', border: '2px solid rgba(255,255,255,0.2)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
+    }>
+      <JoinTeamFormContent />
+    </Suspense>
   )
 }

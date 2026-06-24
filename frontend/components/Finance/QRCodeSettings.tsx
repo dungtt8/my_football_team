@@ -16,8 +16,8 @@ interface QRCodeSettingsProps {
 }
 
 export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnly = false }) => {
-    const apiCall = useApi()
-    const { showToast } = useToast()
+    const { request } = useApi()
+    const { toast } = useToast()
 
     const [settings, setSettings] = useState<PaymentSettings>({})
     const [loading, setLoading] = useState(false)
@@ -34,9 +34,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const loadSettings = async () => {
         try {
             setLoading(true)
-            const response = await apiCall('/api/team/settings', {
-                method: 'GET'
-            })
+            const response = await request<any>('/api/team/settings', 'GET')
             if (response?.fund) {
                 setSettings(response.fund)
                 setBankAccount(response.fund.bank_account_number || '')
@@ -47,7 +45,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             }
         } catch (error) {
             console.error('Failed to load settings:', error)
-            showToast('Failed to load payment settings', 'error')
+            toast('Failed to load payment settings', 'error')
         } finally {
             setLoading(false)
         }
@@ -59,13 +57,13 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            showToast('Please select a valid image file', 'error')
+            toast('Please select a valid image file', 'error')
             return
         }
 
         // Validate file size (2MB max)
         if (file.size > 2 * 1024 * 1024) {
-            showToast('File size must be less than 2MB', 'error')
+            toast('File size must be less than 2MB', 'error')
             return
         }
 
@@ -81,7 +79,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
     const handleUploadQR = async () => {
         if (!selectedFile) {
-            showToast('Please select a file first', 'error')
+            toast('Please select a file first', 'error')
             return
         }
 
@@ -106,13 +104,13 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             const data = await response.json()
             setSettings(prev => ({ ...prev, qr_code_url: data.qr_code_url }))
             setSelectedFile(null)
-            showToast('QR code uploaded successfully', 'success')
+            toast('QR code uploaded successfully', 'success')
 
             // Reload settings to ensure consistency
             await loadSettings()
         } catch (error) {
             console.error('Upload error:', error)
-            showToast(error instanceof Error ? error.message : 'Failed to upload QR code', 'error')
+            toast(error instanceof Error ? error.message : 'Failed to upload QR code', 'error')
         } finally {
             setUploading(false)
         }
@@ -123,18 +121,16 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
         try {
             setLoading(true)
-            const response = await apiCall('/api/team/settings/qr-code', {
-                method: 'DELETE'
-            })
+            const response = await request<any>('/api/team/settings/qr-code', 'DELETE')
 
             if (response?.message) {
                 setSettings(prev => ({ ...prev, qr_code_url: undefined }))
                 setPreviewUrl(null)
-                showToast('QR code deleted successfully', 'success')
+                toast('QR code deleted successfully', 'success')
             }
         } catch (error) {
             console.error('Delete error:', error)
-            showToast('Failed to delete QR code', 'error')
+            toast('Failed to delete QR code', 'error')
         } finally {
             setLoading(false)
         }
@@ -143,13 +139,10 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const handleSaveBankInfo = async () => {
         try {
             setLoading(true)
-            await apiCall('/api/team/settings', {
-                method: 'PUT',
-                body: {
-                    fund: {
-                        bank_account_number: bankAccount || null,
-                        bank_name: bankName || null
-                    }
+            await request<any>('/api/team/settings', 'PUT', {
+                fund: {
+                    bank_account_number: bankAccount || null,
+                    bank_name: bankName || null
                 }
             })
 
@@ -158,10 +151,10 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                 bank_account_number: bankAccount,
                 bank_name: bankName
             }))
-            showToast('Bank information saved successfully', 'success')
+            toast('Bank information saved successfully', 'success')
         } catch (error) {
             console.error('Save error:', error)
-            showToast('Failed to save bank information', 'error')
+            toast('Failed to save bank information', 'error')
         } finally {
             setLoading(false)
         }
