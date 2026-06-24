@@ -26,7 +26,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     user,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Default closed on mobile
+    const [isDesktop, setIsDesktop] = useState(false) // Track if desktop
+
+    React.useEffect(() => {
+        // Check if desktop on mount
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 768)
+        checkDesktop()
+        window.addEventListener('resize', checkDesktop)
+        return () => window.removeEventListener('resize', checkDesktop)
+    }, [])
+
     const router = useRouter()
 
     const handleNavigate = (path: string) => {
@@ -82,9 +92,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
                     {/* Main content area */}
                     <main className="flex-1 overflow-y-auto transition-all duration-300" style={{
-                        paddingTop: '64px',
+                        paddingTop: 0,
                         paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-                        marginLeft: isSidebarOpen ? 'var(--sidebar-width, 256px)' : '0'
+                        marginLeft: isDesktop && isSidebarOpen ? '256px' : '0',
+                        marginTop: '64px',
+                        width: '100%',
+                        boxSizing: 'border-box'
                     }}>
                         <div className="w-full h-full">
                             {children}

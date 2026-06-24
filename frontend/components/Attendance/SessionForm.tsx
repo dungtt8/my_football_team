@@ -8,7 +8,7 @@ export interface SessionFormData {
     session_type: 'training' | 'match'
     location?: string
     description?: string
-    check_in_deadline?: string
+    check_in_deadline: string
 }
 
 interface SessionFormProps {
@@ -42,13 +42,15 @@ export const SessionForm: React.FC<SessionFormProps> = ({
             errs.session_date = 'Ngày buổi tập là bắt buộc'
         }
 
-        if (formData.check_in_deadline) {
+        if (!formData.check_in_deadline) {
+            errs.check_in_deadline = 'Hạn chót điểm danh là bắt buộc'
+        } else {
             const deadline = new Date(formData.check_in_deadline)
             const sessionDate = new Date(formData.session_date)
             if (isNaN(deadline.getTime())) {
                 errs.check_in_deadline = 'Định dạng thời gian không hợp lệ'
-            } else if (deadline <= sessionDate) {
-                errs.check_in_deadline = 'Hạn chót phải sau thời gian buổi tập'
+            } else if (deadline >= sessionDate) {
+                errs.check_in_deadline = 'Hạn chót phải trước thời gian buổi tập'
             }
         }
 
@@ -65,9 +67,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
             session_type: formData.session_type,
             location: formData.location || undefined,
             description: formData.description || undefined,
-            check_in_deadline: formData.check_in_deadline
-                ? new Date(formData.check_in_deadline).toISOString()
-                : undefined,
+            check_in_deadline: new Date(formData.check_in_deadline).toISOString(),
         }
         onSubmit(payload)
     }
@@ -132,7 +132,9 @@ export const SessionForm: React.FC<SessionFormProps> = ({
 
             {/* Check-in Deadline */}
             <div style={fieldStyle}>
-                <label style={labelStyle}>Hạn chót điểm danh</label>
+                <label style={labelStyle}>
+                    Hạn chót điểm danh <span style={{ color: '#E53E3E' }}>*</span>
+                </label>
                 <input
                     type="datetime-local"
                     style={inputStyle}
@@ -141,7 +143,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
                 />
                 {errors.check_in_deadline && <p style={errorStyle}>{errors.check_in_deadline}</p>}
                 <p style={{ fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray, marginTop: '4px' }}>
-                    Để trống nếu không giới hạn thời gian điểm danh
+                    Thành viên phải điểm danh trước thời gian này
                 </p>
             </div>
 
