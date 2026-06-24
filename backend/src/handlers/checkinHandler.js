@@ -1,6 +1,6 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
-const errorService = require('./errorService');
+const errorService = require('../services/errorService');
 const checkinService = require('../services/checkinService');
 const authService = require('./authService');
 
