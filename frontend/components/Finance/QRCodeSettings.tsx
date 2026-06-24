@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useApi } from '@/hooks/useApi'
+import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
 
 interface PaymentSettings {
@@ -17,6 +18,7 @@ interface QRCodeSettingsProps {
 
 export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnly = false }) => {
     const { request } = useApi()
+    const { isLoading: authLoading } = useAuth()
     const { toast } = useToast()
 
     const [settings, setSettings] = useState<PaymentSettings>({})
@@ -28,8 +30,9 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
     useEffect(() => {
+        if (authLoading) return
         loadSettings()
-    }, [])
+    }, [authLoading])
 
     const loadSettings = async () => {
         try {

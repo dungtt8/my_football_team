@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useApi } from '@/hooks/useApi'
+import { useAuth } from '@/hooks/useAuth'
 
 interface PaymentDeadlineInfo {
     payment_deadline: {
@@ -14,12 +15,14 @@ interface PaymentDeadlineInfo {
 
 export const PaymentQRDisplay: React.FC = () => {
     const { request } = useApi()
+    const { isLoading: authLoading } = useAuth()
     const [deadline, setDeadline] = useState<PaymentDeadlineInfo | null>(null)
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (authLoading) return
         loadPaymentInfo()
-    }, [])
+    }, [authLoading])
 
     const loadPaymentInfo = async () => {
         try {
