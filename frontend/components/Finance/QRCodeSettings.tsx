@@ -38,13 +38,17 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
         try {
             setLoading(true)
             const response = await request<any>('/team/settings', 'GET')
-            if (response?.fund) {
+            
+            // Validate response is object before accessing properties
+            if (response && typeof response === 'object' && !Array.isArray(response) && response?.fund) {
                 setSettings(response.fund)
                 setBankAccount(response.fund.bank_account_number || '')
                 setBankName(response.fund.bank_name || '')
                 if (response.fund.qr_code_url) {
                     setPreviewUrl(response.fund.qr_code_url)
                 }
+            } else {
+                console.warn('Invalid settings response:', typeof response)
             }
         } catch (error) {
             console.error('Failed to load settings:', error)
