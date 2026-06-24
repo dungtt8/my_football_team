@@ -15,7 +15,7 @@ const G = {
 
 export default function AttendancePage() {
     const router = useRouter()
-    const { user, role } = useAuth()
+    const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listSessions, memberCheckIn, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
     const isManager = role === 'manager' || role === 'co_manager'
@@ -31,7 +31,7 @@ export default function AttendancePage() {
     const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
-        if (!user) return
+        if (authLoading || !user) return
         const load = async () => {
             try {
                 const allRes = await listSessions({ limit: 20 })
@@ -59,7 +59,7 @@ export default function AttendancePage() {
             } catch { toast('Không thể tải dữ liệu', 'error') }
         }
         load()
-    }, [user])
+    }, [user, authLoading, listSessions, getAttendanceHistory, getUserStats, getLeaderboard, toast])
 
     const handleCheckIn = async () => {
         if (!activeSession) { toast('Không có buổi active hôm nay', 'error'); return }

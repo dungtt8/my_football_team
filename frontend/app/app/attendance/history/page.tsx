@@ -11,7 +11,7 @@ import { AttendanceStatsCard } from '@/components/Attendance/AttendanceStatsCard
 
 export default function AttendanceHistoryPage() {
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listAttendance, getUserStats, loading } = useAttendance()
 
@@ -26,6 +26,7 @@ export default function AttendanceHistoryPage() {
 
     // Load data
     useEffect(() => {
+        if (authLoading) return
         const loadData = async () => {
             try {
                 const records = await listAttendance({ limit: 500 })
@@ -44,7 +45,7 @@ export default function AttendanceHistoryPage() {
         }
 
         loadData()
-    }, [])
+    }, [authLoading, user, listAttendance, getUserStats, toast])
 
     // Filter records
     useEffect(() => {

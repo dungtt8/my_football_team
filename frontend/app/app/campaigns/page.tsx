@@ -19,7 +19,7 @@ type TabType = 'all' | 'active' | 'ended'
 
 export default function CampaignsPage() {
     const router = useRouter()
-    const { user, role } = useAuth()
+    const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listCampaigns, createCampaign, loading } = useCampaign()
     const isManager = role === 'manager' || role === 'co_manager'
@@ -30,6 +30,7 @@ export default function CampaignsPage() {
     const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
+        if (authLoading) return
         const load = async () => {
             try {
                 const status = tab === 'active' ? 'active' : tab === 'ended' ? 'closed' : undefined
@@ -38,7 +39,7 @@ export default function CampaignsPage() {
             } catch { toast('Không thể tải chiến dịch', 'error') }
         }
         load()
-    }, [tab])
+    }, [tab, authLoading, listCampaigns, toast])
 
     const handleCreate = async (data: CampaignFormData) => {
         setIsCreating(true)

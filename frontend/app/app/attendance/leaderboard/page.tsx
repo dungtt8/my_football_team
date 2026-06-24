@@ -22,7 +22,7 @@ const getMedalEmoji = (rank: number) => {
 
 export default function LeaderboardPage() {
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { getLeaderboard, getHistoricalLeaderboard } = useAttendance()
 
@@ -69,9 +69,9 @@ export default function LeaderboardPage() {
 
     // Load leaderboard when month changes
     useEffect(() => {
-        if (!currentMonth) return
+        if (authLoading || !currentMonth) return
         loadLeaderboard()
-    }, [currentMonth, loadLeaderboard])
+    }, [currentMonth, loadLeaderboard, authLoading])
 
     const goToPreviousMonth = () => {
         const [year, month] = currentMonth.split('-')

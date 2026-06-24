@@ -12,7 +12,7 @@ import { ArrowLeft } from 'phosphor-react'
 export default function CampaignDetailPage() {
     const router = useRouter()
     const params = useParams()
-    const { user, role } = useAuth()
+    const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const id = params.id as string
 
@@ -34,7 +34,10 @@ export default function CampaignDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isActing, setIsActing] = useState(false)
 
-    useEffect(() => { loadData() }, [id])
+    useEffect(() => {
+        if (authLoading) return
+        loadData()
+    }, [id, authLoading])
 
     const loadData = async () => {
         setIsLoading(true)

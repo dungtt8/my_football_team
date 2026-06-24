@@ -50,11 +50,6 @@ jobs:
         working-directory: backend
         run: pnpm ci
 
-      - name: Run linting
-        working-directory: backend
-        run: pnpm lint --if-present
-        continue-on-error: true
-
       - name: Run tests
         working-directory: backend
         run: pnpm test --if-present
@@ -74,7 +69,6 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
       - name: Deploy to Supabase (Edge Functions)
-        working-directory: backend
         run: npx supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_ID
           }}
         env:

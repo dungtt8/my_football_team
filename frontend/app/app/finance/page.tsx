@@ -23,7 +23,7 @@ const statusBg = (s: string) => s === 'approved' ? G.accentDim : s === 'rejected
 
 export default function FinancePage() {
     const router = useRouter()
-    const { user, role } = useAuth()
+    const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listTransactions, getFinanceBalance, getPendingApprovals, approveTransaction, rejectTransaction, submitTransaction, loading } = useFinance()
     const isManager = role === 'manager' || role === 'co_manager'
@@ -38,6 +38,9 @@ export default function FinancePage() {
     const [rejectReason, setRejectReason] = useState('')
 
     useEffect(() => {
+        // Only load data after auth has finished loading
+        if (authLoading) return
+
         const load = async () => {
             setIsLoading(true)
             try {
@@ -48,7 +51,7 @@ export default function FinancePage() {
             } catch { } finally { setIsLoading(false) }
         }
         load()
-    }, [isManager])
+    }, [isManager, authLoading, getFinanceBalance, listTransactions, getPendingApprovals])
 
     const handleSubmit = async (data: TransactionFormData) => {
         setIsSubmitting(true)

@@ -22,7 +22,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
 export default function MenuPage() {
     const router = useRouter()
-    const { user, role, team, logout } = useAuth()
+    const { user, role, team, logout, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { getPaymentDeadline } = useFinance()
     const { getActiveCheckIn, respondToCheckIn } = useCheckin()
@@ -38,6 +38,7 @@ export default function MenuPage() {
     const initials = displayName.split(' ').map((w: string) => w[0]).slice(-2).join('').toUpperCase()
 
     useEffect(() => {
+        if (authLoading) return
         if (role === 'owner' || role === 'co_manager') {
             const token = localStorage.getItem('auth_token')
             fetch(`${API_URL}/team/invite`, { headers: { Authorization: `Bearer ${token}` } })
@@ -57,7 +58,7 @@ export default function MenuPage() {
                 }
             })
             .catch(() => { })
-    }, [role, getPaymentDeadline, getActiveCheckIn])
+    }, [authLoading, role, getPaymentDeadline, getActiveCheckIn])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)

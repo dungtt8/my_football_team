@@ -10,7 +10,7 @@ interface UseApiOptions {
 }
 
 export const useApi = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -21,6 +21,14 @@ export const useApi = () => {
       body?: any,
       options?: UseApiOptions
     ) => {
+      // Wait for auth to finish loading, then check if authenticated
+      if (authLoading) {
+        const err = new Error('Authentication is still loading')
+        setError(err)
+        options?.onError?.(err)
+        throw err
+      }
+
       if (!isAuthenticated) {
         const err = new Error('Not authenticated')
         setError(err)
@@ -70,7 +78,7 @@ export const useApi = () => {
         setLoading(false)
       }
     },
-    [isAuthenticated]
+    [isAuthenticated, authLoading]
   )
 
   return {
