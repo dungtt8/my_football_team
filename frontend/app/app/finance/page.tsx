@@ -26,7 +26,7 @@ export default function FinancePage() {
     const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listTransactions, getFinanceBalance, getPendingApprovals, approveTransaction, rejectTransaction, submitTransaction, loading } = useFinance()
-    const isManager = role === 'manager' || role === 'co_manager'
+    const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [approvals, setApprovals] = useState<Approval[]>([])
@@ -60,8 +60,8 @@ export default function FinancePage() {
                 console.error('Failed to load finance data:', err)
                 setTransactions([])
                 setApprovals([])
-            } finally { 
-                setIsLoading(false) 
+            } finally {
+                setIsLoading(false)
             }
         }
         load()

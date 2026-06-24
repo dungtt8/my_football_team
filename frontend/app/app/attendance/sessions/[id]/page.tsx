@@ -15,7 +15,7 @@ export default function SessionDetailPage() {
     const id = params.id as string
 
     const { getSession, memberCheckIn, markAbsent, closeSession } = useAttendance()
-    const isManager = role === 'co_manager' || role === 'manager'
+    const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
     const [session, setSession] = useState<AttendanceSession | null>(null)
     const [records, setRecords] = useState<AttendanceRecord[]>([])
@@ -150,7 +150,7 @@ export default function SessionDetailPage() {
                             <p className="text-sm mb-4" style={{ color: '#6B6660' }}>+10 điểm sau khi điểm danh thành công</p>
                             <button
                                 disabled={isActing || !canCheckIn}
-                                onClick={() => act(() => memberCheckIn(id).then(() => {}), 'Điểm danh thành công! +10 điểm')}
+                                onClick={() => act(() => memberCheckIn(id).then(() => { }), 'Điểm danh thành công! +10 điểm')}
                                 className="w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
                                 style={{ background: '#0F0E0C', color: '#FFFCF9' }}
                             >
@@ -191,7 +191,7 @@ export default function SessionDetailPage() {
                     <MarkAbsentForm
                         disabled={isActing}
                         onSubmit={(userId) => act(
-                            () => markAbsent(id, userId).then(() => {}),
+                            () => markAbsent(id, userId).then(() => { }),
                             'Đã đánh vắng mặt (-5 điểm)'
                         )}
                     />
@@ -204,7 +204,7 @@ export default function SessionDetailPage() {
                     disabled={isActing}
                     onClick={() => {
                         if (!window.confirm('Đóng buổi này? Không thể mở lại.')) return
-                        act(() => closeSession(id).then(() => {}), 'Đã đóng buổi')
+                        act(() => closeSession(id).then(() => { }), 'Đã đóng buổi')
                     }}
                     className="w-full py-3 rounded-xl text-sm font-semibold border disabled:opacity-50"
                     style={{ borderColor: '#E53E3E', color: '#E53E3E' }}

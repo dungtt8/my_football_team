@@ -22,7 +22,7 @@ export default function CampaignsPage() {
     const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listCampaigns, createCampaign, loading } = useCampaign()
-    const isManager = role === 'manager' || role === 'co_manager'
+    const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [tab, setTab] = useState<TabType>('all')

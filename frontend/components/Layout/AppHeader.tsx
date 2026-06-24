@@ -10,6 +10,7 @@ interface AppHeaderProps {
     showSearch?: boolean
     isSidebarOpen?: boolean
     onSidebarToggle?: () => void
+    isDesktop?: boolean
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -19,6 +20,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     showSearch = false,
     isSidebarOpen = true,
     onSidebarToggle,
+    isDesktop = false,
 }) => {
     return (
         <header
@@ -29,7 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderBottom: '1px solid rgba(255,255,255,0.07)',
-                left: isSidebarOpen ? '256px' : '0',
+                left: isDesktop && isSidebarOpen ? '256px' : '0',
             }}
         >
             {/* Left: Hamburger + Logo */}

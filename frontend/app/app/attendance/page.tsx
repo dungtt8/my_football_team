@@ -18,7 +18,7 @@ export default function AttendancePage() {
     const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listSessions, memberCheckIn, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
-    const isManager = role === 'manager' || role === 'co_manager'
+    const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [stats, setStats] = useState<UserStats | null>(null)
     const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([])

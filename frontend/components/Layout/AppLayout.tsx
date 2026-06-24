@@ -80,6 +80,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         onMenuClick={() => setIsMenuOpen(true)}
                         isSidebarOpen={isSidebarOpen}
                         onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                        isDesktop={isDesktop}
                     />
 
                     {/* Menu Drawer - Mobile only */}

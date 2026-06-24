@@ -27,7 +27,7 @@ export default function CampaignDetailPage() {
         getReport,
     } = useCampaign()
 
-    const isManager = role === 'co_manager' || role === 'manager'
+    const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
     const [campaign, setCampaign] = useState<Campaign | null>(null)
     const [report, setReport] = useState<CampaignReport | null>(null)
