@@ -648,4 +648,174 @@ const deleteQRCode = async (req, res) => {
     }
 };
 
-module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode };
+/**
+ * PUT /api/team/members/:memberId/deactivate  (auth + tenancy, owner/co_manager)
+ * Deactivate a member (soft-pause, status → 'inactive')
+ */
+const deactivateMember = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const { memberId } = req.params;
+        const callerId = req.user.user_id;
+        const callerRole = req.user.role;
+
+        // Permission check: only owner and co_manager can deactivate
+        if (!['owner', 'co_manager'].includes(callerRole)) {
+            throw new Error('Only owner and co_manager can manage members');
+        }
+
+        // Fetch the member to deactivate
+        const member = await db('team_members')
+            .where({ id: parseInt(memberId), team_id: teamId })
+            .first();
+
+        if (!member) {
+            throw new NotFoundError('Team member not found');
+        }
+
+        // Prevent self-deactivation
+        if (member.user_id === callerId) {
+            throw new Error('Cannot deactivate yourself');
+        }
+
+        // Prevent deactivating owner
+        if (member.role === 'owner') {
+            throw new Error('Cannot deactivate team owner');
+        }
+
+        // Update member status to inactive
+        const [updated] = await db('team_members')
+            .where({ id: member.id })
+            .update({
+                status: 'inactive',
+                deactivated_at: new Date(),
+            })
+            .returning('*');
+
+        logger.info('Member deactivated', {
+            team_id: teamId,
+            member_id: member.id,
+            user_id: member.user_id,
+            deactivated_by: callerId,
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PUT /api/team/members/:memberId/deactivate' });
+    }
+};
+
+/**
+ * PUT /api/team/members/:memberId/kick  (auth + tenancy, owner/co_manager)
+ * Kick a member from team (hard-remove, status → 'kicked')
+ */
+const kickMember = async (req, res) => {
+    try {
+        const teamId = req.user.team_id;
+        const { memberId } = req.params;
+        const callerId = req.user.user_id;
+        const callerRole = req.user.role;
+
+        // Permission check: only owner and co_manager can kick
+        if (!['owner', 'co_manager'].includes(callerRole)) {
+            throw new Error('Only owner and co_manager can manage members');
+        }
+
+        // Fetch the member to kick
+        const member = await db('team_members')
+            .where({ id: parseInt(memberId), team_id: teamId })
+            .first();
+
+        if (!member) {
+            throw new NotFoundError('Team member not found');
+        }
+
+        // Prevent self-kicking
+        if (member.user_id === callerId) {
+            throw new Error('Cannot kick yourself');
+        }
+
+        // Prevent kicking owner
+        if (member.role === 'owner') {
+            throw new Error('Cannot kick team owner');
+        }
+
+        // Update member status to kicked
+        await db('team_members')
+            .where({ id: member.id })
+            .update({
+                status: 'kicked',
+                deleted_at: new Date(),
+            });
+
+        logger.info('Member kicked', {
+            team_id: teamId,
+            member_id: member.id,
+            user_id: member.user_id,
+            kicked_by: callerId,
+        });
+
+        return res.json({
+            message: 'Member kicked successfully',
+            member_id: member.id,
+            team_id: teamId,
+            user_id: member.user_id,
+            status: 'kicked',
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PUT /api/team/members/:memberId/kick' });
+    }
+};
+
+/**
+ * PUT /api/members/jersey-number  (auth required, NO tenancy, self-update)
+ * Member sets their own jersey number for a team
+ */
+const updateJerseyNumber = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { team_id, jersey_number } = req.body;
+
+        if (!team_id) {
+            throw new ValidationError('team_id is required');
+        }
+
+        // Validate jersey_number: must be positive integer or null
+        if (jersey_number !== null && jersey_number !== undefined) {
+            if (!Number.isInteger(jersey_number) || jersey_number <= 0) {
+                throw new ValidationError('jersey_number must be a positive integer');
+            }
+            if (jersey_number > 9999999) {
+                throw new ValidationError('jersey_number exceeds maximum value');
+            }
+        }
+
+        // Verify user is member of team (active or inactive, not kicked)
+        const member = await db('team_members')
+            .where({ team_id, user_id: userId })
+            .whereIn('status', ['active', 'inactive'])
+            .first();
+
+        if (!member) {
+            throw new NotFoundError('User is not member of this team');
+        }
+
+        // Update jersey number
+        const [updated] = await db('team_members')
+            .where({ id: member.id })
+            .update({ jersey_number: jersey_number || null })
+            .returning('*');
+
+        logger.info('Jersey number updated', {
+            team_id,
+            user_id: userId,
+            jersey_number: jersey_number || null,
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PUT /api/members/jersey-number' });
+    }
+};
+
+module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode, deactivateMember, kickMember, updateJerseyNumber };

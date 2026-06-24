@@ -165,6 +165,13 @@ app.put('/api/team/settings', rbacMiddleware(['owner']), teamHandler.updateSetti
 app.post('/api/team/settings/qr-code/upload', rbacMiddleware(['owner']), upload.single('qr_code'), teamHandler.uploadQRCode);
 app.delete('/api/team/settings/qr-code', rbacMiddleware(['owner']), teamHandler.deleteQRCode);
 
+// Team member management routes (tenancy-scoped)
+app.put('/api/team/members/:memberId/deactivate', rbacMiddleware(['owner', 'co_manager']), teamHandler.deactivateMember);
+app.put('/api/team/members/:memberId/kick', rbacMiddleware(['owner', 'co_manager']), teamHandler.kickMember);
+
+// Jersey number update (no tenancy, self-update)
+app.put('/api/members/jersey-number', authMiddleware, teamHandler.updateJerseyNumber);
+
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
     handleError(err, req, res, {
