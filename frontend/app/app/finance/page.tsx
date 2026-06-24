@@ -45,10 +45,24 @@ export default function FinancePage() {
             setIsLoading(true)
             try {
                 const [bal, txs] = await Promise.all([getFinanceBalance(), listTransactions({ limit: 10 })])
-                setBalance(bal)
-                setTransactions(txs)
-                if (isManager) setApprovals(await getPendingApprovals())
-            } catch { } finally { setIsLoading(false) }
+                setBalance(bal || null)
+                setTransactions(Array.isArray(txs) ? txs : [])
+                if (isManager) {
+                    try {
+                        const approvalList = await getPendingApprovals()
+                        setApprovals(Array.isArray(approvalList) ? approvalList : [])
+                    } catch (approvalErr) {
+                        console.error('Failed to load approvals:', approvalErr)
+                        setApprovals([])
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load finance data:', err)
+                setTransactions([])
+                setApprovals([])
+            } finally { 
+                setIsLoading(false) 
+            }
         }
         load()
     }, [isManager, authLoading, getFinanceBalance, listTransactions, getPendingApprovals])
