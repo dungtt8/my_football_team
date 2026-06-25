@@ -4,15 +4,26 @@
  */
 
 export function setAuthCookie(token: string) {
-    // Set a secure cookie that expires in 7 days
-    const expiryDate = new Date()
-    expiryDate.setDate(expiryDate.getDate() + 7)
+    // Set cookie with options:
+    // - path=/: Available to all routes
+    // - max-age: 7 days in seconds
+    // - SameSite=Strict: Strict same-site policy for security
+    const maxAge = 7 * 24 * 60 * 60 // 7 days in seconds
 
-    document.cookie = `auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+    // Build cookie string
+    let cookieString = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Strict`
+
+    // Add Secure flag only in production (HTTPS)
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+        cookieString += '; Secure'
+    }
+
+    document.cookie = cookieString
 }
 
 export function deleteAuthCookie() {
-    document.cookie = 'auth_token=; path=/; max-age=0'
+    // Set max-age to 0 to delete the cookie
+    document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Strict'
 }
 
 export function getAuthCookie(): string | null {
@@ -23,7 +34,7 @@ export function getAuthCookie(): string | null {
     for (let cookie of cookieArray) {
         cookie = cookie.trim()
         if (cookie.indexOf(name) === 0) {
-            return cookie.substring(name.length)
+            return decodeURIComponent(cookie.substring(name.length))
         }
     }
 

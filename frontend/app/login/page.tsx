@@ -17,7 +17,7 @@ function LoginFormContent() {
     // Auto-redirect if already authenticated (from previous session)
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            const redirect = searchParams.get('redirect')
+            const redirect = searchParams.get('redirect') || searchParams.get('from')
             router.push(redirect || '/')
         }
     }, [isAuthenticated, isLoading, router, searchParams])
@@ -52,15 +52,15 @@ function LoginFormContent() {
             // Redirect after context update completes
             // Use setTimeout to ensure context state updates before navigation
             setTimeout(() => {
-                const redirect = searchParams.get('redirect')
+                const redirect = searchParams.get('redirect') || searchParams.get('from')
                 if (redirect) {
-                    // Redirect to the preserved invite link (with code param)
+                    // Redirect to the preserved URL
                     router.push(redirect)
                 } else {
                     // No redirect param: check team status
                     router.push(data.has_team === false ? '/onboarding' : '/')
                 }
-            }, 0)
+            }, 100)
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
             setError(message)
