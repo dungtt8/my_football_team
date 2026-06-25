@@ -59,7 +59,7 @@ export default function AttendancePage() {
             } catch { toast('Không thể tải dữ liệu', 'error') }
         }
         load()
-    }, [user, authLoading, listSessions, getAttendanceHistory, getUserStats, getLeaderboard, toast])
+    }, [user, authLoading])
 
     const handleCheckIn = async () => {
         if (!activeSession) { toast('Không có buổi active hôm nay', 'error'); return }

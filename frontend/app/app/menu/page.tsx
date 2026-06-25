@@ -58,7 +58,7 @@ export default function MenuPage() {
                 }
             })
             .catch(() => { })
-    }, [authLoading, role, getPaymentDeadline, getActiveCheckIn])
+    }, [authLoading, role])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)

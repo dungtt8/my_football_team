@@ -65,7 +65,7 @@ export default function FinancePage() {
             }
         }
         load()
-    }, [isManager, authLoading, getFinanceBalance, listTransactions, getPendingApprovals])
+    }, [isManager, authLoading])
 
     const handleSubmit = async (data: TransactionFormData) => {
         setIsSubmitting(true)

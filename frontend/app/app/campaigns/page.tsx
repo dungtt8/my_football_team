@@ -39,7 +39,7 @@ export default function CampaignsPage() {
             } catch { toast('Không thể tải chiến dịch', 'error') }
         }
         load()
-    }, [tab, authLoading, listCampaigns, toast])
+    }, [tab, authLoading])
 
     const handleCreate = async (data: CampaignFormData) => {
         setIsCreating(true)

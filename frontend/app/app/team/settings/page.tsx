@@ -262,8 +262,8 @@ export default function TeamSettingsPage() {
             <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '8px', scrollBehavior: 'smooth' }}>
                 {[
                     { id: 'general', label: 'Thông tin', icon: <Gear size={14} /> },
-                    { id: 'attendance', label: 'Điểm danh', icon: <Clock size={14} /> },
                     { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={14} /> },
+                    { id: 'attendance', label: 'Điểm danh', icon: <Clock size={14} /> },
                     { id: 'fund', label: 'Quỹ', icon: <CurrencyDollar size={14} /> },
                     { id: 'scheduling', label: 'Lịch', icon: <Calendar size={14} /> },
                     { id: 'invite', label: 'Mời', icon: <CalendarPlus size={14} /> },

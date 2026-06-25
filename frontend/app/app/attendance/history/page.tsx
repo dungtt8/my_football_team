@@ -45,7 +45,7 @@ export default function AttendanceHistoryPage() {
         }
 
         loadData()
-    }, [authLoading, user, listAttendance, getUserStats, toast])
+    }, [authLoading, user])
 
     // Filter records
     useEffect(() => {

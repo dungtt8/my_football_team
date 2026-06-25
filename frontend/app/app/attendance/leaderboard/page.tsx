@@ -65,13 +65,13 @@ export default function LeaderboardPage() {
         } finally {
             setIsLoading(false)
         }
-    }, [currentMonth, getLeaderboard, getHistoricalLeaderboard, toast, user?.id])
+    }, [currentMonth, user?.id])
 
     // Load leaderboard when month changes
     useEffect(() => {
         if (authLoading || !currentMonth) return
         loadLeaderboard()
-    }, [currentMonth, loadLeaderboard, authLoading])
+    }, [currentMonth, authLoading])
 
     const goToPreviousMonth = () => {
         const [year, month] = currentMonth.split('-')
