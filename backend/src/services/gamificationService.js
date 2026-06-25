@@ -25,7 +25,7 @@ class GamificationService {
   async addPoints(userId, points, reason, teamId) {
     try {
       const month = this.getCurrentMonth();
-      
+
       const result = await db('user_points').insert({
         user_id: userId,
         team_id: teamId,
@@ -98,6 +98,11 @@ class GamificationService {
 
       return leaderboard;
     } catch (error) {
+      // Handle missing table gracefully - return empty leaderboard
+      if (error.message.includes('relation "user_points" does not exist')) {
+        logger.warn('user_points table does not exist yet', { teamId, month });
+        return [];
+      }
       logger.error('Failed to get leaderboard', {
         teamId,
         month,
@@ -125,22 +130,20 @@ class GamificationService {
         .where('month', month)
         .first();
 
-      const userTotalPoints = userStats.total_points || 0;
+      const userTotalPoints = userStats?.total_points || 0;
 
-      // Calculate rank by counting users with higher points
-      const rankResult = await db('user_points')
-        .select(db.raw('COUNT(DISTINCT u.id) as rank'))
+      // Calculate rank: count users with higher total points
+      const usersWithHigherPoints = await db('user_points as up')
+        .select('up.user_id')
         .from('user_points as up')
         .leftJoin('users as u', 'up.user_id', 'u.id')
         .where('up.team_id', teamId)
         .where('up.month', month)
         .where('u.status', 'active')
-        .whereRaw('COALESCE(SUM(up.points), 0) > ?', [userTotalPoints])
-        .groupBy('up.user_id')
-        .having(db.raw('COUNT(DISTINCT u.id)'))
-        .first();
+        .groupBy('up.user_id', 'u.id')
+        .having(db.raw('COALESCE(SUM(up.points), 0) > ?', [userTotalPoints]));
 
-      const rank = (rankResult ? rankResult.rank : 0) + 1;
+      const rank = usersWithHigherPoints.length + 1;
 
       const stats = {
         user_id: userId,
@@ -154,6 +157,17 @@ class GamificationService {
 
       return stats;
     } catch (error) {
+      // Handle missing table gracefully - return zero points with rank 1
+      if (error.message.includes('relation "user_points" does not exist')) {
+        logger.warn('user_points table does not exist yet', { userId, teamId, month });
+        return {
+          user_id: userId,
+          team_id: teamId,
+          month,
+          total_points: 0,
+          rank: 1
+        };
+      }
       logger.error('Failed to get user stats', {
         userId,
         teamId,

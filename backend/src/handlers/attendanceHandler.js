@@ -724,15 +724,15 @@ const getAttendanceHistory = async (req, res) => {
                 'ar.session_id',
                 'ar.status',
                 'ar.checked_in_at',
-                'as.session_date',
-                'as.location',
-                'as.session_type'
+                'sess.session_date',
+                'sess.location',
+                'sess.session_type'
             )
-            .leftJoin('attendance_sessions as as', 'ar.session_id', 'as.id')
+            .leftJoin('attendance_sessions as sess', 'ar.session_id', 'sess.id')
             .where('ar.user_id', userId)
-            .where('as.team_id', teamId)
-            .whereRaw("TO_CHAR(as.session_date, 'YYYY-MM') = ?", [targetMonth])
-            .orderBy('as.session_date', 'desc');
+            .where('sess.team_id', teamId)
+            .whereRaw('TO_CHAR("sess"."session_date", \'YYYY-MM\') = ?', [targetMonth])
+            .orderBy('sess.session_date', 'desc');
 
         logger.info('Attendance history retrieved successfully', {
             user_id: userId,
