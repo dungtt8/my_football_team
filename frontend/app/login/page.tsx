@@ -62,9 +62,22 @@ function LoginFormContent() {
             // Use setTimeout to ensure context state updates before navigation
             setTimeout(() => {
                 try {
-                    const redirect = searchParams.get('redirect') || searchParams.get('from')
-                    const targetUrl = redirect || (data.has_team === false ? '/onboarding' : '/')
-                    console.log('[Login] Redirecting to:', targetUrl)
+                    let targetUrl = '/'
+
+                    // Priority 1: If user doesn't have team → go to onboarding
+                    if (data.has_team === false) {
+                        targetUrl = '/onboarding'
+                        console.log('[Login] User has no team, redirecting to onboarding')
+                    } else {
+                        // Priority 2: If there's a redirect param and user has team → use it
+                        const redirect = searchParams.get('redirect') || searchParams.get('from')
+                        if (redirect && redirect !== '/login') {
+                            targetUrl = redirect
+                            console.log('[Login] Using redirect param:', targetUrl)
+                        }
+                    }
+
+                    console.log('[Login] Final redirect to:', targetUrl)
                     router.push(targetUrl)
                 } catch (redirectErr) {
                     console.error('[Login] Redirect error:', redirectErr)
