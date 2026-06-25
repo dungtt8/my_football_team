@@ -22,7 +22,10 @@ export function middleware(request: NextRequest) {
     }
 
     // Check if auth token exists in cookies
-    const token = request.cookies.get('auth_token')?.value
+    // Note: We check cookies first (set by setAuthCookie), then fall back to checking if header exists
+    const tokenFromCookie = request.cookies.get('auth_token')?.value
+    const tokenFromHeader = request.headers.get('authorization')?.replace('Bearer ', '')
+    const token = tokenFromCookie || tokenFromHeader
 
     // If no token and trying to access protected route, redirect to login
     if (!token) {

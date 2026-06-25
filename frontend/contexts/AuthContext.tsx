@@ -134,23 +134,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     const setAuthData = (token: string, userData: User, teamData: Team | null, userRole: UserRole, teams: Team[] = []) => {
-        localStorage.setItem('auth_token', token)
-        localStorage.setItem('user', JSON.stringify(userData))
-        if (teamData) {
-            localStorage.setItem('team', JSON.stringify(teamData))
-        } else {
-            localStorage.removeItem('team')
+        try {
+            // Validate token
+            if (!token) {
+                console.error('[AuthContext] setAuthData: token is empty')
+                throw new Error('Invalid token')
+            }
+
+            localStorage.setItem('auth_token', token)
+            localStorage.setItem('user', JSON.stringify(userData))
+            if (teamData) {
+                localStorage.setItem('team', JSON.stringify(teamData))
+            } else {
+                localStorage.removeItem('team')
+            }
+            localStorage.setItem('role', userRole)
+            localStorage.setItem('allTeams', JSON.stringify(teams))
+
+            // Set auth cookie for middleware verification
+            try {
+                setAuthCookie(token)
+                console.log('[AuthContext] Auth cookie set successfully')
+            } catch (cookieErr) {
+                console.error('[AuthContext] Failed to set auth cookie:', cookieErr)
+                // Continue anyway - localStorage will work as fallback
+            }
+
+            setUser(userData)
+            setTeam(teamData)
+            setRole(userRole)
+            setAllTeams(teams)
+            console.log('[AuthContext] Auth data updated successfully')
+        } catch (err) {
+            console.error('[AuthContext] setAuthData error:', err)
+            throw err
         }
-        localStorage.setItem('role', userRole)
-        localStorage.setItem('allTeams', JSON.stringify(teams))
-
-        // Set auth cookie for middleware verification
-        setAuthCookie(token)
-
-        setUser(userData)
-        setTeam(teamData)
-        setRole(userRole)
-        setAllTeams(teams)
     }
 
     const switchTeam = async (teamId: string) => {

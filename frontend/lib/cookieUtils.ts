@@ -4,39 +4,61 @@
  */
 
 export function setAuthCookie(token: string) {
-    // Set cookie with options:
-    // - path=/: Available to all routes
-    // - max-age: 7 days in seconds
-    // - SameSite=Strict: Strict same-site policy for security
-    const maxAge = 7 * 24 * 60 * 60 // 7 days in seconds
+    try {
+        // Validate token
+        if (!token || typeof token !== 'string') {
+            console.warn('[CookieUtils] Invalid token provided to setAuthCookie')
+            return
+        }
 
-    // Build cookie string
-    let cookieString = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Strict`
+        // Set cookie with options:
+        // - path=/: Available to all routes
+        // - max-age: 7 days in seconds
+        // - SameSite=Lax: Allow some cross-site cookie usage
+        const maxAge = 7 * 24 * 60 * 60 // 7 days in seconds
 
-    // Add Secure flag only in production (HTTPS)
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-        cookieString += '; Secure'
+        // Build cookie string - encode the token value
+        let cookieString = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`
+
+        // Add Secure flag only in production (HTTPS)
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+            cookieString += '; Secure'
+        }
+
+        document.cookie = cookieString
+        console.log('[CookieUtils] Auth cookie set successfully')
+    } catch (err) {
+        console.error('[CookieUtils] Failed to set auth cookie:', err)
+        // Silently fail - localStorage will work as fallback
     }
-
-    document.cookie = cookieString
 }
 
 export function deleteAuthCookie() {
-    // Set max-age to 0 to delete the cookie
-    document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Strict'
+    try {
+        // Set max-age to 0 to delete the cookie
+        document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax'
+        console.log('[CookieUtils] Auth cookie deleted successfully')
+    } catch (err) {
+        console.error('[CookieUtils] Failed to delete auth cookie:', err)
+    }
 }
 
 export function getAuthCookie(): string | null {
-    const name = 'auth_token='
-    const decodedCookie = decodeURIComponent(document.cookie)
-    const cookieArray = decodedCookie.split(';')
+    try {
+        const name = 'auth_token='
+        const decodedCookie = decodeURIComponent(document.cookie)
+        const cookieArray = decodedCookie.split(';')
 
-    for (let cookie of cookieArray) {
-        cookie = cookie.trim()
-        if (cookie.indexOf(name) === 0) {
-            return decodeURIComponent(cookie.substring(name.length))
+        for (let cookie of cookieArray) {
+            cookie = cookie.trim()
+            if (cookie.indexOf(name) === 0) {
+                return decodeURIComponent(cookie.substring(name.length))
+            }
         }
-    }
 
-    return null
+        return null
+    } catch (err) {
+        console.error('[CookieUtils] Failed to get auth cookie:', err)
+        return null
+    }
 }

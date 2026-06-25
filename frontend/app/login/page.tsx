@@ -32,6 +32,8 @@ function LoginFormContent() {
                 throw new Error('Vui lòng nhập đầy đủ thông tin')
             }
 
+            console.log('[Login] Starting phone authentication...')
+
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
             const response = await fetch(`${apiUrl}/auth/phone/login`, {
                 method: 'POST',
@@ -40,29 +42,39 @@ function LoginFormContent() {
             })
 
             const data = await response.json()
+            console.log('[Login] API Response:', { status: response.status, hasToken: !!data.token, hasUser: !!data.user })
 
             if (!response.ok) {
                 throw new Error(data.error || 'Login failed')
             }
 
+            if (!data.token || !data.user) {
+                throw new Error('Invalid response: missing token or user')
+            }
+
+            console.log('[Login] Setting auth data...')
             // Update AuthContext state + localStorage atomically
             // Pass teams array if available from login response
             setAuthData(data.token, data.user, data.team ?? null, data.user.role, data.teams || [])
 
+            console.log('[Login] Auth data set, preparing redirect...')
             // Redirect after context update completes
             // Use setTimeout to ensure context state updates before navigation
             setTimeout(() => {
-                const redirect = searchParams.get('redirect') || searchParams.get('from')
-                if (redirect) {
-                    // Redirect to the preserved URL
-                    router.push(redirect)
-                } else {
-                    // No redirect param: check team status
-                    router.push(data.has_team === false ? '/onboarding' : '/')
+                try {
+                    const redirect = searchParams.get('redirect') || searchParams.get('from')
+                    const targetUrl = redirect || (data.has_team === false ? '/onboarding' : '/')
+                    console.log('[Login] Redirecting to:', targetUrl)
+                    router.push(targetUrl)
+                } catch (redirectErr) {
+                    console.error('[Login] Redirect error:', redirectErr)
+                    setError('Redirect failed, please try again')
+                    setIsPhoneLoading(false)
                 }
-            }, 100)
+            }, 150)
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
+            console.error('[Login] Error:', message, err)
             setError(message)
             setIsPhoneLoading(false)
         }
