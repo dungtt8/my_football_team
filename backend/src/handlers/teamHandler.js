@@ -75,8 +75,14 @@ const createTeam = async (req, res) => {
         // Update user's role to owner
         await db('users').where({ id: userId }).update({ role: 'owner' });
 
-        // Issue new JWT with team context
-        const token = authService.generateJWT({ id: userId, team_id: team.id, email: req.user.email, role: 'owner' });
+        // Get all user's teams for JWT
+        const allTeams = await getUserTeams(userId);
+
+        // Issue new JWT with team context and all teams
+        const token = authService.generateJWT(
+            { id: userId, team_id: team.id, email: req.user.email, role: 'owner', zalo_user_id: req.user.zalo_user_id },
+            allTeams
+        );
 
         logger.info('Team created', { team_id: team.id, owner_id: userId, name: team.name });
 
@@ -84,6 +90,7 @@ const createTeam = async (req, res) => {
             token,
             team: { id: team.id, name: team.name, invite_code: team.invite_code },
             role: 'owner',
+            teams: allTeams
         });
     } catch (error) {
         return handleError(error, req, res, { endpoint: 'POST /api/teams' });
@@ -109,9 +116,13 @@ const joinTeam = async (req, res) => {
         const existing = await db('team_members').where({ team_id: team.id, user_id: userId }).first();
         if (existing) {
             if (existing.status === 'active') {
-                // Already in — just return a fresh token
-                const token = authService.generateJWT({ id: userId, team_id: team.id, email: req.user.email, role: existing.role });
-                return res.json({ token, team: { id: team.id, name: team.name }, role: existing.role });
+                // Already in — just return a fresh token with all teams
+                const allTeams = await getUserTeams(userId);
+                const token = authService.generateJWT(
+                    { id: userId, team_id: team.id, email: req.user.email, role: existing.role, zalo_user_id: req.user.zalo_user_id },
+                    allTeams
+                );
+                return res.json({ token, team: { id: team.id, name: team.name }, role: existing.role, teams: allTeams });
             }
             // Reactivate
             await db('team_members').where({ id: existing.id }).update({ status: 'active', deactivated_at: null });
@@ -122,7 +133,13 @@ const joinTeam = async (req, res) => {
         }
 
         const role = existing?.role || 'member';
-        const token = authService.generateJWT({ id: userId, team_id: team.id, email: req.user.email, role });
+
+        // Get all user's teams for JWT
+        const allTeams = await getUserTeams(userId);
+        const token = authService.generateJWT(
+            { id: userId, team_id: team.id, email: req.user.email, role, zalo_user_id: req.user.zalo_user_id },
+            allTeams
+        );
 
         logger.info('User joined team', { team_id: team.id, user_id: userId });
 
@@ -130,6 +147,7 @@ const joinTeam = async (req, res) => {
             token,
             team: { id: team.id, name: team.name },
             role,
+            teams: allTeams
         });
     } catch (error) {
         return handleError(error, req, res, { endpoint: 'POST /api/teams/join' });
@@ -936,4 +954,130 @@ const changePassword = async (req, res) => {
     }
 };
 
-module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode, deactivateMember, kickMember, updateJerseyNumber, updateProfile, changePassword };
+/**
+ * Helper: Get all teams for a user
+ * Returns array of {id, name, role} for each team user is active in
+ */
+const getUserTeams = async (userId) => {
+    const teams = await db('team_members as tm')
+        .join('teams as t', 't.id', 'tm.team_id')
+        .where({ 'tm.user_id': userId, 'tm.status': 'active' })
+        .whereNull('tm.deleted_at')
+        .whereNull('t.deleted_at')
+        .select(
+            't.id',
+            't.name',
+            'tm.role'
+        )
+        .orderBy('t.name');
+
+    return teams;
+};
+
+/**
+ * GET /api/user/teams  (auth required, NO tenancy)
+ * List all teams user is a member/manager of
+ * Returns: { teams: [{id, name, role}, ...], currentTeamId }
+ */
+const listUserTeams = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const currentTeamId = req.user.team_id;
+
+        const teams = await getUserTeams(userId);
+
+        if (teams.length === 0) {
+            return res.json({
+                teams: [],
+                currentTeamId: null,
+                message: 'No teams found. Create or join a team to get started.'
+            });
+        }
+
+        logger.info('User teams listed', { user_id: userId, count: teams.length });
+
+        return res.json({
+            teams,
+            currentTeamId,
+            total: teams.length
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'GET /api/user/teams' });
+    }
+};
+
+/**
+ * POST /api/teams/:teamId/switch  (auth required, NO tenancy)
+ * Switch current team context and get new JWT
+ * Body: {} (empty)
+ * Returns: { token, team: {id, name}, role, teams }
+ */
+const switchTeam = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const targetTeamId = parseInt(req.params.teamId, 10);
+
+        // Verify user is member of target team
+        const membership = await db('team_members')
+            .where({ team_id: targetTeamId, user_id: userId, status: 'active' })
+            .whereNull('deleted_at')
+            .first();
+
+        if (!membership) {
+            throw new NotFoundError('You are not a member of this team or membership is inactive');
+        }
+
+        // Get team info
+        const team = await db('teams').where({ id: targetTeamId }).whereNull('deleted_at').first();
+        if (!team) throw new NotFoundError('Team not found');
+
+        // Get all user's teams
+        const allTeams = await getUserTeams(userId);
+
+        // Generate new JWT with updated team_id
+        const token = authService.generateJWT(
+            {
+                id: userId,
+                team_id: targetTeamId,
+                email: req.user.email,
+                role: membership.role,
+                zalo_user_id: req.user.zalo_user_id
+            },
+            allTeams
+        );
+
+        logger.info('Team switched', { user_id: userId, from_team: req.user.team_id, to_team: targetTeamId, role: membership.role });
+
+        return res.json({
+            token,
+            team: { id: team.id, name: team.name },
+            role: membership.role,
+            teams: allTeams
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'POST /api/teams/:teamId/switch' });
+    }
+};
+
+module.exports = {
+    // Existing exports
+    createTeam,
+    joinTeam,
+    getInviteCode,
+    regenerateInviteCode,
+    listMembers,
+    updateMemberRole,
+    getSettings,
+    updateSettings,
+    uploadQRCode,
+    deleteQRCode,
+    deactivateMember,
+    kickMember,
+    updateJerseyNumber,
+    updateProfile,
+    changePassword,
+    // Multi-team exports
+    listUserTeams,
+    switchTeam,
+    getUserTeams
+};

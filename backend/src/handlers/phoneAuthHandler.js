@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 const { handleError, ValidationError } = require('../services/errorService');
 const logger = require('../utils/logger');
 const db = require('../config/database');
+const { getUserTeams } = require('./teamHandler');
 
 // Simple phone-based authentication — queries real DB
 const phoneAuthHandler = async (req, res) => {
@@ -31,35 +32,51 @@ const phoneAuthHandler = async (req, res) => {
             user = { ...user, full_name };
         }
 
-        // 2. Lookup active team membership
-        const membership = await db('team_members as tm')
-            .join('teams as t', 't.id', 'tm.team_id')
-            .where({ 'tm.user_id': user.id, 'tm.status': 'active' })
-            .whereNull('t.deleted_at')
-            .select('tm.team_id', 'tm.role', 't.name as team_name')
-            .first();
+        // 2. Get all user's team memberships
+        const allTeams = await getUserTeams(user.id);
 
-        if (!membership) {
-            const token = authService.generateJWT({ id: user.id, team_id: null, email: user.email, role: 'member' });
+        // 3. Determine current team context
+        let currentTeam = null;
+        let currentRole = 'member';
+
+        if (allTeams.length > 0) {
+            // If user has teams, set first team as current (or could be improved with "last_active_team")
+            const firstTeam = allTeams[0];
+            currentTeam = { id: firstTeam.id, name: firstTeam.name };
+            currentRole = firstTeam.role;
+        }
+
+        // 4. Generate JWT
+        const token = authService.generateJWT(
+            {
+                id: user.id,
+                team_id: currentTeam?.id || null,
+                email: user.email,
+                role: currentRole,
+                zalo_user_id: user.zalo_user_id
+            },
+            allTeams
+        );
+
+        if (!currentTeam) {
             logger.info('User has no team, redirecting to onboarding', { user_id: user.id });
             return res.json({
                 token,
                 user: { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role: 'member', team_id: null },
                 team: null,
                 has_team: false,
+                teams: []
             });
         }
 
-        const { team_id, role, team_name } = membership;
-        const token = authService.generateJWT({ id: user.id, team_id, email: user.email, role });
-
-        logger.info('User authenticated', { user_id: user.id, role, team_id });
+        logger.info('User authenticated', { user_id: user.id, role: currentRole, team_id: currentTeam.id, total_teams: allTeams.length });
 
         return res.json({
             token,
-            user: { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role, team_id },
-            team: { id: team_id, name: team_name },
+            user: { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role: currentRole, team_id: currentTeam.id },
+            team: currentTeam,
             has_team: true,
+            teams: allTeams
         });
     } catch (error) {
         return handleError(error, req, res, { endpoint: '/auth/phone/login' });

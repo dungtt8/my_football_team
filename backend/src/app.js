@@ -84,6 +84,10 @@ app.put('/api/auth/password', teamHandler.changePassword);
 app.post('/api/teams', teamHandler.createTeam);
 app.post('/api/teams/join', teamHandler.joinTeam);
 
+// Multi-team support — auth required but no specific team context needed
+app.get('/api/user/teams', teamHandler.listUserTeams);
+app.post('/api/teams/:teamId/switch', teamHandler.switchTeam);
+
 // All remaining routes require auth + team context
 app.use(tenancyMiddleware);
 

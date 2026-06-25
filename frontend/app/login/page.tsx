@@ -46,7 +46,8 @@ function LoginFormContent() {
             }
 
             // Update AuthContext state + localStorage atomically
-            setAuthData(data.token, data.user, data.team ?? null, data.user.role)
+            // Pass teams array if available from login response
+            setAuthData(data.token, data.user, data.team ?? null, data.user.role, data.teams || [])
 
             // Redirect after context update completes
             // Use setTimeout to ensure context state updates before navigation

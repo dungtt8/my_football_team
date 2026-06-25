@@ -36,8 +36,8 @@ export default function CreateTeamPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Lỗi tạo đội')
 
-      // Update auth context with new team + owner role
-      setAuthData(data.token, user!, data.team, 'owner')
+      // Update auth context with new team + owner role + all teams
+      setAuthData(data.token, user!, data.team, 'owner', data.teams || [])
       toast(`Đã tạo đội "${data.team.name}" 🎉`, 'success')
       router.push('/app/finance')
     } catch (e: any) {

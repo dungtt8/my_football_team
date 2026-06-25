@@ -3,13 +3,19 @@ const axios = require('axios');
 const { jwtSecret, jwtExpiration, zaloAppId, zaloAppSecret } = require('../config/auth');
 
 class AuthService {
-  generateJWT(user) {
+  /**
+   * Generate JWT with multi-team support
+   * @param {Object} user - User object with id, email, team_id, role, zalo_user_id
+   * @param {Array} teams - Optional array of user's teams [{id, name, role}, ...]
+   */
+  generateJWT(user, teams = []) {
     const payload = {
       user_id: user.id,
       team_id: user.team_id,
       email: user.email,
-      role: user.role,
-      zalo_user_id: user.zalo_user_id
+      role: user.role, // Current team role
+      zalo_user_id: user.zalo_user_id,
+      teams // All teams user belongs to with their roles
     };
 
     return jwt.sign(payload, jwtSecret, { expiresIn: jwtExpiration });
