@@ -44,5 +44,17 @@ export const useTeam = () => {
         })
     }, [])
 
-    return { listMembers, updateMemberRole, loading }
+    const deactivateMember = useCallback(async (memberId: number): Promise<void> => {
+        await teamFetch(`/team/members/${memberId}/deactivate`, {
+            method: 'PUT',
+        })
+    }, [])
+
+    const kickMember = useCallback(async (memberId: number): Promise<void> => {
+        await teamFetch(`/team/members/${memberId}/kick`, {
+            method: 'PUT',
+        })
+    }, [])
+
+    return { listMembers, updateMemberRole, deactivateMember, kickMember, loading }
 }

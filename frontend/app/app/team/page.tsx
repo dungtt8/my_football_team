@@ -33,13 +33,15 @@ export default function TeamMembersPage() {
     const router = useRouter()
     const { user, role } = useAuth()
     const { toast } = useToast()
-    const { listMembers, updateMemberRole, loading } = useTeam()
+    const { listMembers, updateMemberRole, deactivateMember, kickMember, loading } = useTeam()
     const isOwner = role === 'owner'
 
     const [members, setMembers] = useState<TeamMember[]>([])
     const [editing, setEditing] = useState<{ id: number; currentRole: string } | null>(null)
     const [selectedRole, setSelectedRole] = useState('')
     const [isUpdating, setIsUpdating] = useState(false)
+    const [confirmAction, setConfirmAction] = useState<{ type: 'kick' | 'deactivate'; memberId: number; memberName: string } | null>(null)
+    const [isActioning, setIsActioning] = useState(false)
 
     useEffect(() => {
         listMembers().then(setMembers).catch(() => toast('Không thể tải danh sách', 'error'))
@@ -60,6 +62,30 @@ export default function TeamMembersPage() {
             setEditing(null)
         } catch (e: any) { toast(e?.message || 'Lỗi cập nhật', 'error') }
         finally { setIsUpdating(false) }
+    }
+
+    const handleKickMember = async () => {
+        if (!confirmAction || confirmAction.type !== 'kick') return
+        setIsActioning(true)
+        try {
+            await kickMember(confirmAction.memberId)
+            toast(`Đã loại "${confirmAction.memberName}" khỏi đội`, 'success')
+            setMembers(prev => prev.filter(m => m.id !== confirmAction.memberId))
+            setConfirmAction(null)
+        } catch (e: any) { toast(e?.message || 'Lỗi loại thành viên', 'error') }
+        finally { setIsActioning(false) }
+    }
+
+    const handleDeactivateMember = async () => {
+        if (!confirmAction || confirmAction.type !== 'deactivate') return
+        setIsActioning(true)
+        try {
+            await deactivateMember(confirmAction.memberId)
+            toast(`Đã tạm dừng "${confirmAction.memberName}"`, 'success')
+            setMembers(prev => prev.map(m => m.id === confirmAction.memberId ? { ...m, status: 'inactive' } : m))
+            setConfirmAction(null)
+        } catch (e: any) { toast(e?.message || 'Lỗi tạm dừng thành viên', 'error') }
+        finally { setIsActioning(false) }
     }
 
     const initials = (name: string) => name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase()
@@ -146,14 +172,54 @@ export default function TeamMembersPage() {
                                         {ROLE_LABELS[m.role] || m.role}
                                     </span>
                                     {isOwner && !isMe && (
-                                        <button onClick={() => openEdit(m)} style={{ padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${G.glassBorder}`, color: G.t2, fontSize: '12px', cursor: 'pointer' }}>
-                                            Sửa
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <button onClick={() => openEdit(m)} style={{ padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${G.glassBorder}`, color: G.t2, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = G.blue; (e.currentTarget as any).color = '#070B14' }} onMouseLeave={(e) => { (e.currentTarget as any).background = 'rgba(255,255,255,0.06)'; (e.currentTarget as any).color = G.t2 }}>
+                                                Sửa
+                                            </button>
+                                            <button onClick={() => setConfirmAction({ type: 'deactivate', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,165,0,0.1)', border: `1px solid rgba(255,165,0,0.2)`, color: '#FFA500', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(255,165,0,0.2)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = 'rgba(255,165,0,0.1)' }}>
+                                                Tạm dừng
+                                            </button>
+                                            <button onClick={() => setConfirmAction({ type: 'kick', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: G.redDim, border: `1px solid rgba(255,107,107,0.2)`, color: G.red, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(255,107,107,0.25)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = G.redDim }}>
+                                                Loại
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         )
                     })}
+                </div>
+            )}
+
+            {/* Confirm action modal */}
+            {confirmAction && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,11,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+                    onClick={() => setConfirmAction(null)}>
+                    <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px' }}
+                        onClick={e => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 16px', fontSize: '17px', fontWeight: 600, color: G.t1 }}>
+                            {confirmAction.type === 'kick' ? 'Loại thành viên?' : 'Tạm dừng thành viên?'}
+                        </h3>
+                        <p style={{ margin: '0 0 20px', fontSize: '14px', color: G.t2, lineHeight: '1.5' }}>
+                            {confirmAction.type === 'kick'
+                                ? `Loại "${confirmAction.memberName}" khỏi đội. Họ sẽ không thể truy cập lại.`
+                                : `Tạm dừng "${confirmAction.memberName}". Họ sẽ có thể tham gia lại sau.`}
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => setConfirmAction(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`, background: 'transparent', color: G.t2, fontWeight: 500, cursor: 'pointer' }}>Huỷ</button>
+                            <button
+                                onClick={confirmAction.type === 'kick' ? handleKickMember : handleDeactivateMember}
+                                disabled={isActioning}
+                                style={{
+                                    flex: 1, padding: '12px', borderRadius: '12px', border: 'none',
+                                    background: confirmAction.type === 'kick' ? G.red : '#FFA500',
+                                    color: '#070B14', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+                                    opacity: isActioning ? 0.6 : 1
+                                }}>
+                                {isActioning ? '...' : confirmAction.type === 'kick' ? 'Loại' : 'Tạm dừng'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
