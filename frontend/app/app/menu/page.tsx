@@ -101,7 +101,7 @@ export default function MenuPage() {
     }
 
     const menuItems = [
-        { label: 'Thông tin cá nhân', icon: '👤', action: () => { } },
+        { label: 'Thông tin cá nhân', icon: '👤', action: () => router.push('/app/menu/settings') },
         { label: 'Lịch sử điểm danh', icon: '📋', action: () => router.push('/app/attendance/history') },
         { label: 'Lịch sử chi tiêu', icon: '💰', action: () => router.push('/app/finance') },
         ...(role === 'owner' ? [{ label: 'Quản lý thành viên', icon: '👥', action: () => router.push('/app/team') }] : []),
