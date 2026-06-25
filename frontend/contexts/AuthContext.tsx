@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setIsLoading(true)
             const token = localStorage.getItem('auth_token')
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/teams/${teamId}/switch`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teams/${teamId}/switch`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
