@@ -248,25 +248,25 @@ export default function TeamSettingsPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', paddingTop: '88px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ minHeight: '100vh', padding: '16px 12px', paddingTop: '88px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-                <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px' }}>‹</button>
-                <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>‹</button>
+                <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '4px' }}>Cấu hình</p>
-                    <h1 style={{ fontSize: '28px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
+                    <h1 style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
                 </div>
             </div>
 
             {/* Tab navigation */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', overflowX: 'auto', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '8px', scrollBehavior: 'smooth' }}>
                 {[
-                    { id: 'general', label: 'Thông tin', icon: <Gear size={16} /> },
-                    { id: 'attendance', label: 'Điểm danh', icon: <Clock size={16} /> },
-                    { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={16} /> },
-                    { id: 'fund', label: 'Quỹ', icon: <CurrencyDollar size={16} /> },
-                    { id: 'scheduling', label: 'Lịch trình', icon: <Calendar size={16} /> },
-                    { id: 'invite', label: 'Mời thành viên', icon: <CalendarPlus size={16} /> },
+                    { id: 'general', label: 'Thông tin', icon: <Gear size={14} /> },
+                    { id: 'attendance', label: 'Điểm danh', icon: <Clock size={14} /> },
+                    { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={14} /> },
+                    { id: 'fund', label: 'Quỹ', icon: <CurrencyDollar size={14} /> },
+                    { id: 'scheduling', label: 'Lịch', icon: <Calendar size={14} /> },
+                    { id: 'invite', label: 'Mời', icon: <CalendarPlus size={14} /> },
                 ].map((t) => (
                     <button
                         key={t.id}
@@ -274,10 +274,10 @@ export default function TeamSettingsPage() {
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 16px',
+                            gap: '6px',
+                            padding: '8px 12px',
                             borderRadius: '20px',
-                            fontSize: '13px',
+                            fontSize: '12px',
                             fontWeight: tab === t.id ? 600 : 500,
                             border: 'none',
                             cursor: 'pointer',
@@ -285,6 +285,7 @@ export default function TeamSettingsPage() {
                             color: tab === t.id ? '#070B14' : G.t2,
                             transition: 'all 0.2s ease',
                             whiteSpace: 'nowrap',
+                            flexShrink: 0,
                         }}
                     >
                         {t.icon}
@@ -692,12 +693,13 @@ export default function TeamSettingsPage() {
                                     background: 'rgba(255,255,255,0.05)',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
-                                    fontSize: '11px',
+                                    fontSize: '13px',
                                     outline: 'none',
                                     boxSizing: 'border-box',
                                     opacity: isOwner ? 1 : 0.6,
                                     minHeight: '80px',
                                     fontFamily: 'monospace',
+                                    wordBreak: 'break-word',
                                 }}
                             />
                             {settings.fund_qr_code_url && (
@@ -705,11 +707,14 @@ export default function TeamSettingsPage() {
                                     src={settings.fund_qr_code_url}
                                     alt="QR Code"
                                     style={{
-                                        width: '120px',
-                                        height: '120px',
+                                        width: '100%',
+                                        maxWidth: '200px',
+                                        height: 'auto',
+                                        aspectRatio: '1',
                                         borderRadius: '12px',
                                         marginTop: '12px',
                                         border: `1px solid ${G.glassBorder}`,
+                                        objectFit: 'contain',
                                     }}
                                     onError={() => toast('Không thể tải ảnh QR', 'error')}
                                 />
@@ -1094,11 +1099,12 @@ export default function TeamSettingsPage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '12px 14px',
+                            padding: '10px 12px',
                             borderRadius: '12px',
                             background: G.accentDim,
                             border: `1px solid rgba(0,214,143,0.25)`,
                             marginBottom: '12px',
+                            flexWrap: 'wrap',
                         }}>
                             <input
                                 type="text"
@@ -1106,6 +1112,7 @@ export default function TeamSettingsPage() {
                                 readOnly
                                 style={{
                                     flex: 1,
+                                    minWidth: '150px',
                                     background: 'transparent',
                                     border: 'none',
                                     color: G.t1,
@@ -1117,21 +1124,22 @@ export default function TeamSettingsPage() {
                             <button
                                 onClick={handleCopyInvite}
                                 style={{
-                                    padding: '6px 12px',
+                                    padding: '6px 10px',
                                     borderRadius: '8px',
                                     background: G.accent,
                                     color: '#070B14',
                                     border: 'none',
                                     cursor: 'pointer',
                                     fontWeight: 600,
-                                    fontSize: '12px',
+                                    fontSize: '11px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '4px',
                                     whiteSpace: 'nowrap',
+                                    flexShrink: 0,
                                 }}
                             >
-                                {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
+                                {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
                                 {copied ? 'Đã copy' : 'Copy'}
                             </button>
                         </div>
@@ -1170,13 +1178,14 @@ export default function TeamSettingsPage() {
             {/* Info box */}
             {!isOwner && (
                 <div style={{
-                    marginTop: '32px',
-                    padding: '16px',
+                    marginTop: '20px',
+                    padding: '12px 14px',
                     background: 'rgba(255,165,0,0.1)',
                     border: '1px solid rgba(255,165,0,0.25)',
                     borderRadius: '12px',
                     color: '#FFA500',
-                    fontSize: '13px',
+                    fontSize: '12px',
+                    lineHeight: '1.4',
                 }}
                 >
                     ⚠️ Chỉ chủ đội mới có quyền thay đổi các cài đặt này
