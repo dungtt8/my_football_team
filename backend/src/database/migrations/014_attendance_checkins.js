@@ -7,14 +7,14 @@
 
 exports.up = function (knex) {
     return knex.schema.createTable('attendance_checkins', function (table) {
-        table.increments('id').primary();
+        table.bigIncrements('id').primary();
 
-        table.integer('team_id').unsigned().notNullable().references('id').inTable('teams').onDelete('CASCADE');
-        table.integer('member_id').unsigned().notNullable().references('id').inTable('team_members').onDelete('CASCADE');
-        table.integer('session_id').unsigned().notNullable().references('id').inTable('attendance_sessions').onDelete('CASCADE');
+        table.bigInteger('team_id').notNullable().references('id').inTable('teams').onDelete('CASCADE');
+        table.bigInteger('member_id').notNullable().references('id').inTable('team_members').onDelete('CASCADE');
+        table.bigInteger('session_id').notNullable().references('id').inTable('attendance_sessions').onDelete('CASCADE');
 
         // Check-in response: yes, no, or null (not responded yet)
-        table.enum('response', ['yes', 'no', null]).defaultTo(null).comment('Member response: yes (tôi tham gia), no (tôi không tham gia)');
+        table.enum('response', ['yes', 'no']).nullable().defaultTo(null).comment('Member response: yes (tôi tham gia), no (tôi không tham gia)');
 
         // Timestamps
         table.timestamp('responded_at').nullable().comment('When member responded');
