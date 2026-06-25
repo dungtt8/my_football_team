@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { setAuthCookie, deleteAuthCookie } from '@/lib/cookieUtils'
 
 export interface User {
     id: string
@@ -97,6 +98,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.setItem('team', JSON.stringify(data.team))
             localStorage.setItem('role', data.user.role)
 
+            // Set auth cookie for middleware verification
+            setAuthCookie(data.token)
+
             setUser(data.user)
             setTeam(data.team)
             setRole(data.user.role)
@@ -115,6 +119,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('role')
         localStorage.removeItem('allTeams')
 
+        // Delete auth cookie
+        deleteAuthCookie()
+
         setUser(null)
         setTeam(null)
         setRole(null)
@@ -123,6 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const setAuthToken = (token: string) => {
         localStorage.setItem('auth_token', token)
+        setAuthCookie(token)
     }
 
     const setAuthData = (token: string, userData: User, teamData: Team | null, userRole: UserRole, teams: Team[] = []) => {
@@ -135,6 +143,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         localStorage.setItem('role', userRole)
         localStorage.setItem('allTeams', JSON.stringify(teams))
+
+        // Set auth cookie for middleware verification
+        setAuthCookie(token)
+
         setUser(userData)
         setTeam(teamData)
         setRole(userRole)
@@ -163,6 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Update JWT
             localStorage.setItem('auth_token', data.token)
+            setAuthCookie(data.token)
 
             // Update current team
             if (data.team) {
