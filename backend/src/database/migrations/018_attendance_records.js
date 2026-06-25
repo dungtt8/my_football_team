@@ -6,6 +6,11 @@
  */
 
 exports.up = async (knex) => {
+    const exists = await knex.schema.hasTable('attendance_records');
+    if (exists) {
+        return; // Table already exists, skip
+    }
+
     await knex.schema.createTable('attendance_records', (table) => {
         table.bigIncrements('id').primary();
         table.bigInteger('session_id').notNullable().references('attendance_sessions.id').onDelete('CASCADE');
