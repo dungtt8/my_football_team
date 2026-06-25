@@ -146,16 +146,25 @@ export default function SessionDetailPage() {
                         </div>
                     ) : (
                         <>
-                            <p className="font-semibold mb-1">Điểm danh {isMatch ? 'trận đấu' : 'buổi tập'} này</p>
-                            <p className="text-sm mb-4" style={{ color: '#6B6660' }}>+10 điểm sau khi điểm danh thành công</p>
-                            <button
-                                disabled={isActing || !canCheckIn}
-                                onClick={() => act(() => memberCheckIn(id).then(() => { }), 'Điểm danh thành công! +10 điểm')}
-                                className="w-full py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                                style={{ background: '#0F0E0C', color: '#FFFCF9' }}
-                            >
-                                {isActing ? 'Đang xử lý...' : '✓ Điểm danh ngay'}
-                            </button>
+                            <p className="font-semibold mb-4">Bạn có tham gia {isMatch ? 'trận đấu' : 'buổi tập'} này không?</p>
+                            <div className="flex gap-3">
+                                <button
+                                    disabled={isActing}
+                                    onClick={() => act(() => memberCheckIn(id).then(() => { }), 'Điểm danh thành công! +10 điểm')}
+                                    className="flex-1 py-4 rounded-xl text-base font-semibold disabled:opacity-50 transition-all"
+                                    style={{ background: '#0F0E0C', color: '#FFFCF9' }}
+                                >
+                                    {isActing ? 'Đang xử lý...' : '✓ Tham gia'}
+                                </button>
+                                <button
+                                    disabled={isActing}
+                                    onClick={() => act(() => markAbsent(id, user?.id || '').then(() => { }), 'Đã ghi nhận không tham gia (-5 điểm)')}
+                                    className="flex-1 py-3 rounded-xl text-sm font-semibold border disabled:opacity-50 transition-all"
+                                    style={{ borderColor: '#E5E5E5', color: '#6B6660', background: 'transparent' }}
+                                >
+                                    Không
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>
