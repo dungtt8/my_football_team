@@ -155,7 +155,7 @@ const createManualSession = async (req, res) => {
         });
 
         // Insert session
-        const [sessionId] = await db('attendance_sessions').insert({
+        const result = await db('attendance_sessions').insert({
             team_id: teamId,
             created_by: userId,
             session_date: sessionDate,
@@ -166,7 +166,9 @@ const createManualSession = async (req, res) => {
             status: 'active',
             created_at: new Date(),
             updated_at: new Date()
-        });
+        }).returning('id');
+
+        const sessionId = Array.isArray(result) ? result[0].id : result[0];
 
         // Fetch created session
         const session = await db('attendance_sessions')
@@ -390,13 +392,15 @@ const memberCheckIn = async (req, res) => {
         }
 
         // Insert attendance record
-        const [recordId] = await db('attendance_records').insert({
+        const recordResult = await db('attendance_records').insert({
             session_id: id,
             user_id: userId,
             status: 'attended',
             checked_in_at: new Date(),
             created_at: new Date()
-        });
+        }).returning('id');
+
+        const recordId = Array.isArray(recordResult) ? recordResult[0].id : recordResult[0];
 
         // Add gamification points (+10 for check-in)
         await gamificationService.addPoints(userId, 10, 'check_in', teamId);
@@ -483,13 +487,15 @@ const coManagerMarkAbsent = async (req, res) => {
         }
 
         // Insert attendance record with marked_absent status
-        const [recordId] = await db('attendance_records').insert({
+        const markedResult = await db('attendance_records').insert({
             session_id: id,
             user_id,
             status: 'marked_absent',
             marked_by: markerId,
             created_at: new Date()
-        });
+        }).returning('id');
+
+        const recordId = Array.isArray(markedResult) ? markedResult[0].id : markedResult[0];
 
         // Add penalty points (-5 for absence)
         await gamificationService.addPoints(user_id, -5, 'absence_penalty', teamId);
