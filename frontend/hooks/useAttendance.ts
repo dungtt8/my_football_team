@@ -279,6 +279,29 @@ export const useAttendance = (): UseAttendanceReturn => {
         [request]
     )
 
+    // Compat shim for listAttendance - wrapped in useCallback to prevent infinite re-renders
+    const listAttendance = useCallback(
+        async (params?: Record<string, any>) => {
+            try {
+                const month = params?.month as string | undefined
+                const history = await getAttendanceHistory(month)
+                return history?.history || []
+            } catch { return [] }
+        },
+        [getAttendanceHistory]
+    )
+
+    // Compat shim for getAttendanceDetail - wrapped in useCallback to prevent infinite re-renders
+    const getAttendanceDetail = useCallback(
+        async (sessionId: string) => {
+            try {
+                const result = await getSession(sessionId)
+                return result?.records?.[0]
+            } catch { return undefined }
+        },
+        [getSession]
+    )
+
     return {
         createSession,
         createManualSession,
@@ -292,19 +315,8 @@ export const useAttendance = (): UseAttendanceReturn => {
         getUserStats,
         getAttendanceHistory,
         // Compat shims
-        listAttendance: async (params?: Record<string, any>) => {
-            try {
-                const month = params?.month as string | undefined
-                const history = await getAttendanceHistory(month)
-                return history?.history || []
-            } catch { return [] }
-        },
-        getAttendanceDetail: async (sessionId: string) => {
-            try {
-                const result = await getSession(sessionId)
-                return result?.records?.[0]
-            } catch { return undefined }
-        },
+        listAttendance,
+        getAttendanceDetail,
         loading,
         error: error || localError,
     }
