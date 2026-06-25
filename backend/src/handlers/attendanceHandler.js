@@ -10,6 +10,38 @@ const {
 const logger = require('../utils/logger');
 
 /**
+ * Ensure attendance_records table exists (fallback if migration hasn't run)
+ */
+const ensureAttendanceRecordsTable = async () => {
+    try {
+        const exists = await db.schema.hasTable('attendance_records');
+        if (!exists) {
+            logger.info('Creating attendance_records table...');
+            await db.schema.createTable('attendance_records', (table) => {
+                table.bigIncrements('id').primary();
+                table.bigInteger('session_id').notNullable();
+                table.bigInteger('user_id').notNullable();
+                table.bigInteger('team_id').notNullable();
+                table.enu('status', ['attended', 'marked_absent', 'pending']).defaultTo('pending');
+                table.timestamp('checked_in_at').nullable();
+                table.bigInteger('marked_by').nullable();
+                table.timestamp('created_at').defaultTo(db.fn.now());
+                table.timestamp('updated_at').defaultTo(db.fn.now());
+                table.index(['session_id']);
+                table.index(['user_id', 'team_id']);
+                table.unique(['session_id', 'user_id']);
+            });
+            logger.info('attendance_records table created successfully');
+        }
+    } catch (error) {
+        logger.error('Error ensuring attendance_records table:', error);
+    }
+};
+
+// Call on startup
+ensureAttendanceRecordsTable();
+
+/**
  * Create a new attendance session
  * POST /api/attendance/sessions
  * Body: { session_date, location?, session_type?, description? }
@@ -297,6 +329,9 @@ const getSession = async (req, res) => {
             team_id: teamId
         });
 
+        // Ensure table exists
+        await ensureAttendanceRecordsTable();
+
         // Get session
         const session = await db('attendance_sessions')
             .where('id', id)
@@ -355,6 +390,9 @@ const memberCheckIn = async (req, res) => {
         if (!userId || !teamId) {
             throw new ValidationError('User and team context is required');
         }
+
+        // Ensure table exists
+        await ensureAttendanceRecordsTable();
 
         logger.info('Member checking in to session', {
             session_id: id,
@@ -454,6 +492,9 @@ const coManagerMarkAbsent = async (req, res) => {
         if (!user_id) {
             throw new ValidationError('User ID is required');
         }
+
+        // Ensure table exists
+        await ensureAttendanceRecordsTable();
 
         logger.info('Co-manager marking member as absent', {
             session_id: id,
