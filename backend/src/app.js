@@ -75,8 +75,12 @@ app.post('/api/zalo/webhook', zaloWebhookHandler);
 // Protected routes (require auth, but NOT yet tenancy)
 app.use(authMiddleware);
 
-// Team onboarding — auth required but no team context yet
+// Profile & account management (auth required, NOT tenancy-scoped)
 const teamHandler = require('./handlers/teamHandler');
+app.put('/api/profile', teamHandler.updateProfile);
+app.put('/api/auth/password', teamHandler.changePassword);
+
+// Team onboarding — auth required but no team context yet
 app.post('/api/teams', teamHandler.createTeam);
 app.post('/api/teams/join', teamHandler.joinTeam);
 

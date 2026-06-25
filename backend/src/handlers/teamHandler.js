@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const bcrypt = require('bcryptjs');
 const { handleError, ValidationError, NotFoundError } = require('../services/errorService');
 const logger = require('../utils/logger');
 const authService = require('../services/authService');
@@ -18,6 +19,27 @@ function isPaymentDeadlineActive(startDay, endDay) {
     const currentDay = today.getDate();
     return currentDay >= startDay && currentDay <= endDay;
 }
+
+/**
+ * Verify password against hash
+ * Handles both bcrypt hashes and plain text (for legacy/testing)
+ */
+const verifyPassword = async (plainPassword, hash) => {
+    try {
+        // Try bcrypt first (modern)
+        return await bcrypt.compare(plainPassword, hash);
+    } catch (e) {
+        // Fallback: plain text comparison (for testing/legacy)
+        return plainPassword === hash;
+    }
+};
+
+/**
+ * Hash password with bcrypt
+ */
+const hashPassword = async (plainPassword) => {
+    return await bcrypt.hash(plainPassword, 10);
+};
 
 /**
  * POST /api/teams  (auth required, NO tenancy)
@@ -818,4 +840,100 @@ const updateJerseyNumber = async (req, res) => {
     }
 };
 
-module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode, deactivateMember, kickMember, updateJerseyNumber };
+/**
+ * PUT /api/profile
+ * Update user profile (name, phone)
+ * Body: { full_name?, phone? }
+ */
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { full_name, phone } = req.body;
+
+        // Validate inputs
+        if (full_name !== undefined && (!full_name || !full_name.trim())) {
+            throw new ValidationError('Full name cannot be empty');
+        }
+        if (phone !== undefined && phone && !/^[\d\s\-\+\(\)]+$/.test(phone)) {
+            throw new ValidationError('Invalid phone format');
+        }
+
+        // Build update object
+        const updateData = {};
+        if (full_name !== undefined) updateData.full_name = full_name.trim();
+        if (phone !== undefined) updateData.phone = phone || null;
+
+        // Update user
+        const [updated] = await db('users')
+            .where('id', userId)
+            .update({ ...updateData, updated_at: new Date() })
+            .returning('*');
+
+        logger.info('Profile updated', { user_id: userId });
+
+        return res.json({
+            id: updated.id,
+            email: updated.email,
+            full_name: updated.full_name,
+            phone: updated.phone,
+        });
+    } catch (error) {
+        return handleError(error, req, res, {
+            endpoint: 'PUT /api/profile',
+            method: 'PUT'
+        });
+    }
+};
+
+/**
+ * PUT /api/auth/password
+ * Change user password
+ * Body: { current_password, new_password, new_password_confirm }
+ */
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { current_password, new_password, new_password_confirm } = req.body;
+
+        // Validate inputs
+        if (!current_password) throw new ValidationError('Current password is required');
+        if (!new_password) throw new ValidationError('New password is required');
+        if (!new_password_confirm) throw new ValidationError('Password confirmation is required');
+        if (new_password !== new_password_confirm) {
+            throw new ValidationError('New passwords do not match');
+        }
+        if (new_password.length < 6) {
+            throw new ValidationError('New password must be at least 6 characters');
+        }
+        if (new_password === current_password) {
+            throw new ValidationError('New password must be different from current password');
+        }
+
+        // Get user
+        const user = await db('users').where('id', userId).first();
+        if (!user) throw new NotFoundError('User not found');
+
+        // Verify current password
+        const isPasswordValid = await verifyPassword(current_password, user.password_hash || '');
+        if (!isPasswordValid) {
+            throw new ValidationError('Current password is incorrect');
+        }
+
+        // Hash and update new password
+        const hashedPassword = await hashPassword(new_password);
+        await db('users')
+            .where('id', userId)
+            .update({ password_hash: hashedPassword, updated_at: new Date() });
+
+        logger.info('Password changed', { user_id: userId });
+
+        return res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        return handleError(error, req, res, {
+            endpoint: 'PUT /api/auth/password',
+            method: 'PUT'
+        });
+    }
+};
+
+module.exports = { createTeam, joinTeam, getInviteCode, regenerateInviteCode, listMembers, updateMemberRole, getSettings, updateSettings, uploadQRCode, deleteQRCode, deactivateMember, kickMember, updateJerseyNumber, updateProfile, changePassword };
