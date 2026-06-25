@@ -103,8 +103,16 @@ const createSession = async (req, res) => {
 const createManualSession = async (req, res) => {
     try {
         const { session_date, session_type, check_in_deadline, location, description } = req.body;
-        const userId = req.user.id;
-        const teamId = req.team.id;
+        const userId = req.user?.id || req.user?.user_id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        // Validate user and team context
+        if (!userId) {
+            throw new ValidationError('User context is required');
+        }
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
 
         // Validate required fields
         if (!session_date) {
@@ -339,8 +347,12 @@ const getSession = async (req, res) => {
 const memberCheckIn = async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.user.id;
-        const teamId = req.team.id;
+        const userId = req.user?.id || req.user?.user_id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!userId || !teamId) {
+            throw new ValidationError('User and team context is required');
+        }
 
         logger.info('Member checking in to session', {
             session_id: id,
@@ -429,9 +441,12 @@ const coManagerMarkAbsent = async (req, res) => {
     try {
         const { id } = req.params;
         const { user_id } = req.body;
-        const markerId = req.user.id;
-        const teamId = req.team.id;
+        const markerId = req.user?.id || req.user?.user_id;
+        const teamId = req.team?.id || req.user?.team_id;
 
+        if (!markerId || !teamId) {
+            throw new ValidationError('User and team context is required');
+        }
         if (!user_id) {
             throw new ValidationError('User ID is required');
         }
@@ -509,7 +524,11 @@ const coManagerMarkAbsent = async (req, res) => {
 const closeSession = async (req, res) => {
     try {
         const { id } = req.params;
-        const teamId = req.team.id;
+        const teamId = req.team?.id || req.user?.team_id;
+
+        if (!teamId) {
+            throw new ValidationError('Team context is required');
+        }
 
         logger.info('Closing attendance session', {
             session_id: id,
@@ -718,33 +737,29 @@ const getAttendanceHistory = async (req, res) => {
         });
 
         // Get attendance records for current month
-        const history = await db('attendance_records as ar')
-            .select(
-                'ar.id',
-                'ar.session_id',
-                'ar.status',
-                'ar.checked_in_at',
-                'sess.session_date',
-                'sess.location',
-                'sess.session_type'
-            )
-            .leftJoin('attendance_sessions as sess', 'ar.session_id', 'sess.id')
-            .where('ar.user_id', userId)
-            .where('sess.team_id', teamId)
-            .whereRaw('TO_CHAR("sess"."session_date", \'YYYY-MM\') = ?', [targetMonth])
-            .orderBy('sess.session_date', 'desc');
+        // Use raw query to handle date formatting properly
+        const history = await db.raw(
+            `SELECT ar.id, ar.session_id, ar.status, ar.checked_in_at, 
+                    s.session_date, s.location, s.session_type
+             FROM attendance_records ar
+             LEFT JOIN attendance_sessions s ON ar.session_id = s.id
+             WHERE ar.user_id = ? AND s.team_id = ? 
+             AND TO_CHAR(s.session_date, 'YYYY-MM') = ?
+             ORDER BY s.session_date DESC`,
+            [userId, teamId, targetMonth]
+        );
 
         logger.info('Attendance history retrieved successfully', {
             user_id: userId,
             team_id: teamId,
             month: targetMonth,
-            count: history.length
+            count: history.rows ? history.rows.length : 0
         });
 
         return res.json({
             user_id: userId,
             month: targetMonth,
-            history
+            history: history.rows || []
         });
     } catch (error) {
         return handleError(error, req, res, {
