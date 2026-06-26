@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
     },
     {
         id: 'campaigns',
-        label: 'Chiến Dịch',
+        label: 'Khoản Thu',
         path: '/app/campaigns',
         icon: <Megaphone size={20} weight="regular" />,
     },

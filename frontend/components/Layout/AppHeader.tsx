@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { List, MagnifyingGlass, Football, CaretLeft, CaretRight, User } from 'phosphor-react'
+import { List, MagnifyingGlass, CaretLeft, CaretRight, User } from 'phosphor-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import TeamSwitcher from '@/components/Common/TeamSwitcher'
 
@@ -16,7 +16,7 @@ interface AppHeaderProps {
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
-    teamName = 'Football Team',
+    teamName = 'My Football Team',
     teamLogo,
     onMenuClick,
     showSearch = false,
@@ -67,18 +67,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     )}
 
                     <div className="flex items-center gap-2.5">
-                        {teamLogo ? (
-                            <img src={teamLogo} alt={teamName} className="w-8 h-8 rounded-lg object-cover" />
-                        ) : (
-                            <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                style={{ background: 'linear-gradient(135deg, #00D68F, #00A36C)' }}
-                            >
-                                <Football size={16} weight="fill" color="#070B14" />
-                            </div>
-                        )}
+                        <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+                            style={{ background: 'rgba(127, 168, 159, 0.15)', border: '1px solid rgba(127,168,159,0.2)' }}
+                        >
+                            ⚽
+                        </div>
                         <span className="font-semibold text-sm tracking-tight" style={{ color: '#F0F4FF' }}>
-                            {teamName}
+                            My Football Team
                         </span>
                     </div>
                 </div>

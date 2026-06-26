@@ -164,7 +164,7 @@ function LoginFormContent() {
                         <em style={{ color: '#7FA89F' }}>thông minh</em>
                     </h1>
                     <p className="text-base font-light leading-relaxed max-w-xs" style={{ color: 'rgba(255,252,249,0.5)' }}>
-                        Theo dõi tài chính, điểm danh và chiến dịch — tất cả trong một nơi.
+                        Theo dõi tài chính, điểm danh và khoản thu — tất cả trong một nơi.
                     </p>
                 </div>
 

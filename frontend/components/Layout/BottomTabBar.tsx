@@ -27,7 +27,7 @@ const TAB_ITEMS: TabItem[] = [
     },
     {
         id: 'campaigns',
-        label: 'Chiến dịch',
+        label: 'Khoản thu',
         path: '/app/campaigns',
         icon: <Megaphone size={22} weight="regular" />,
         iconActive: <Megaphone size={22} weight="fill" />,

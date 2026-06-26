@@ -248,18 +248,18 @@ export default function TeamSettingsPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', padding: '16px 12px', paddingTop: '88px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ minHeight: '100vh', padding: 'max(12px, 4vw) max(8px, 3vw)', paddingTop: 'clamp(80px, 12vh, 88px)', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px', flexShrink: 0 }}>‹</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 12px)', marginBottom: 'clamp(16px, 3vh, 20px)' }}>
+                <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', fontSize: 'clamp(14px, 4vw, 16px)', flexShrink: 0 }}>‹</button>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '4px' }}>Cấu hình</p>
-                    <h1 style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
+                    <p style={{ fontSize: 'clamp(9px, 2.5vw, 11px)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '2px' }}>Cấu hình</p>
+                    <h1 style={{ fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
                 </div>
             </div>
 
             {/* Tab navigation */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '8px', scrollBehavior: 'smooth' }}>
+            <div style={{ display: 'flex', gap: 'clamp(4px, 1vw, 6px)', marginBottom: 'clamp(16px, 3vh, 20px)', overflowX: 'auto', paddingBottom: '8px', scrollBehavior: 'smooth' }}>
                 {[
                     { id: 'general', label: 'Thông tin', icon: <Gear size={14} /> },
                     { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={14} /> },
@@ -274,10 +274,10 @@ export default function TeamSettingsPage() {
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 12px',
+                            gap: '4px',
+                            padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 12px)',
                             borderRadius: '20px',
-                            fontSize: '12px',
+                            fontSize: 'clamp(10px, 2.5vw, 12px)',
                             fontWeight: tab === t.id ? 600 : 500,
                             border: 'none',
                             cursor: 'pointer',
@@ -295,7 +295,7 @@ export default function TeamSettingsPage() {
             </div>
 
             {/* Content */}
-            <div style={{ maxWidth: '600px' }}>
+            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto' }}>
                 {/* General Settings */}
                 {tab === 'general' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -385,7 +385,7 @@ export default function TeamSettingsPage() {
 
                 {/* Attendance Settings */}
                 {tab === 'attendance' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
@@ -393,8 +393,8 @@ export default function TeamSettingsPage() {
                             padding: '20px',
                             backdropFilter: 'blur(12px)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <label style={{ fontSize: '14px', fontWeight: 600, color: G.t1 }}>Bật điểm danh</label>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: 'wrap' }}>
+                                <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '120px' }}>Bật điểm danh</label>
                                 <input
                                     type="checkbox"
                                     checked={settings.attendance_enabled}
@@ -406,7 +406,7 @@ export default function TeamSettingsPage() {
 
                             {settings.attendance_enabled && (
                                 <>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                         Thời gian chờ trước khi check-in (phút)
                                     </label>
                                     <input
@@ -418,19 +418,19 @@ export default function TeamSettingsPage() {
                                         max="60"
                                         style={{
                                             width: '100%',
-                                            padding: '12px 14px',
+                                            padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
                                             borderRadius: '12px',
                                             background: 'rgba(255,255,255,0.05)',
                                             border: `1px solid ${G.glassBorder}`,
                                             color: G.t1,
-                                            fontSize: '14px',
+                                            fontSize: 'clamp(13px, 2.5vw, 14px)',
                                             outline: 'none',
                                             boxSizing: 'border-box',
                                             marginBottom: '12px',
                                             opacity: isOwner ? 1 : 0.6,
                                         }}
                                     />
-                                    <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
+                                    <p style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: G.t3, margin: '8px 0 0 0' }}>
                                         ℹ️ Thành viên phải check-in trong khoảng thời gian này
                                     </p>
                                 </>
@@ -441,7 +441,7 @@ export default function TeamSettingsPage() {
 
                 {/* Finance Settings */}
                 {tab === 'finance' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
@@ -750,7 +750,7 @@ export default function TeamSettingsPage() {
 
                 {/* Scheduling Settings */}
                 {tab === 'scheduling' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
@@ -758,8 +758,8 @@ export default function TeamSettingsPage() {
                             padding: '20px',
                             backdropFilter: 'blur(12px)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <label style={{ fontSize: '14px', fontWeight: 600, color: G.t1 }}>Tự động tạo sự kiện yêu cầu điểm danh</label>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: window.innerWidth < 480 ? 'wrap' : 'nowrap' }}>
+                                <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '150px' }}>Tự động tạo sự kiện yêu cầu điểm danh</label>
                                 <input
                                     type="checkbox"
                                     checked={settings.auto_create_sessions}
@@ -938,14 +938,14 @@ export default function TeamSettingsPage() {
 
                                     {/* Check-in Configuration Section */}
                                     <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `1px solid ${G.glassBorder}` }}>
-                                        <h3 style={{ fontSize: '14px', fontWeight: 600, color: G.t1, marginBottom: '16px' }}>
+                                        <h3 style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, marginBottom: '16px' }}>
                                             Cài đặt điểm danh thành viên
                                         </h3>
-                                        <p style={{ fontSize: '12px', color: G.t3, marginBottom: '16px' }}>
+                                        <p style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: G.t3, marginBottom: '16px' }}>
                                             Cấu hình khi nào tạo thông báo điểm danh và thành viên có bao lâu để báo tham gia
                                         </p>
 
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                             Thứ tạo thông báo
                                         </label>
                                         <select
@@ -975,7 +975,7 @@ export default function TeamSettingsPage() {
                                             <option value="sun">Chủ nhật (Sun)</option>
                                         </select>
 
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                             Giờ tạo thông báo (UTC)
                                         </label>
                                         <input
@@ -998,7 +998,7 @@ export default function TeamSettingsPage() {
                                             }}
                                         />
 
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                             Ngày bắt đầu cho phép điểm danh
                                         </label>
                                         <select
@@ -1007,12 +1007,12 @@ export default function TeamSettingsPage() {
                                             disabled={!isOwner}
                                             style={{
                                                 width: '100%',
-                                                padding: '12px 14px',
+                                                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
                                                 borderRadius: '12px',
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: `1px solid ${G.glassBorder}`,
                                                 color: G.t1,
-                                                fontSize: '14px',
+                                                fontSize: 'clamp(13px, 2.5vw, 14px)',
                                                 outline: 'none',
                                                 boxSizing: 'border-box',
                                                 marginBottom: '16px',
@@ -1028,7 +1028,7 @@ export default function TeamSettingsPage() {
                                             <option value="sun">Chủ nhật (Sun)</option>
                                         </select>
 
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                             Ngày kết thúc cho phép điểm danh
                                         </label>
                                         <select
@@ -1037,12 +1037,12 @@ export default function TeamSettingsPage() {
                                             disabled={!isOwner}
                                             style={{
                                                 width: '100%',
-                                                padding: '12px 14px',
+                                                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
                                                 borderRadius: '12px',
                                                 background: 'rgba(255,255,255,0.05)',
                                                 border: `1px solid ${G.glassBorder}`,
                                                 color: G.t1,
-                                                fontSize: '14px',
+                                                fontSize: 'clamp(13px, 2.5vw, 14px)',
                                                 outline: 'none',
                                                 boxSizing: 'border-box',
                                                 opacity: isOwner ? 1 : 0.6,
@@ -1097,14 +1097,14 @@ export default function TeamSettingsPage() {
 
                         <div style={{
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 12px',
+                            flexDirection: window.innerWidth < 480 ? 'column' : 'row',
+                            alignItems: window.innerWidth < 480 ? 'stretch' : 'center',
+                            gap: 'clamp(8px, 2vw, 12px)',
+                            padding: 'clamp(8px, 2vw, 12px)',
                             borderRadius: '12px',
                             background: G.accentDim,
                             border: `1px solid rgba(0,214,143,0.25)`,
-                            marginBottom: '12px',
-                            flexWrap: 'wrap',
+                            marginBottom: 'clamp(10px, 2vh, 12px)',
                         }}>
                             <input
                                 type="text"
@@ -1112,34 +1112,36 @@ export default function TeamSettingsPage() {
                                 readOnly
                                 style={{
                                     flex: 1,
-                                    minWidth: '150px',
+                                    minWidth: window.innerWidth < 480 ? '0' : '100px',
                                     background: 'transparent',
                                     border: 'none',
                                     color: G.t1,
-                                    fontSize: '12px',
+                                    fontSize: 'clamp(11px, 2.5vw, 12px)',
                                     outline: 'none',
                                     wordBreak: 'break-all',
+                                    padding: window.innerWidth < 480 ? '4px 0' : '0',
                                 }}
                             />
                             <button
                                 onClick={handleCopyInvite}
                                 style={{
-                                    padding: '6px 10px',
+                                    padding: 'clamp(5px, 1.5vw, 6px) clamp(8px, 2vw, 10px)',
                                     borderRadius: '8px',
                                     background: G.accent,
                                     color: '#070B14',
                                     border: 'none',
                                     cursor: 'pointer',
                                     fontWeight: 600,
-                                    fontSize: '11px',
+                                    fontSize: 'clamp(10px, 2vw, 11px)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '4px',
                                     whiteSpace: 'nowrap',
                                     flexShrink: 0,
+                                    justifyContent: 'center',
                                 }}
                             >
-                                {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+                                {copied ? <CheckCircle size={window.innerWidth < 480 ? 10 : 12} /> : <Copy size={window.innerWidth < 480 ? 10 : 12} />}
                                 {copied ? 'Đã copy' : 'Copy'}
                             </button>
                         </div>
@@ -1178,13 +1180,13 @@ export default function TeamSettingsPage() {
             {/* Info box */}
             {!isOwner && (
                 <div style={{
-                    marginTop: '20px',
-                    padding: '12px 14px',
+                    marginTop: 'clamp(16px, 3vh, 20px)',
+                    padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
                     background: 'rgba(255,165,0,0.1)',
                     border: '1px solid rgba(255,165,0,0.25)',
                     borderRadius: '12px',
                     color: '#FFA500',
-                    fontSize: '12px',
+                    fontSize: 'clamp(11px, 2.5vw, 12px)',
                     lineHeight: '1.4',
                 }}
                 >

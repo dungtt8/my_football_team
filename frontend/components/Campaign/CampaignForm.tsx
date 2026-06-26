@@ -35,7 +35,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
 
     const validate = (): boolean => {
         const e: FormErrors = {}
-        if (!formData.name.trim()) e.name = 'Tên chiến dịch không được để trống'
+        if (!formData.name.trim()) e.name = 'Tên khoản thu không được để trống'
         const amt = parseFloat(formData.amount_per_member)
         if (isNaN(amt) || amt <= 0) e.amount_per_member = 'Số tiền phải lớn hơn 0'
         setErrors(e)
@@ -64,7 +64,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
             {/* Name */}
             <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
-                    Tên chiến dịch <span className="text-red-500">*</span>
+                    Tên khoản thu <span className="text-red-500">*</span>
                 </label>
                 <input
                     type="text"
@@ -117,7 +117,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Thông tin thêm về chiến dịch..."
+                    placeholder="Thông tin thêm về khoản thu..."
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black resize-none"
                 />

@@ -38,7 +38,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
         try {
             setLoading(true)
             const response = await request<any>('/team/settings', 'GET')
-            
+
             // Validate response is object before accessing properties
             if (response && typeof response === 'object' && !Array.isArray(response) && response?.fund) {
                 setSettings(response.fund)
@@ -100,7 +100,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                 }
             })
 

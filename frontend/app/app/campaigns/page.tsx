@@ -36,7 +36,7 @@ export default function CampaignsPage() {
                 const status = tab === 'active' ? 'active' : tab === 'ended' ? 'closed' : undefined
                 const res = await listCampaigns({ status })
                 setCampaigns((res as any)?.data || res || [])
-            } catch { toast('Không thể tải chiến dịch', 'error') }
+            } catch { toast('Không thể tải khoản thu', 'error') }
         }
         load()
     }, [tab, authLoading])
@@ -45,11 +45,11 @@ export default function CampaignsPage() {
         setIsCreating(true)
         try {
             await createCampaign(data)
-            toast('Đã tạo chiến dịch mới', 'success')
+            toast('Đã tạo khoản thu mới', 'success')
             setShowForm(false)
             const res = await listCampaigns({})
             setCampaigns((res as any)?.data || res || [])
-        } catch (e: any) { toast(e?.message || 'Lỗi tạo chiến dịch', 'error') }
+        } catch (e: any) { toast(e?.message || 'Lỗi tạo khoản thu', 'error') }
         finally { setIsCreating(false) }
     }
 
@@ -63,7 +63,7 @@ export default function CampaignsPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
                 <div>
                     <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '6px' }}>Cộng đồng</p>
-                    <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Chiến Dịch</h1>
+                    <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Khoản Thu</h1>
                 </div>
                 {isManager && (
                     <button onClick={() => setShowForm(true)} style={{
@@ -90,8 +90,8 @@ export default function CampaignsPage() {
             {/* Campaign list */}
             {campaigns.length === 0 ? (
                 <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '36px', textAlign: 'center' }}>
-                    <p style={{ color: G.t3, fontSize: '14px', margin: 0 }}>Chưa có chiến dịch nào</p>
-                    {isManager && <button onClick={() => setShowForm(true)} style={{ marginTop: '14px', padding: '10px 20px', borderRadius: '10px', background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>+ Tạo chiến dịch đầu tiên</button>}
+                    <p style={{ color: G.t3, fontSize: '14px', margin: 0 }}>Chưa có khoản thu nào</p>
+                    {isManager && <button onClick={() => setShowForm(true)} style={{ marginTop: '14px', padding: '10px 20px', borderRadius: '10px', background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>+ Tạo khoản thu đầu tiên</button>}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -130,7 +130,7 @@ export default function CampaignsPage() {
                     onClick={() => setShowForm(false)}>
                     <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
                         onClick={e => e.stopPropagation()}>
-                        <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: 600, color: G.t1 }}>Tạo chiến dịch mới</h2>
+                        <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: 600, color: G.t1 }}>Tạo khoản thu mới</h2>
                         <CampaignForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
                     </div>
                 </div>

@@ -48,7 +48,7 @@ export default function CampaignDetailPage() {
                 try { setReport(await getReport(id)) } catch { /* non-fatal */ }
             }
         } catch {
-            toast('Không thể tải chiến dịch', 'error')
+            toast('Không thể tải khoản thu', 'error')
             router.push('/app/campaigns')
         } finally { setIsLoading(false) }
     }
@@ -134,7 +134,7 @@ export default function CampaignDetailPage() {
 
             {!isManager && myAssignment?.status === 'pending_confirmation' && (
                 <div className="rounded-2xl p-5 border" style={{ borderColor: '#E5E5E5' }}>
-                    <p className="font-semibold mb-1">Bạn được phân công vào chiến dịch này</p>
+                    <p className="font-semibold mb-1">Bạn được phân công vào khoản thu này</p>
                     <p className="text-sm mb-4" style={{ color: '#6B6660' }}>
                         {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ cần đóng góp
                     </p>
@@ -184,9 +184,9 @@ export default function CampaignDetailPage() {
             )}
 
             {isManager && campaign.status === 'active' && (
-                <button disabled={isActing} onClick={() => act(closeCampaign.bind(null, id), 'Đã đóng chiến dịch')}
+                <button disabled={isActing} onClick={() => act(closeCampaign.bind(null, id), 'Đã đóng khoản thu')}
                     className="w-full py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: '#E53E3E', color: '#E53E3E' }}>
-                    Đóng chiến dịch
+                    Đóng khoản thu
                 </button>
             )}
         </div>
