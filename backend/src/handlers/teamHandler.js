@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { handleError, ValidationError, NotFoundError } = require('../services/errorService');
 const logger = require('../utils/logger');
 const authService = require('../services/authService');
+const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
 
 const VALID_ROLES = ['member', 'co_manager', 'owner'];
 
@@ -292,6 +293,7 @@ const updateMemberRole = async (req, res) => {
 /**
  * GET /api/team/settings  (auth + tenancy, all members)
  * Get current team settings (general info, attendance, finance)
+ * Returns: Times are converted from UTC to GMT+7 (Vietnam Time) for frontend display
  */
 const getSettings = async (req, res) => {
     try {
@@ -329,9 +331,9 @@ const getSettings = async (req, res) => {
                 session_time: team.session_time || '18:00',
                 session_type: team.session_type || 'training',
                 session_location: team.session_location || '',
-                auto_session_creation_time: team.auto_session_creation_time || '03:00',
+                auto_session_creation_time: utcToGmt7(team.auto_session_creation_time || '03:00'),
                 checkin_creation_day: team.checkin_creation_day || 'mon',
-                checkin_creation_time: team.checkin_creation_time || '20:00',
+                checkin_creation_time: utcToGmt7(team.checkin_creation_time || '20:00'),
                 checkin_start_day: team.checkin_start_day || 'fri',
                 checkin_end_day: team.checkin_end_day || 'tue',
             },
@@ -347,7 +349,9 @@ const getSettings = async (req, res) => {
 /**
  * PUT /api/team/settings  (auth + tenancy, owner only)
  * Update team settings (name, description, attendance rules, finance rules)
- * Body: { general?, attendance?, finance? }
+ * Body: { general?, attendance?, finance?, scheduling? }
+ * Note: Times in scheduling are received as GMT+7 (Vietnam Time) from frontend, 
+ *       automatically converted to UTC for storage and cron job execution
  */
 const updateSettings = async (req, res) => {
     try {
@@ -477,11 +481,12 @@ const updateSettings = async (req, res) => {
                 if (scheduling.auto_session_creation_time) {
                     const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
                     if (!timeRegex.test(scheduling.auto_session_creation_time)) {
-                        throw new ValidationError('Auto-session creation time must be in HH:mm format (UTC)');
+                        throw new ValidationError('Auto-session creation time must be in HH:mm format (GMT+7)');
                     }
-                    updates.auto_session_creation_time = scheduling.auto_session_creation_time;
+                    // Convert from GMT+7 (user input) to UTC (storage)
+                    updates.auto_session_creation_time = gmt7ToUtc(scheduling.auto_session_creation_time);
                 } else {
-                    updates.auto_session_creation_time = '03:00'; // Default to 3 AM UTC
+                    updates.auto_session_creation_time = '03:00'; // Default to 3 AM UTC (10 AM GMT+7)
                 }
             }
             if (scheduling.checkin_creation_day !== undefined) {
@@ -495,11 +500,12 @@ const updateSettings = async (req, res) => {
                 if (scheduling.checkin_creation_time) {
                     const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
                     if (!timeRegex.test(scheduling.checkin_creation_time)) {
-                        throw new ValidationError('Check-in creation time must be in HH:mm format (UTC)');
+                        throw new ValidationError('Check-in creation time must be in HH:mm format (GMT+7)');
                     }
-                    updates.checkin_creation_time = scheduling.checkin_creation_time;
+                    // Convert from GMT+7 (user input) to UTC (storage)
+                    updates.checkin_creation_time = gmt7ToUtc(scheduling.checkin_creation_time);
                 } else {
-                    updates.checkin_creation_time = '20:00'; // Default to 8 PM UTC
+                    updates.checkin_creation_time = '13:00'; // Default to 1 PM UTC (8 PM GMT+7)
                 }
             }
             if (scheduling.checkin_start_day !== undefined) {
@@ -594,9 +600,9 @@ const updateSettings = async (req, res) => {
                 session_time: updatedTeam.session_time || '18:00',
                 session_type: updatedTeam.session_type || 'training',
                 session_location: updatedTeam.session_location || '',
-                auto_session_creation_time: updatedTeam.auto_session_creation_time || '03:00',
+                auto_session_creation_time: utcToGmt7(updatedTeam.auto_session_creation_time || '03:00'),
                 checkin_creation_day: updatedTeam.checkin_creation_day || 'mon',
-                checkin_creation_time: updatedTeam.checkin_creation_time || '20:00',
+                checkin_creation_time: utcToGmt7(updatedTeam.checkin_creation_time || '20:00'),
                 checkin_start_day: updatedTeam.checkin_start_day || 'fri',
                 checkin_end_day: updatedTeam.checkin_end_day || 'tue',
             },
