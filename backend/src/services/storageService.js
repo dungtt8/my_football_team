@@ -42,6 +42,15 @@ const uploadQRCode = async (fileBuffer, fileName, teamId) => {
 
         if (error) {
             logger.error('Supabase upload error', { error, teamId, fileName });
+
+            // Provide helpful error messages
+            if (error.message?.includes('Bucket not found')) {
+                throw new Error(
+                    `Storage bucket "${BUCKET_NAME}" not found. ` +
+                    `Run 'node scripts/setup-storage.js' to create it, or create manually in Supabase dashboard.`
+                );
+            }
+
             throw new Error(`Upload failed: ${error.message}`);
         }
 

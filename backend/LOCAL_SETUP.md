@@ -24,8 +24,13 @@ cp .env.example .env
 **For Supabase:**
 - Go to https://supabase.com and create a new project
 - Get connection details from Settings → Database
-- Update .env with Supabase credentials
+- Update .env with Supabase database credentials
 - Set DB_SSL=true for Supabase
+- **For Storage (QR codes):**
+  - Go to Settings → API
+  - Copy `Project URL` → paste in `SUPABASE_URL`
+  - Copy `Service Role Secret` (under "General" section) → paste in `SUPABASE_SERVICE_KEY`
+  - **⚠️ Keep SUPABASE_SERVICE_KEY secret - never commit it to git**
 
 **For Local PostgreSQL:**
 - Start PostgreSQL service
@@ -39,6 +44,23 @@ npm run migrate
 ```
 
 Expected: All migrations run without errors, tables created in PostgreSQL.
+
+### 4. Setup Supabase Storage (for QR code uploads)
+
+```bash
+node scripts/setup-storage.js
+```
+
+This creates the required `team-assets` bucket in Supabase Storage.
+If the bucket already exists, it will be skipped.
+
+**Manual Alternative:** Create bucket in Supabase Dashboard
+- Go to https://app.supabase.com/ → Your Project
+- Click "Storage" in left sidebar
+- Click "+ New bucket"
+- Name: `team-assets`
+- Make Public: ✓ Yes
+- Click "Create bucket"
 
 ### 4. Load sample data (optional)
 

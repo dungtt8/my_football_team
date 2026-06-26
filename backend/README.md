@@ -6,6 +6,8 @@
 
 See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for complete development setup.
 
+**Storage Setup:** See [SUPABASE_STORAGE_SETUP.md](../docs/SUPABASE_STORAGE_SETUP.md) for QR code upload configuration.
+
 ## Features
 
 - **Multi-tenant Architecture** - Supabase PostgreSQL with Row-Level Security
