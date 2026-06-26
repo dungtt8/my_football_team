@@ -248,7 +248,7 @@ export default function TeamSettingsPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', padding: 'max(12px, 4vw) max(8px, 3vw)', paddingTop: 'clamp(80px, 12vh, 88px)', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ minHeight: '100vh', padding: 'max(12px, 4vw) max(8px, 3vw)', paddingTop: 'clamp(80px, 12vh, 88px)', color: G.t1, width: '100%', boxSizing: 'border-box', overflow: 'hidden', overflowY: 'auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 12px)', marginBottom: 'clamp(16px, 3vh, 20px)' }}>
                 <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', fontSize: 'clamp(14px, 4vw, 16px)', flexShrink: 0 }}>‹</button>
@@ -295,16 +295,16 @@ export default function TeamSettingsPage() {
             </div>
 
             {/* Content */}
-            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto' }}>
+            <div style={{ maxWidth: '600px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
                 {/* General Settings */}
                 {tab === 'general' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Tên đội
@@ -335,7 +335,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Mô tả
@@ -385,13 +385,13 @@ export default function TeamSettingsPage() {
 
                 {/* Attendance Settings */}
                 {tab === 'attendance' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box', width: '100%' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: 'wrap' }}>
                                 <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '120px' }}>Bật điểm danh</label>
@@ -441,13 +441,13 @@ export default function TeamSettingsPage() {
 
                 {/* Finance Settings */}
                 {tab === 'finance' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box', width: '100%' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Ngày đóng quỹ (hằng tháng)
@@ -483,7 +483,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Giờ đóng quỹ
@@ -513,7 +513,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Thời hạn thanh toán quỹ: Từ ngày (trong tháng)
@@ -548,7 +548,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Thời hạn thanh toán quỹ: Đến ngày (trong tháng)
@@ -601,13 +601,13 @@ export default function TeamSettingsPage() {
 
                 {/* Fund Settings */}
                 {tab === 'fund' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Số tài khoản ngân hàng
@@ -641,7 +641,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Tên ngân hàng
@@ -675,7 +675,7 @@ export default function TeamSettingsPage() {
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
                                 Mã QR thanh toán
@@ -750,13 +750,13 @@ export default function TeamSettingsPage() {
 
                 {/* Scheduling Settings */}
                 {tab === 'scheduling' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
                             borderRadius: '16px',
                             padding: '20px',
-                            backdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: window.innerWidth < 480 ? 'wrap' : 'nowrap' }}>
                                 <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '150px' }}>Tự động tạo sự kiện yêu cầu điểm danh</label>
@@ -1089,7 +1089,7 @@ export default function TeamSettingsPage() {
                         border: `1px solid ${G.glassBorder}`,
                         borderRadius: '16px',
                         padding: '20px',
-                        backdropFilter: 'blur(12px)',
+                        backdropFilter: 'blur(12px)', boxSizing: 'border-box',
                     }}>
                         <p style={{ fontSize: '14px', color: G.t2, marginBottom: '16px' }}>
                             Chia sẻ link này với thành viên mới để họ tham gia đội
