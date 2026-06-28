@@ -1,17 +1,29 @@
 /**
- * Migration 018: Recreate attendance_records table with correct schema
+ * Migration 020: Recreate attendance_records table with correct schema (data-safe)
  * 
  * Stores check-in/absent records for each attendance session with status enum
- * Replaces the old schema from migration 001
+ * Only drops old schema if it exists - preserves data if new schema already applied
  */
 
 exports.up = async (knex) => {
-    // Drop old table if exists (from migration 001)
-    const exists = await knex.schema.hasTable('attendance_records');
-    if (exists) {
-        await knex.schema.dropTable('attendance_records');
+    const tableExists = await knex.schema.hasTable('attendance_records');
+    
+    if (tableExists) {
+        // Check if table has the new schema (session_id column)
+        const hasSessionId = await knex.schema.hasColumn('attendance_records', 'session_id');
+        
+        if (hasSessionId) {
+            // Already has correct schema, skip
+            console.log('✅ attendance_records table already has correct schema, skipping...');
+            return;
+        } else {
+            // Has old schema, drop and recreate
+            console.log('🔄 Dropping old attendance_records schema...');
+            await knex.schema.dropTable('attendance_records');
+        }
     }
 
+    console.log('📝 Creating attendance_records table with new schema...');
     await knex.schema.createTable('attendance_records', (table) => {
         table.bigIncrements('id').primary();
         table.bigInteger('session_id').notNullable().references('attendance_sessions.id').onDelete('CASCADE');
