@@ -1,14 +1,15 @@
 /**
- * Migration 018: Create attendance_records table for tracking member attendance
+ * Migration 018: Recreate attendance_records table with correct schema
  * 
- * Stores check-in/absent records for each attendance session
- * Replaces the old gamification_points table for attendance tracking
+ * Stores check-in/absent records for each attendance session with status enum
+ * Replaces the old schema from migration 001
  */
 
 exports.up = async (knex) => {
+    // Drop old table if exists (from migration 001)
     const exists = await knex.schema.hasTable('attendance_records');
     if (exists) {
-        return; // Table already exists, skip
+        await knex.schema.dropTable('attendance_records');
     }
 
     await knex.schema.createTable('attendance_records', (table) => {
@@ -17,7 +18,7 @@ exports.up = async (knex) => {
         table.bigInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
         table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
 
-        // Status: attended (checked in), marked_absent (co-manager marked), etc.
+        // Status: attended (checked in), marked_absent (co-manager marked), pending (not checked in yet)
         table.enu('status', ['attended', 'marked_absent', 'pending']).defaultTo('pending');
 
         // When member checked in (null if marked_absent or pending)

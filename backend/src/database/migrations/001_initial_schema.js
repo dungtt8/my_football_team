@@ -90,20 +90,6 @@ exports.up = async (knex) => {
         table.unique(['campaign_id', 'user_id']);
     });
 
-    // attendance_records table
-    await knex.schema.createTable('attendance_records', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('team_id').notNullable().references('id').inTable('teams').onDelete('CASCADE');
-        table.bigInteger('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
-        table.timestamp('session_date').notNullable();
-        table.boolean('attended').defaultTo(true);
-        table.text('notes');
-        table.bigInteger('created_by').notNullable().references('id').inTable('users').onDelete('CASCADE');
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        table.unique(['team_id', 'user_id', 'session_date']);
-        table.index(['team_id', 'user_id']);
-    });
-
     // inngest_logs table
     await knex.schema.createTable('inngest_logs', (table) => {
         table.bigIncrements('id').primary();
@@ -119,7 +105,6 @@ exports.up = async (knex) => {
 
 exports.down = async (knex) => {
     await knex.schema.dropTable('inngest_logs');
-    await knex.schema.dropTable('attendance_records');
     await knex.schema.dropTable('campaign_assignments');
     await knex.schema.dropTable('fund_transactions');
     await knex.schema.dropTable('fund_campaigns');
