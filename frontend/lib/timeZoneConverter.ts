@@ -26,6 +26,13 @@ export function utcToGmt7(timeUtc: string | undefined): string | undefined {
  * @returns {string | undefined} Time in UTC format "HH:mm" (e.g., "13:00")
  */
 export function gmt7ToUtc(timeGmt7: string | undefined): string | undefined {
+    if (!timeGmt7 || typeof timeGmt7 !== 'string') return timeGmt7;
+
+    const [hours, minutes] = timeGmt7.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return timeGmt7;
+
+    // Subtract 7 hours, handle day underflow
+    let newHours = hours - 7;
     if (newHours < 0) {
         newHours += 24;
     }
