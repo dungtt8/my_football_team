@@ -9,45 +9,62 @@ exports.up = async (knex) => {
         });
     }
 
+    // Check if tables already exist (from duplicate old migration)
+    const logsExists = await knex.schema.hasTable('fund_balance_logs');
+    const approvalsExists = await knex.schema.hasTable('approvals');
+    
+    if (logsExists && approvalsExists) {
+        console.log('✅ finance tables already exist, skipping...');
+        return;
+    }
+
     // Create fund_balance_logs table
-    await knex.schema.createTable('fund_balance_logs', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
-        table.bigInteger('transaction_id').notNullable().references('fund_transactions.id').onDelete('CASCADE');
-        table.decimal('previous_balance', 12, 2).notNullable();
-        table.decimal('new_balance', 12, 2).notNullable();
-        table.decimal('change_amount', 12, 2).notNullable();
-        table.text('description').nullable();
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        
-        // Indexes for performance
-        table.index(['team_id']);
-        table.index(['transaction_id']);
-        table.index(['created_at']);
-        table.index(['team_id', 'created_at']);
-    });
+    if (!logsExists) {
+        await knex.schema.createTable('fund_balance_logs', (table) => {
+            table.bigIncrements('id').primary();
+            table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
+            table.bigInteger('transaction_id').notNullable().references('fund_transactions.id').onDelete('CASCADE');
+            table.decimal('previous_balance', 12, 2).notNullable();
+            table.decimal('new_balance', 12, 2).notNullable();
+            table.decimal('change_amount', 12, 2).notNullable();
+            table.text('description').nullable();
+            table.timestamp('created_at').defaultTo(knex.fn.now());
+            
+            // Indexes for performance
+            table.index(['team_id']);
+            table.index(['transaction_id']);
+            table.index(['created_at']);
+            table.index(['team_id', 'created_at']);
+        });
+    }
 
     // Create approvals table
-    await knex.schema.createTable('approvals', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
-        table.string('entity_type', 50).notNullable(); // 'transaction', 'campaign_confirmation'
-        table.bigInteger('entity_id').notNullable();
-        table.bigInteger('submitted_by').notNullable().references('users.id').onDelete('CASCADE');
-        table.string('status', 50).defaultTo('pending'); // 'pending', 'approved', 'rejected'
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        
-        // Indexes for performance
-        table.index(['team_id']);
-        table.index(['entity_type']);
-        table.index(['status']);
-        table.index(['team_id', 'entity_type', 'status']);
-        table.index(['team_id', 'created_at']);
-    });
+    if (!approvalsExists) {
+        await knex.schema.createTable('approvals', (table) => {
+            table.bigIncrements('id').primary();
+            table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
+            table.string('entity_type', 50).notNullable(); // 'transaction', 'campaign_confirmation'
+            table.bigInteger('entity_id').notNullable();
+            table.bigInteger('submitted_by').notNullable().references('users.id').onDelete('CASCADE');
+            table.string('status', 50).defaultTo('pending'); // 'pending', 'approved', 'rejected'
+            table.timestamp('created_at').defaultTo(knex.fn.now());
+            
+            // Indexes for performance
+            table.index(['team_id']);
+            table.index(['entity_type']);
+            table.index(['status']);
+            table.index(['team_id', 'entity_type', 'status']);
+            table.index(['team_id', 'created_at']);
+        });
+    }
 
-    // Enable RLS on all three tables
-    await knex.raw('ALTER TABLE fund_balance_logs ENABLE ROW LEVEL SECURITY');
-    await knex.raw('ALTER TABLE approvals ENABLE ROW LEVEL SECURITY');
+    // Enable RLS on all three tables (if they were just created)
+    if (!logsExists) {
+        await knex.raw('ALTER TABLE fund_balance_logs ENABLE ROW LEVEL SECURITY');
+    }
+    if (!approvalsExists) {
+        await knex.raw('ALTER TABLE approvals ENABLE ROW LEVEL SECURITY');
+    }
 
     // fund_balance_logs RLS policies
     await knex.raw(`
