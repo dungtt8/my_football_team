@@ -50,6 +50,14 @@ jobs:
         working-directory: backend
         run: pnpm ci
 
+      - name: Cleanup old migration records
+        working-directory: backend
+        run: |
+          echo "🧹 Cleaning up old migration records..."
+          pnpm migrate:cleanup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Run database migrations
         working-directory: backend
         run: |

@@ -8,6 +8,7 @@
     "dev": "node src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "migrate:cleanup": "node src/database/cleanup-migrations.js",
     "migrate": "knex migrate:latest --env production",
     "migrate:rollback": "knex migrate:rollback --env production",
     "seed": "knex seed:run --env production"
