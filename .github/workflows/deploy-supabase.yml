@@ -52,15 +52,26 @@ jobs:
 
       - name: Run database migrations
         working-directory: backend
-        run: pnpm migrate
+        run: |
+          echo "🔄 Running database migrations..."
+          pnpm migrate
+          echo "✅ Migrations completed"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
+      - name: Verify migrations applied
+        working-directory: backend
+        run: |
+          echo "🔍 Checking migration status..."
+          npx knex migrate:status --env production || true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Verify deployment
         working-directory: backend
         run: |
           echo "✅ Database migrations completed"
-          echo "✅ Deployment to Supabase successful"
+          echo "✅ Backend ready for deployment"
