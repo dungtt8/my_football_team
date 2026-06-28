@@ -23,12 +23,12 @@ async function cleanup() {
     console.log('📋 Checking current migrations in database...');
     
     const currentMigrations = await conn.query(
-      'SELECT migration FROM knex_migrations ORDER BY id;'
+      'SELECT name FROM knex_migrations ORDER BY id;'
     );
     
     console.log(`Found ${currentMigrations.rows.length} migrations:`);
     currentMigrations.rows.forEach(m => {
-      console.log(`  - ${m.migration}`);
+      console.log(`  - ${m.name}`);
     });
     
     const OLD_MIGRATIONS = [
@@ -52,7 +52,7 @@ async function cleanup() {
       '019_teams_updated_at.js'
     ];
     
-    const toDelete = currentMigrations.rows.filter(m => OLD_MIGRATIONS.includes(m.migration));
+    const toDelete = currentMigrations.rows.filter(m => OLD_MIGRATIONS.includes(m.name));
     
     if (toDelete.length === 0) {
       console.log('\n✅ No old migrations to clean up');
@@ -62,12 +62,12 @@ async function cleanup() {
     
     console.log(`\n⚠️  Found ${toDelete.length} old migration records to remove:`);
     toDelete.forEach(m => {
-      console.log(`  - ${m.migration}`);
+      console.log(`  - ${m.name}`);
     });
     
     // Build DELETE query
     const placeholders = OLD_MIGRATIONS.map((_, i) => `$${i + 1}`).join(',');
-    const deleteQuery = `DELETE FROM knex_migrations WHERE migration IN (${placeholders});`;
+    const deleteQuery = `DELETE FROM knex_migrations WHERE name IN (${placeholders});`;
     
     console.log('\n🧹 Deleting old migration records...');
     const result = await conn.query(deleteQuery, OLD_MIGRATIONS);
@@ -75,12 +75,12 @@ async function cleanup() {
     
     // Show remaining migrations
     const remaining = await conn.query(
-      'SELECT migration FROM knex_migrations ORDER BY id;'
+      'SELECT name FROM knex_migrations ORDER BY id;'
     );
     
     console.log(`\n📋 Remaining migrations (${remaining.rows.length}):`);
     remaining.rows.forEach(m => {
-      console.log(`  ✓ ${m.migration}`);
+      console.log(`  ✓ ${m.name}`);
     });
     
     console.log('\n✅ Cleanup complete! Now you can run: pnpm migrate');

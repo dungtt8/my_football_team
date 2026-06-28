@@ -77,7 +77,7 @@ jobs:
           npx knex migrate:status --env production || true
           echo ""
           echo "📋 Verifying migrations in database..."
-          echo "SELECT migration FROM knex_migrations ORDER BY id;" | psql "$DATABASE_URL" || echo "⚠️  Could not verify (normal on first deploy)"
+          echo "SELECT name FROM knex_migrations ORDER BY id;" | psql "$DATABASE_URL" || echo "⚠️  Could not verify (normal on first deploy)"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
