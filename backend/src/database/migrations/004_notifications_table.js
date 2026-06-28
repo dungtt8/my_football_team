@@ -1,4 +1,11 @@
 exports.up = async (knex) => {
+    // Skip if table already exists (from duplicate old migration)
+    const exists = await knex.schema.hasTable('notifications');
+    if (exists) {
+        console.log('✅ notifications table already exists, skipping...');
+        return;
+    }
+
     // notifications table
     await knex.schema.createTable('notifications', (table) => {
         table.bigIncrements('id').primary();

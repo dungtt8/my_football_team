@@ -1,59 +1,76 @@
 exports.up = async (knex) => {
+    // Skip if tables already exist (from duplicate old migration)
+    const campaignsExists = await knex.schema.hasTable('campaigns');
+    const assignmentsExists = await knex.schema.hasTable('campaign_assignments_v2');
+    
+    if (campaignsExists && assignmentsExists) {
+        console.log('✅ campaigns tables already exist, skipping...');
+        return;
+    }
+
     // campaigns table for ad-hoc campaigns (distinct from fund_campaigns)
-    await knex.schema.createTable('campaigns', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
-        table.bigInteger('created_by').notNullable().references('users.id').onDelete('RESTRICT');
-        table.string('name', 255).notNullable();
-        table.decimal('amount_per_member', 12, 2).notNullable();
-        table.timestamp('deadline').nullable();
-        table.text('description');
-        table.string('status', 50).notNullable().defaultTo('active'); // 'active', 'closed'
-        table.timestamp('closed_at').nullable();
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        table.timestamp('updated_at').defaultTo(knex.fn.now());
-        table.index(['team_id', 'status']);
-        table.index(['created_by']);
-    });
+    if (!campaignsExists) {
+        await knex.schema.createTable('campaigns', (table) => {
+            table.bigIncrements('id').primary();
+            table.bigInteger('team_id').notNullable().references('teams.id').onDelete('CASCADE');
+            table.bigInteger('created_by').notNullable().references('users.id').onDelete('RESTRICT');
+            table.string('name', 255).notNullable();
+            table.decimal('amount_per_member', 12, 2).notNullable();
+            table.timestamp('deadline').nullable();
+            table.text('description');
+            table.string('status', 50).notNullable().defaultTo('active'); // 'active', 'closed'
+            table.timestamp('closed_at').nullable();
+            table.timestamp('created_at').defaultTo(knex.fn.now());
+            table.timestamp('updated_at').defaultTo(knex.fn.now());
+            table.index(['team_id', 'status']);
+            table.index(['created_by']);
+        });
+    }
 
     // campaign_assignments_v2 table for ad-hoc campaign assignments with state machine
     // Using v2 suffix to differentiate from existing fund campaign assignments
-    await knex.schema.createTable('campaign_assignments_v2', (table) => {
-        table.bigIncrements('id').primary();
-        table.bigInteger('campaign_id').notNullable().references('campaigns.id').onDelete('CASCADE');
-        table.bigInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
-        table.string('status', 50).notNullable().defaultTo('pending_confirmation'); // 'pending_confirmation', 'pending_approval', 'approved', 'rejected', 'exempt'
-        
-        // Confirmation flow
-        table.timestamp('confirmed_at').nullable();
-        table.bigInteger('confirmed_by').nullable().references('users.id').onDelete('RESTRICT');
-        
-        // Rejection flow
-        table.timestamp('rejected_at').nullable();
-        table.text('rejected_reason').nullable();
-        
-        // Approval flow
-        table.timestamp('approved_at').nullable();
-        table.bigInteger('approved_by').nullable().references('users.id').onDelete('RESTRICT');
-        table.text('approval_notes').nullable();
-        
-        // Exemption flow
-        table.timestamp('exempt_at').nullable();
-        table.text('exempt_reason').nullable();
-        
-        // Transaction reference
-        table.bigInteger('transaction_id').nullable().references('fund_transactions.id').onDelete('SET NULL');
-        
-        table.timestamp('created_at').defaultTo(knex.fn.now());
-        table.timestamp('updated_at').defaultTo(knex.fn.now());
-        table.unique(['campaign_id', 'user_id']);
-        table.index(['campaign_id', 'status']);
-        table.index(['user_id', 'status']);
-    });
+    if (!assignmentsExists) {
+        await knex.schema.createTable('campaign_assignments_v2', (table) => {
+            table.bigIncrements('id').primary();
+            table.bigInteger('campaign_id').notNullable().references('campaigns.id').onDelete('CASCADE');
+            table.bigInteger('user_id').notNullable().references('users.id').onDelete('CASCADE');
+            table.string('status', 50).notNullable().defaultTo('pending_confirmation'); // 'pending_confirmation', 'pending_approval', 'approved', 'rejected', 'exempt'
+            
+            // Confirmation flow
+            table.timestamp('confirmed_at').nullable();
+            table.bigInteger('confirmed_by').nullable().references('users.id').onDelete('RESTRICT');
+            
+            // Rejection flow
+            table.timestamp('rejected_at').nullable();
+            table.text('rejected_reason').nullable();
+            
+            // Approval flow
+            table.timestamp('approved_at').nullable();
+            table.bigInteger('approved_by').nullable().references('users.id').onDelete('RESTRICT');
+            table.text('approval_notes').nullable();
+            
+            // Exemption flow
+            table.timestamp('exempt_at').nullable();
+            table.text('exempt_reason').nullable();
+            
+            // Transaction reference
+            table.bigInteger('transaction_id').nullable().references('fund_transactions.id').onDelete('SET NULL');
+            
+            table.timestamp('created_at').defaultTo(knex.fn.now());
+            table.timestamp('updated_at').defaultTo(knex.fn.now());
+            table.unique(['campaign_id', 'user_id']);
+            table.index(['campaign_id', 'status']);
+            table.index(['user_id', 'status']);
+        });
+    }
 
-    // Enable RLS on new tables
-    await knex.raw('ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY');
-    await knex.raw('ALTER TABLE campaign_assignments_v2 ENABLE ROW LEVEL SECURITY');
+    // Only set up RLS if tables were just created
+    if (!campaignsExists) {
+        await knex.raw('ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY');
+    }
+    if (!assignmentsExists) {
+        await knex.raw('ALTER TABLE campaign_assignments_v2 ENABLE ROW LEVEL SECURITY');
+    }
 
     // campaigns RLS policies
     await knex.raw(`

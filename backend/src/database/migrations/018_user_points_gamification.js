@@ -3,6 +3,13 @@
  * Tracks points earned by users per month per team
  */
 exports.up = async (knex) => {
+    // Check if table already exists (from duplicate old migration)
+    const exists = await knex.schema.hasTable('user_points');
+    if (exists) {
+        console.log('✅ user_points table already exists, skipping...');
+        return;
+    }
+
     // Create user_points table
     await knex.schema.createTable('user_points', (table) => {
         table.increments('id').primary();
