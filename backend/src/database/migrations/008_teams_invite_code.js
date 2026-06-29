@@ -1,4 +1,11 @@
 exports.up = async (knex) => {
+    // Check if column already exists
+    const hasColumn = await knex.schema.hasColumn('teams', 'invite_code');
+    if (hasColumn) {
+        console.log('✅ invite_code column already exists, skipping...');
+        return;
+    }
+
     await knex.schema.alterTable('teams', (table) => {
         table.string('invite_code', 10).unique().nullable();
     });
