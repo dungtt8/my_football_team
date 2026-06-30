@@ -436,7 +436,7 @@ const onCampaignClosedLogic = async ({ event, step }) => {
 
   // Step 2: Fetch all campaign assignments for statistics
   const assignments = await step.run('fetch-assignments', async () => {
-    return db('campaign_assignments_v2')
+    return db('campaign_assignments')
       .where('campaign_id', campaign_id)
       .select('status', 'user_id', 'transaction_id');
   });

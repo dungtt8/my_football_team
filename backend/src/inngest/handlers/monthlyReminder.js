@@ -247,7 +247,7 @@ const autoCreateTeamFundLogic = async ({ step }) => {
           created_at: new Date(),
           updated_at: new Date()
         }));
-        await db('campaign_assignments_v2').insert(assignments);
+        await db('campaign_assignments').insert(assignments);
       }
 
       // Emit event for notifications

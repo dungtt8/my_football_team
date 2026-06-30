@@ -76,7 +76,7 @@ const createCampaign = async (req, res) => {
         updated_at: new Date()
       }));
 
-      await db('campaign_assignments_v2').insert(assignments);
+      await db('campaign_assignments').insert(assignments);
 
       logger.info('Campaign auto-assigned to active members', {
         campaign_id: campaignId,
@@ -101,7 +101,7 @@ const createCampaign = async (req, res) => {
     });
 
     // Fetch assignments
-    const assignments = await db('campaign_assignments_v2')
+    const assignments = await db('campaign_assignments')
       .where('campaign_id', campaignId);
 
     return res.status(201).json({
@@ -189,11 +189,11 @@ const getCampaign = async (req, res) => {
     }
 
     // Fetch assignments with user details
-    const assignments = await db('campaign_assignments_v2')
+    const assignments = await db('campaign_assignments')
       .where('campaign_id', id)
-      .join('users', 'campaign_assignments_v2.user_id', 'users.id')
+      .join('users', 'campaign_assignments.user_id', 'users.id')
       .select(
-        'campaign_assignments_v2.*',
+        'campaign_assignments.*',
         'users.display_name',
         'users.zalo_user_id'
       );
@@ -253,7 +253,7 @@ const memberConfirm = async (req, res) => {
     }
 
     // Fetch assignment
-    const assignment = await db('campaign_assignments_v2')
+    const assignment = await db('campaign_assignments')
       .where('campaign_id', id)
       .where('user_id', memberId)
       .first();
@@ -267,7 +267,7 @@ const memberConfirm = async (req, res) => {
     }
 
     // Update assignment status with bill image proof
-    await db('campaign_assignments_v2')
+    await db('campaign_assignments')
       .where('id', assignment.id)
       .update({
         status: 'pending_approval',
@@ -278,7 +278,7 @@ const memberConfirm = async (req, res) => {
       });
 
     // Fetch updated assignment
-    const updatedAssignment = await db('campaign_assignments_v2')
+    const updatedAssignment = await db('campaign_assignments')
       .where('id', assignment.id)
       .first();
 
@@ -354,7 +354,7 @@ const memberReject = async (req, res) => {
     }
 
     // Fetch assignment
-    const assignment = await db('campaign_assignments_v2')
+    const assignment = await db('campaign_assignments')
       .where('campaign_id', id)
       .where('user_id', memberId)
       .first();
@@ -368,7 +368,7 @@ const memberReject = async (req, res) => {
     }
 
     // Update assignment status
-    await db('campaign_assignments_v2')
+    await db('campaign_assignments')
       .where('id', assignment.id)
       .update({
         status: 'rejected',
@@ -378,7 +378,7 @@ const memberReject = async (req, res) => {
       });
 
     // Fetch updated assignment
-    const updatedAssignment = await db('campaign_assignments_v2')
+    const updatedAssignment = await db('campaign_assignments')
       .where('id', assignment.id)
       .first();
 
@@ -427,7 +427,7 @@ const coManagerApprove = async (req, res) => {
     }
 
     // Fetch assignment
-    const assignment = await db('campaign_assignments_v2')
+    const assignment = await db('campaign_assignments')
       .where('campaign_id', id)
       .where('user_id', userId)
       .first();
@@ -467,7 +467,7 @@ const coManagerApprove = async (req, res) => {
     });
 
     // Update assignment status and link transaction
-    await db('campaign_assignments_v2')
+    await db('campaign_assignments')
       .where('id', assignment.id)
       .update({
         status: 'approved',
@@ -479,7 +479,7 @@ const coManagerApprove = async (req, res) => {
       });
 
     // Fetch updated assignment
-    const updatedAssignment = await db('campaign_assignments_v2')
+    const updatedAssignment = await db('campaign_assignments')
       .where('id', assignment.id)
       .first();
 
@@ -529,7 +529,7 @@ const coManagerReject = async (req, res) => {
     }
 
     // Fetch assignment
-    const assignment = await db('campaign_assignments_v2')
+    const assignment = await db('campaign_assignments')
       .where('campaign_id', id)
       .where('user_id', userId)
       .first();
@@ -548,7 +548,7 @@ const coManagerReject = async (req, res) => {
     await approvalService.rejectEntity(assignment.id, 'campaign_assignment', managerId, rejection_reason);
 
     // Fetch updated assignment
-    const updatedAssignment = await db('campaign_assignments_v2')
+    const updatedAssignment = await db('campaign_assignments')
       .where('id', assignment.id)
       .first();
 
@@ -597,7 +597,7 @@ const coManagerExempt = async (req, res) => {
     }
 
     // Fetch assignment
-    const assignment = await db('campaign_assignments_v2')
+    const assignment = await db('campaign_assignments')
       .where('campaign_id', id)
       .where('user_id', userId)
       .first();
@@ -615,7 +615,7 @@ const coManagerExempt = async (req, res) => {
     }
 
     // Update assignment status
-    await db('campaign_assignments_v2')
+    await db('campaign_assignments')
       .where('id', assignment.id)
       .update({
         status: 'exempt',
@@ -625,7 +625,7 @@ const coManagerExempt = async (req, res) => {
       });
 
     // Fetch updated assignment
-    const updatedAssignment = await db('campaign_assignments_v2')
+    const updatedAssignment = await db('campaign_assignments')
       .where('id', assignment.id)
       .first();
 
@@ -726,7 +726,7 @@ const getReport = async (req, res) => {
     }
 
     // Get all assignments
-    const assignments = await db('campaign_assignments_v2')
+    const assignments = await db('campaign_assignments')
       .where('campaign_id', id);
 
     // Calculate statistics
