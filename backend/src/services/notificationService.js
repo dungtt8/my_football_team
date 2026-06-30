@@ -72,7 +72,9 @@ class NotificationService {
         event_name: eventName,
         error: error.message
       });
-      throw error;
+      // Do not throw — Inngest events are fire-and-forget side effects.
+      // Missing INNGEST_EVENT_KEY or network issues should not break the caller.
+      return null;
     }
   }
 
