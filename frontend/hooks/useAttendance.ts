@@ -41,6 +41,12 @@ export interface AttendanceCheckin {
     description?: string | null
     created_at?: string | null
     createdAt?: string | null
+    checked_in_at?: string | null
+    checkInTime?: string | null
+    checkOutTime?: string | null
+    duration?: number | null
+    notes?: string | null
+    status?: string
 }
 
 /** Kept for backward compat where AttendanceRecord is referenced */
