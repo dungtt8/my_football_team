@@ -53,7 +53,12 @@ export default function AttendanceHistoryPage() {
 
         // Status filter
         if (statusFilter !== 'all') {
-            filtered = filtered.filter((r) => r.status === statusFilter)
+            filtered = filtered.filter((r) => {
+                if (statusFilter === 'present') return r.response === 'yes'
+                if (statusFilter === 'absent') return r.response === 'no'
+                if (statusFilter === 'pending') return r.response === null
+                return true
+            })
         }
 
         // Date range filter
@@ -79,11 +84,11 @@ export default function AttendanceHistoryPage() {
     const exportToCSV = () => {
         const headers = ['Date', 'Check-In', 'Check-Out', 'Duration', 'Status']
         const rows = filteredRecords.map((r) => [
-            new Date(r.created_at || r.createdAt || '').toLocaleDateString('vi-VN'),
-            r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('vi-VN') : '--',
+            new Date(r.session_date || r.created_at || '').toLocaleDateString('vi-VN'),
             '--',
             '--',
-            r.status,
+            '--',
+            r.response === 'yes' ? 'present' : r.response === 'no' ? 'absent' : 'pending',
         ])
 
         const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
@@ -194,7 +199,6 @@ export default function AttendanceHistoryPage() {
                         >
                             <option value="all">All Status</option>
                             <option value="present">Present</option>
-                            <option value="late">Late</option>
                             <option value="absent">Absent</option>
                             <option value="pending">Pending</option>
                         </select>
