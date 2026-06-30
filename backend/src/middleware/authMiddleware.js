@@ -14,7 +14,11 @@ const authMiddleware = (req, res, next) => {
     const decoded = authService.verifyJWT(token);
 
     // Attach user context to request
-    req.user = decoded;
+    // Normalize user_id → id for consistent access across handlers
+    req.user = {
+      ...decoded,
+      id: decoded.id ?? decoded.user_id,
+    };
     req.teamId = decoded.team_id;
 
     next();
