@@ -12,12 +12,8 @@
 
 exports.up = async (knex) => {
     // Add indexes to optimize multi-team queries
-    await knex.schema.table('team_members', (table) => {
-        // Speed up queries finding all teams for a user
-        table.index(['user_id', 'status']);
-        // Speed up queries checking user's role in team
-        table.index(['team_id', 'user_id', 'status']);
-    });
+    await knex.raw('CREATE INDEX IF NOT EXISTS team_members_user_id_status_index ON team_members(user_id, status)');
+    await knex.raw('CREATE INDEX IF NOT EXISTS team_members_team_id_user_id_status_index ON team_members(team_id, user_id, status)');
 
     // Comment on users table about role deprecation
     // Note: This is just documentation in the migration, actual change is in code
@@ -41,8 +37,6 @@ exports.up = async (knex) => {
 
 exports.down = async (knex) => {
     // Remove the indexes we added
-    await knex.schema.table('team_members', (table) => {
-        table.dropIndex(['user_id', 'status']);
-        table.dropIndex(['team_id', 'user_id', 'status']);
-    });
+    await knex.raw('DROP INDEX IF EXISTS team_members_user_id_status_index');
+    await knex.raw('DROP INDEX IF EXISTS team_members_team_id_user_id_status_index');
 };
