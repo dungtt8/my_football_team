@@ -5,6 +5,7 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const notificationService = require('./notificationService');
+const checkinService = require('./checkinService');
 const { ValidationError, NotFoundError } = require('./errorService');
 
 const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -89,26 +90,29 @@ const createAutoSession = async (teamId) => {
             return null; // Don't create
         }
 
-        // Parse session time
+        // session_date = today at configured session_time
         const [hours, minutes] = team.session_time.split(':').map(Number);
-        const checkInDeadline = new Date();
-        checkInDeadline.setHours(hours, minutes, 0, 0);
+        const sessionDate = new Date();
+        sessionDate.setUTCHours(hours, minutes, 0, 0);
 
-        // Add attendance cooldown to create deadline earlier
-        const cooldownMinutes = team.attendance_cooldown_minutes || 5;
-        checkInDeadline.setMinutes(checkInDeadline.getMinutes() - cooldownMinutes);
+        // check_in_deadline = 1 hour before session (members must respond by then)
+        const checkInDeadline = new Date(sessionDate.getTime() - 60 * 60 * 1000);
 
         // Create session
         const [session] = await db('attendance_sessions').insert({
             team_id: teamId,
-            session_date: new Date(),
+            session_date: sessionDate,
             session_type: team.session_type === 'both' ? 'training' : team.session_type,
             location: team.session_location || null,
             check_in_deadline: checkInDeadline,
             status: 'active',
-            created_by: null, // System created
+            created_by: null,
             created_at: new Date(),
+            updated_at: new Date(),
         }).returning('*');
+
+        // Auto-create checkin rows for all active members
+        await checkinService.createCheckinsForSession(session.id, teamId);
 
         // Update team's last_auto_session_created_at
         await db('teams').where({ id: teamId }).update({

@@ -4,12 +4,12 @@ import { useState, useCallback } from 'react'
 import { useApi } from './useApi'
 import { SessionFormData } from '@/components/Attendance/SessionForm'
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface AttendanceSession {
     id: string
     team_id: string
-    created_by: string
+    created_by: string | null
     session_date: string
     check_in_deadline: string | null
     location: string | null
@@ -21,56 +21,46 @@ export interface AttendanceSession {
     updated_at: string
 }
 
-export interface AttendanceRecord {
+/** One row per (session × user) — the Yes/No response */
+export interface AttendanceCheckin {
     id: string
-    // snake_case (from backend)
-    session_id?: string
-    user_id?: string
-    status: 'attended' | 'marked_absent' | 'present' | 'late' | 'absent' | 'pending'
-    checked_in_at?: string | null
-    marked_by?: string | null
-    created_at?: string
-    // joined from session
+    session_id: string
+    user_id: string
+    team_id: string
+    response: 'yes' | 'no' | null
+    responded_at: string | null
+    // joined
+    full_name?: string
+    email?: string
+    // when joined with session
     session_date?: string
     location?: string
     session_type?: string
-    // joined from user
-    full_name?: string
-    email?: string
-    // camelCase aliases for backward compat
-    createdAt?: string
-    checkInTime?: string
-    checkOutTime?: string
-    duration?: number
-    notes?: string
-    userId?: string
-    sessionId?: string
+    session_status?: string
+    check_in_deadline?: string | null
+    description?: string | null
+}
+
+/** Kept for backward compat where AttendanceRecord is referenced */
+export type AttendanceRecord = AttendanceCheckin
+
+export interface SessionStats {
+    total: number
+    yes: number
+    no: number
+    pending: number
 }
 
 export interface LeaderboardEntry {
     rank: number
-    // snake_case (from backend)
     user_id?: string
     full_name?: string
     total_points?: number
     month?: string
-    // camelCase aliases for backward compat
+    // camelCase aliases
     userId?: string
     userName?: string
-    avatarUrl?: string
     points?: number
-    streak?: number
-    badges?: number
-    totalPresent?: number
-}
-
-export interface Badge {
-    id: string
-    name: string
-    description: string
-    icon: string
-    earnedDate: string
-    isEarned: boolean
 }
 
 export interface UserStats {
@@ -78,229 +68,161 @@ export interface UserStats {
     month: string
     total_points: number
     rank: number
-    attended: number
-    absent: number
 }
 
 export interface AttendanceHistory {
     user_id: string
     month: string
-    history: AttendanceRecord[]
+    history: AttendanceCheckin[]
 }
 
-export interface CheckInResult {
-    id: string
-    session_id: string
-    user_id: string
-    status: string
-    checked_in_at: string
-    points_awarded: number
-}
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
-export interface MarkAbsentResult {
-    id: string
-    session_id: string
-    user_id: string
-    status: string
-    marked_by: string
-    points_deducted: number
-}
-
-// ── Hook interface ────────────────────────────────────────────────────────────
-
-export interface UseAttendanceReturn {
-    createSession: (data: SessionFormData) => Promise<AttendanceSession>
-    createManualSession: (data: SessionFormData) => Promise<AttendanceSession>
-    listSessions: (params?: Record<string, string | number>) => Promise<{ data: AttendanceSession[]; pagination: any }>
-    getSession: (id: string) => Promise<{ session: AttendanceSession; records: AttendanceRecord[]; total_records: number }>
-    closeSession: (id: string) => Promise<AttendanceSession>
-    memberCheckIn: (sessionId: string) => Promise<CheckInResult>
-    markAbsent: (sessionId: string, userId: string) => Promise<MarkAbsentResult>
-    getLeaderboard: () => Promise<LeaderboardEntry[]>
-    getHistoricalLeaderboard: (month: string) => Promise<LeaderboardEntry[]>
-    getUserStats: (userId: string, month?: string) => Promise<UserStats>
-    getAttendanceHistory: (month?: string) => Promise<AttendanceHistory>
-    // Compatibility shims (redirect to real endpoints)
-    listAttendance: (params?: Record<string, any>) => Promise<AttendanceRecord[]>
-    getAttendanceDetail: (sessionId: string) => Promise<AttendanceRecord | undefined>
-    loading: boolean
-    error: Error | null
-}
-
-// ── Hook ─────────────────────────────────────────────────────────────────────
-
-export const useAttendance = (): UseAttendanceReturn => {
+export const useAttendance = () => {
     const { request, loading, error } = useApi()
     const [localError, setLocalError] = useState<Error | null>(null)
 
-    const createSession = useCallback(
-        async (data: SessionFormData) => {
-            try {
-                setLocalError(null)
-                return await request<AttendanceSession>('/attendance/sessions', 'POST', data)
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to create session')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    // ── Sessions ────────────────────────────────────────────────────────────
 
-    const createManualSession = useCallback(
-        async (data: SessionFormData) => {
-            try {
-                setLocalError(null)
-                return await request<AttendanceSession>('/team/attendance/sessions/manual', 'POST', data)
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to create manual session')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    const createSession = useCallback(async (data: SessionFormData) => {
+        try {
+            setLocalError(null)
+            return await request<AttendanceSession>('/attendance/sessions', 'POST', data)
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to create session')
+            setLocalError(e); throw e
+        }
+    }, [request])
 
-    const listSessions = useCallback(
-        async (params?: Record<string, string | number>) => {
-            try {
-                setLocalError(null)
-                const qs = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : ''
-                return await request<{ data: AttendanceSession[]; pagination: any }>(`/attendance/sessions${qs}`, 'GET') || { data: [], pagination: {} }
-            } catch (err) {
-                setLocalError(err instanceof Error ? err : new Error('Failed to list sessions'))
-                return { data: [], pagination: {} }
-            }
-        },
-        [request]
-    )
+    // Alias: createManualSession now points to the same endpoint
+    const createManualSession = createSession
 
-    const getSession = useCallback(
-        async (id: string) => {
-            try {
-                setLocalError(null)
-                return await request<{ session: AttendanceSession; records: AttendanceRecord[]; total_records: number }>(`/attendance/sessions/${id}`, 'GET')
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to get session')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    const listSessions = useCallback(async (params?: Record<string, string | number>) => {
+        try {
+            setLocalError(null)
+            const qs = params ? `?${new URLSearchParams(params as Record<string, string>).toString()}` : ''
+            return await request<{ data: AttendanceSession[]; pagination: any }>(`/attendance/sessions${qs}`, 'GET') || { data: [], pagination: {} }
+        } catch (err) {
+            setLocalError(err instanceof Error ? err : new Error('Failed to list sessions'))
+            return { data: [], pagination: {} }
+        }
+    }, [request])
 
-    const closeSession = useCallback(
-        async (id: string) => {
-            try {
-                setLocalError(null)
-                return await request<AttendanceSession>(`/attendance/sessions/${id}/close`, 'POST')
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to close session')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    const getSession = useCallback(async (id: string) => {
+        try {
+            setLocalError(null)
+            return await request<{ session: AttendanceSession; records: AttendanceCheckin[]; stats: SessionStats; total_records: number }>(`/attendance/sessions/${id}`, 'GET')
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to get session')
+            setLocalError(e); throw e
+        }
+    }, [request])
 
-    const memberCheckIn = useCallback(
-        async (sessionId: string) => {
-            try {
-                setLocalError(null)
-                return await request<CheckInResult>(`/attendance/sessions/${sessionId}/check-in`, 'POST')
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to check in')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    const closeSession = useCallback(async (id: string) => {
+        try {
+            setLocalError(null)
+            return await request<AttendanceSession>(`/attendance/sessions/${id}/close`, 'POST')
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to close session')
+            setLocalError(e); throw e
+        }
+    }, [request])
 
-    const markAbsent = useCallback(
-        async (sessionId: string, userId: string) => {
-            try {
-                setLocalError(null)
-                return await request<MarkAbsentResult>(`/attendance/sessions/${sessionId}/mark-absent`, 'POST', { user_id: userId })
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to mark absent')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    // ── Checkin responses ───────────────────────────────────────────────────
 
-    const getLeaderboard = useCallback(
-        async () => {
-            try {
-                setLocalError(null)
-                return await request<LeaderboardEntry[]>('/attendance/leaderboard', 'GET') || []
-            } catch (err) {
-                setLocalError(err instanceof Error ? err : new Error('Failed to fetch leaderboard'))
-                return []
-            }
-        },
-        [request]
-    )
+    const getActiveCheckin = useCallback(async () => {
+        try {
+            setLocalError(null)
+            return await request<{ check_in: AttendanceCheckin | null }>('/attendance/checkin/active', 'GET')
+        } catch (err) {
+            setLocalError(err instanceof Error ? err : new Error('Failed to get active checkin'))
+            return { check_in: null }
+        }
+    }, [request])
 
-    const getHistoricalLeaderboard = useCallback(
-        async (month: string) => {
-            try {
-                setLocalError(null)
-                return await request<LeaderboardEntry[]>(`/attendance/leaderboard/${month}`, 'GET') || []
-            } catch (err) {
-                setLocalError(err instanceof Error ? err : new Error('Failed to fetch leaderboard'))
-                return []
-            }
-        },
-        [request]
-    )
+    const respondToCheckin = useCallback(async (checkinId: string, response: 'yes' | 'no') => {
+        try {
+            setLocalError(null)
+            return await request<{ success: boolean; check_in: AttendanceCheckin }>(
+                `/attendance/checkin/${checkinId}/respond`, 'POST', { response }
+            )
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to respond')
+            setLocalError(e); throw e
+        }
+    }, [request])
 
-    const getUserStats = useCallback(
-        async (userId: string, month?: string) => {
-            try {
-                setLocalError(null)
-                const qs = month ? `?month=${month}` : ''
-                return await request<UserStats>(`/attendance/stats/${userId}${qs}`, 'GET')
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to fetch user stats')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    // ── Leaderboard & stats ─────────────────────────────────────────────────
 
-    const getAttendanceHistory = useCallback(
-        async (month?: string) => {
-            try {
-                setLocalError(null)
-                const qs = month ? `?month=${month}` : ''
-                return await request<AttendanceHistory>(`/attendance/history${qs}`, 'GET')
-            } catch (err) {
-                const e = err instanceof Error ? err : new Error('Failed to fetch attendance history')
-                setLocalError(e); throw e
-            }
-        },
-        [request]
-    )
+    const getLeaderboard = useCallback(async () => {
+        try {
+            setLocalError(null)
+            const res = await request<{ month: string; leaderboard: LeaderboardEntry[] }>('/attendance/leaderboard', 'GET')
+            return res?.leaderboard || []
+        } catch (err) {
+            setLocalError(err instanceof Error ? err : new Error('Failed to fetch leaderboard'))
+            return []
+        }
+    }, [request])
 
-    // Compat shim for listAttendance - wrapped in useCallback to prevent infinite re-renders
-    const listAttendance = useCallback(
-        async (params?: Record<string, any>) => {
-            try {
-                const month = params?.month as string | undefined
-                const history = await getAttendanceHistory(month)
-                return history?.history || []
-            } catch { return [] }
-        },
-        [getAttendanceHistory]
-    )
+    const getHistoricalLeaderboard = useCallback(async (month: string) => {
+        try {
+            setLocalError(null)
+            const res = await request<{ month: string; leaderboard: LeaderboardEntry[] }>(`/attendance/leaderboard/${month}`, 'GET')
+            return res?.leaderboard || []
+        } catch (err) {
+            setLocalError(err instanceof Error ? err : new Error('Failed to fetch leaderboard'))
+            return []
+        }
+    }, [request])
 
-    // Compat shim for getAttendanceDetail - wrapped in useCallback to prevent infinite re-renders
-    const getAttendanceDetail = useCallback(
-        async (sessionId: string) => {
-            try {
-                const result = await getSession(sessionId)
-                return result?.records?.[0]
-            } catch { return undefined }
-        },
-        [getSession]
-    )
+    const getUserStats = useCallback(async (userId: string, month?: string) => {
+        try {
+            setLocalError(null)
+            const qs = month ? `?month=${month}` : ''
+            return await request<UserStats>(`/attendance/stats/${userId}${qs}`, 'GET')
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to fetch user stats')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
+    const getAttendanceHistory = useCallback(async (month?: string) => {
+        try {
+            setLocalError(null)
+            const qs = month ? `?month=${month}` : ''
+            return await request<AttendanceHistory>(`/attendance/history${qs}`, 'GET')
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to fetch attendance history')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
+    // ── Compat shims ────────────────────────────────────────────────────────
+
+    const listAttendance = useCallback(async (params?: Record<string, any>) => {
+        try {
+            const month = params?.month as string | undefined
+            const history = await getAttendanceHistory(month)
+            return history?.history || []
+        } catch { return [] }
+    }, [getAttendanceHistory])
+
+    const getAttendanceDetail = useCallback(async (sessionId: string) => {
+        try {
+            const result = await getSession(sessionId)
+            return result?.records?.[0]
+        } catch { return undefined }
+    }, [getSession])
+
+    // Deprecated — no-op, kept so old call sites don't crash at compile time
+    const memberCheckIn = useCallback(async (_sessionId: string) => {
+        throw new Error('memberCheckIn removed — use respondToCheckin instead')
+    }, [])
+
+    const markAbsent = useCallback(async (_sessionId: string, _userId: string) => {
+        throw new Error('markAbsent removed — attendance is now Yes/No based')
+    }, [])
 
     return {
         createSession,
@@ -308,15 +230,16 @@ export const useAttendance = (): UseAttendanceReturn => {
         listSessions,
         getSession,
         closeSession,
-        memberCheckIn,
-        markAbsent,
+        getActiveCheckin,
+        respondToCheckin,
         getLeaderboard,
         getHistoricalLeaderboard,
         getUserStats,
         getAttendanceHistory,
-        // Compat shims
         listAttendance,
         getAttendanceDetail,
+        memberCheckIn,
+        markAbsent,
         loading,
         error: error || localError,
     }
