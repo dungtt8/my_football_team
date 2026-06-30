@@ -173,7 +173,7 @@ export const AttendanceList: React.FC<AttendanceListProps> = ({
 
                     {/* Status Badge */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        {getStatusBadge(record.status)}
+                        {getStatusBadge(record.status ?? '')}
                     </div>
                 </div>
             ))}

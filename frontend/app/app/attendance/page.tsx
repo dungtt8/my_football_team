@@ -224,14 +224,14 @@ export default function AttendancePage() {
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                                     <span style={{ fontSize: '20px' }}>
-                                        {(['attended', 'present', 'late'].includes(record.status) ? '✅' : record.status === 'absent' || record.status === 'marked_absent' ? '❌' : '⏳')}
+                                        {(['attended', 'present', 'late'].includes(record.status ?? '') ? '✅' : record.status === 'absent' || record.status === 'marked_absent' ? '❌' : '⏳')}
                                     </span>
                                     <div>
                                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: G.t1 }}>
                                             {record.session_type === 'match' ? '⚽' : '🏃'} {record.session_date ? new Date(record.session_date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }) : 'N/A'}
                                         </p>
                                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
-                                            {['attended', 'present', 'late'].includes(record.status) ? (record.checked_in_at ? `${new Date(record.checked_in_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Checked in') : record.status === 'absent' || record.status === 'marked_absent' ? 'Vắng' : 'Chưa điểm danh'}
+                                            {['attended', 'present', 'late'].includes(record.status ?? '') ? (record.checked_in_at ? `${new Date(record.checked_in_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Checked in') : record.status === 'absent' || record.status === 'marked_absent' ? 'Vắng' : 'Chưa điểm danh'}
                                         </p>
                                     </div>
                                 </div>

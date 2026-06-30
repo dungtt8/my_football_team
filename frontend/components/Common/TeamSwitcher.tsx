@@ -102,7 +102,7 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
                             {allTeams.map((t) => {
                                 const isActive = t.id === team?.id
                                 const isSwitching = switchingId === t.id
-                                const role = ROLE_CONFIG[t.role] ?? ROLE_CONFIG.member
+                                const role = ROLE_CONFIG[t.role ?? 'member'] ?? ROLE_CONFIG.member
                                 return (
                                     <button key={t.id} onClick={() => handleSwitchTeam(t.id)}
                                         disabled={isActive || !!switchingId}

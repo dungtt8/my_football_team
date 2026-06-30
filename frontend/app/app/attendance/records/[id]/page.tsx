@@ -73,7 +73,7 @@ export default function AttendanceDetailPage() {
         )
     }
 
-    const statusColor = getStatusColor(record.status)
+    const statusColor = getStatusColor(record.status ?? '')
 
     return (
         <div

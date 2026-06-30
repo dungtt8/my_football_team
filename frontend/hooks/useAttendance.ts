@@ -44,7 +44,7 @@ export interface AttendanceCheckin {
     checked_in_at?: string | null
     checkInTime?: string | null
     checkOutTime?: string | null
-    duration?: number | null
+    duration?: number
     notes?: string | null
     status?: string
 }
@@ -59,6 +59,15 @@ export interface SessionStats {
     pending: number
 }
 
+export interface Badge {
+    id: string
+    name: string
+    icon?: string
+    description?: string
+    isEarned?: boolean
+    earnedDate?: string | null
+}
+
 export interface LeaderboardEntry {
     rank: number
     user_id?: string
@@ -69,6 +78,9 @@ export interface LeaderboardEntry {
     userId?: string
     userName?: string
     points?: number
+    avatarUrl?: string
+    streak?: number
+    badges?: number
 }
 
 export interface UserStats {

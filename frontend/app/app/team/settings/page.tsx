@@ -15,7 +15,7 @@ const G = {
     red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
 }
 
-type TabType = 'general' | 'finance' | 'scheduling' | 'invite'
+type TabType = 'general' | 'finance' | 'scheduling' | 'invite' | 'attendance'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
