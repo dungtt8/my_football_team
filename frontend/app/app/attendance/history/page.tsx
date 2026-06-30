@@ -151,8 +151,8 @@ export default function AttendanceHistoryPage() {
                     totalAbsent={stats?.absent ?? 0}
                     totalLate={0}
                     attendancePercentage={
-                        stats && (stats.attended + stats.absent) > 0
-                            ? Math.round((stats.attended / (stats.attended + stats.absent)) * 100)
+                        stats && ((stats.attended ?? 0) + (stats.absent ?? 0)) > 0
+                            ? Math.round(((stats.attended ?? 0) / ((stats.attended ?? 0) + (stats.absent ?? 0))) * 100)
                             : 0
                     }
                     isLoading={loading}

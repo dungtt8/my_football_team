@@ -211,6 +211,8 @@ const getAttendanceHistory = async (req, res) => {
     try {
         const userId = req.user?.id;
         const teamId = req.team?.id || req.user?.team_id;
+        if (!userId) throw new ValidationError('User not authenticated');
+        if (!teamId) throw new ValidationError('Team not found');
         const { month } = req.query;
         const targetMonth = month || gamificationService.getCurrentMonth();
         if (!/^\d{4}-\d{2}$/.test(targetMonth)) throw new ValidationError('Month must be YYYY-MM');
