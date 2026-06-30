@@ -39,6 +39,8 @@ export interface AttendanceCheckin {
     session_status?: string
     check_in_deadline?: string | null
     description?: string | null
+    created_at?: string | null
+    createdAt?: string | null
 }
 
 /** Kept for backward compat where AttendanceRecord is referenced */
