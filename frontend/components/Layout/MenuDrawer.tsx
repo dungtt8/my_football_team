@@ -35,25 +35,25 @@ interface MenuItem {
 const MENU_ITEMS: MenuItem[] = [
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: 'Tổng quan',
     path: '/app',
     icon: <House size={24} weight="bold" />,
   },
   {
     id: 'finance',
-    label: 'Finance',
+    label: 'Tài chính',
     path: '/app/finance',
     icon: <CurrencyDollar size={24} weight="bold" />,
   },
   {
     id: 'campaigns',
-    label: 'Campaigns',
+    label: 'Chiến dịch',
     path: '/app/campaigns',
     icon: <Megaphone size={24} weight="bold" />,
   },
   {
     id: 'attendance',
-    label: 'Attendance',
+    label: 'Điểm danh',
     path: '/app/attendance',
     icon: <Gear size={24} weight="bold" />,
   },
@@ -62,19 +62,19 @@ const MENU_ITEMS: MenuItem[] = [
 const FOOTER_ITEMS: MenuItem[] = [
   {
     id: 'settings',
-    label: 'Settings',
+    label: 'Cài đặt',
     path: '/app/menu',
     icon: <Gear size={24} weight="bold" />,
   },
   {
     id: 'help',
-    label: 'Help & Support',
+    label: 'Trợ giúp',
     path: '/help',
     icon: <Question size={24} weight="bold" />,
   },
   {
     id: 'about',
-    label: 'About',
+    label: 'Giới thiệu',
     path: '/about',
     icon: <Info size={24} weight="bold" />,
   },
@@ -165,7 +165,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 onClick={onClose}
                 className="flex-shrink-0 transition-colors"
                 style={{ color: 'rgba(240,244,255,0.6)', background: 'rgba(255,255,255,0.06)', width: '36px', height: '36px', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                aria-label="Close menu"
+                aria-label="Đóng menu"
               >
                 <X size={20} />
               </button>
@@ -278,7 +278,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
             }}
           >
             <SignOut size={20} weight="bold" />
-            Logout
+            Đăng xuất
           </button>
         </div>
       </div>

@@ -267,17 +267,21 @@ const onCampaignChargedLogic = async ({ event, step }) => {
     throw new Error(`Member ${user_id} not found`);
   }
 
-  // Step 3: Calculate previous and new balance
+  // Step 3: Calculate previous and new balance (income - expense)
   const balances = await step.run('calculate-balances', async () => {
-    const previousBalanceResult = await db('fund_transactions')
+    const result = await db('fund_transactions')
       .where('team_id', team_id)
       .where('status', 'approved')
-      .sum({ total: 'amount' })
+      .whereNot('id', transaction_id) // exclude current transaction
+      .select(
+        db.raw(`SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income`),
+        db.raw(`SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expense`)
+      )
       .first();
 
-    const previousBalance = previousBalanceResult.total || 0;
-    const newBalance = previousBalance + parseFloat(amount);
-    const changeAmount = parseFloat(amount);
+    const previousBalance = (parseFloat(result.total_income) || 0) - (parseFloat(result.total_expense) || 0);
+    const changeAmount = parseFloat(amount); // campaign luôn là income
+    const newBalance = previousBalance + changeAmount;
 
     return { previousBalance, newBalance, changeAmount };
   });

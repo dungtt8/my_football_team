@@ -78,10 +78,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             {/* Error Message */}
             <div className="text-center mb-lg">
               <h1 className="text-heading-3 font-bold text-black mb-md">
-                Something went wrong
+                Đã xảy ra lỗi
               </h1>
               <p className="text-body text-gray">
-                We encountered an unexpected error. Please try again or return to the home page.
+                Có lỗi không mong muốn xảy ra. Vui lòng thử lại hoặc quay về trang chủ.
               </p>
             </div>
 
@@ -107,7 +107,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 onClick={this.resetError}
                 className="flex-1 flex items-center justify-center gap-sm"
               >
-                Try Again
+                Thử lại
               </Button>
               <Link href="/" className="flex-1">
                 <Button
@@ -116,14 +116,14 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   className="w-full flex items-center justify-center gap-sm"
                 >
                   <ArrowLeft size={18} weight="bold" />
-                  Home
+                  Trang chủ
                 </Button>
               </Link>
             </div>
 
             {/* Support message */}
             <p className="text-caption text-gray text-center mt-lg">
-              If the problem persists, please contact support at{' '}
+              Nếu lỗi vẫn tiếp diễn, vui lòng liên hệ{' '}
               <a href="mailto:support@team.com" className="text-black font-bold hover:underline">
                 support@team.com
               </a>

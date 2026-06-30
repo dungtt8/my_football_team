@@ -15,7 +15,7 @@ const G = {
     red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
 }
 
-type TabType = 'general' | 'attendance' | 'finance' | 'scheduling' | 'invite'
+type TabType = 'general' | 'finance' | 'scheduling' | 'invite'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
@@ -262,7 +262,6 @@ export default function TeamSettingsPage() {
                 {[
                     { id: 'general', label: 'Thông tin', icon: <Gear size={14} /> },
                     { id: 'finance', label: 'Tài chính & Quỹ', icon: <CurrencyDollar size={14} /> },
-                    { id: 'attendance', label: 'Điểm danh', icon: <Clock size={14} /> },
                     { id: 'scheduling', label: 'Lịch', icon: <Calendar size={14} /> },
                     { id: 'invite', label: 'Mời', icon: <CalendarPlus size={14} /> },
                 ].map((t) => (
@@ -378,62 +377,6 @@ export default function TeamSettingsPage() {
                                 {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
                             </button>
                         )}
-                    </div>
-                )}
-
-                {/* Attendance Settings */}
-                {tab === 'attendance' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box', width: '100%' }}>
-                        <div style={{
-                            background: G.glass,
-                            border: `1px solid ${G.glassBorder}`,
-                            borderRadius: '16px',
-                            padding: '20px',
-                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: 'wrap' }}>
-                                <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '120px' }}>Bật điểm danh</label>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.attendance_enabled}
-                                    onChange={(e) => setSettings({ ...settings, attendance_enabled: e.target.checked })}
-                                    disabled={!isOwner}
-                                    style={{ width: '18px', height: '18px', cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6 }}
-                                />
-                            </div>
-
-                            {settings.attendance_enabled && (
-                                <>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Thời gian chờ trước khi check-in (phút)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={settings.attendance_cooldown || 5}
-                                        onChange={(e) => setSettings({ ...settings, attendance_cooldown: parseInt(e.target.value) })}
-                                        disabled={!isOwner}
-                                        min="1"
-                                        max="60"
-                                        style={{
-                                            width: '100%',
-                                            padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: 'clamp(13px, 2.5vw, 14px)',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            marginBottom: '12px',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    />
-                                    <p style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: G.t3, margin: '8px 0 0 0' }}>
-                                        ℹ️ Thành viên phải check-in trong khoảng thời gian này
-                                    </p>
-                                </>
-                            )}
-                        </div>
                     </div>
                 )}
 

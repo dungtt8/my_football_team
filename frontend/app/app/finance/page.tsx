@@ -203,13 +203,33 @@ export default function FinancePage() {
             {showForm && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,11,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
                     onClick={() => setShowForm(false)}>
-                    <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
+                    <div style={{ background: '#0A0F1E', border: `1px solid ${G.glassBorder}`, borderTop: '1px solid rgba(255,255,255,0.10)', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '92vh', display: 'flex', flexDirection: 'column', animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)', boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}
                         onClick={e => e.stopPropagation()}>
-                        <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: 600, color: G.t1 }}>Báo cáo chi tiêu</h2>
-                        <TransactionForm onSubmit={handleSubmit} isLoading={isSubmitting} onCancel={() => setShowForm(false)} />
+                        {/* Handle bar */}
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', flexShrink: 0 }}>
+                            <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.15)' }} />
+                        </div>
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 16px', flexShrink: 0 }}>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#F5A623' }}>Chi tiêu</p>
+                                <h2 style={{ margin: '2px 0 0', fontSize: '20px', fontWeight: 300, fontFamily: 'serif', color: G.t1 }}>Báo cáo khoản chi</h2>
+                            </div>
+                            <button onClick={() => setShowForm(false)} style={{ width: '34px', height: '34px', borderRadius: '10px', border: `1px solid ${G.glassBorder}`, background: G.glass, color: G.t2, cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        </div>
+                        {/* Scrollable content */}
+                        <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px 32px' }}>
+                            <TransactionForm onSubmit={handleSubmit} isLoading={isSubmitting} onCancel={() => setShowForm(false)} />
+                        </div>
                     </div>
                 </div>
             )}
+            <style>{`
+                @keyframes slideUp {
+                    from { transform: translateY(100%); opacity: 0; }
+                    to   { transform: translateY(0);    opacity: 1; }
+                }
+            `}</style>
 
             {/* Reject modal */}
             {rejectModal && (

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { List, MagnifyingGlass, CaretLeft, CaretRight, User } from 'phosphor-react'
+import { List, MagnifyingGlass, CaretLeft, CaretRight, ArrowsDownUp } from 'phosphor-react'
 import { useAuthContext } from '@/contexts/AuthContext'
 import TeamSwitcher from '@/components/Common/TeamSwitcher'
 
@@ -24,7 +24,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     onSidebarToggle,
     isDesktop = false,
 }) => {
-    const { user, allTeams } = useAuthContext()
+    const { user, team, allTeams } = useAuthContext()
     const [teamSwitcherOpen, setTeamSwitcherOpen] = useState(false)
 
     return (
@@ -48,7 +48,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                             onClick={onMenuClick}
                             className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
                             style={{ color: 'rgba(240,244,255,0.7)', background: 'rgba(255,255,255,0.06)' }}
-                            aria-label="Open menu"
+                            aria-label="Mở menu"
                         >
                             <List size={20} weight="bold" />
                         </button>
@@ -60,7 +60,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                             onClick={onSidebarToggle}
                             className="hidden md:flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
                             style={{ color: 'rgba(240,244,255,0.7)', background: 'rgba(255,255,255,0.06)' }}
-                            aria-label="Toggle sidebar"
+                            aria-label="Bật/tắt thanh bên"
                         >
                             {isSidebarOpen ? <CaretLeft size={18} weight="bold" /> : <CaretRight size={18} weight="bold" />}
                         </button>
@@ -85,22 +85,49 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                         <button
                             className="flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95"
                             style={{ color: 'rgba(240,244,255,0.4)', background: 'rgba(255,255,255,0.06)' }}
-                            aria-label="Search"
+                            aria-label="Tìm kiếm"
                         >
                             <MagnifyingGlass size={18} weight="bold" />
                         </button>
                     )}
 
-                    {/* Profile/Team Switcher Button */}
-                    {user && allTeams.length > 0 && (
+                    {/* Team Switcher Button */}
+                    {user && (
                         <button
                             onClick={() => setTeamSwitcherOpen(true)}
-                            className="flex items-center justify-center w-9 h-9 rounded-xl transition-all active:scale-95 hover:bg-white/10"
-                            style={{ color: 'rgba(240,244,255,0.7)', background: 'rgba(255,255,255,0.06)' }}
-                            aria-label="Switch team"
-                            title={`${allTeams.length} team${allTeams.length !== 1 ? 's' : ''}`}
+                            aria-label="Chuyển đội"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '5px 10px 5px 6px',
+                                borderRadius: '12px',
+                                background: 'rgba(255,255,255,0.07)',
+                                border: '1px solid rgba(255,255,255,0.10)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                maxWidth: '160px',
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.07)')}
                         >
-                            <User size={18} weight="bold" />
+                            {/* Avatar chữ cái */}
+                            <div style={{
+                                width: '26px', height: '26px', borderRadius: '8px', flexShrink: 0,
+                                background: 'rgba(0,214,143,0.2)', border: '1px solid rgba(0,214,143,0.3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: 700, color: '#00D68F',
+                            }}>
+                                {(team?.name || user?.full_name || '?').charAt(0).toUpperCase()}
+                            </div>
+                            {/* Tên đội */}
+                            <span style={{
+                                fontSize: '13px', fontWeight: 600, color: 'rgba(240,244,255,0.85)',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+                            }}>
+                                {team?.name || 'Chọn đội'}
+                            </span>
+                            <ArrowsDownUp size={13} weight="bold" style={{ color: 'rgba(240,244,255,0.35)', flexShrink: 0 }} />
                         </button>
                     )}
                 </div>

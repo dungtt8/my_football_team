@@ -93,13 +93,16 @@ const createAutoSession = async (teamId) => {
             return null; // Don't create
         }
 
-        // session_date = today at configured session_time
-        const [hours, minutes] = team.session_time.split(':').map(Number);
+        // session_date = today at configured session_time (session_time is GMT+7, convert to UTC)
+        const [hours, minutes] = (team.session_time || '18:00').split(':').map(Number);
         const sessionDate = new Date();
-        sessionDate.setUTCHours(hours, minutes, 0, 0);
+        // GMT+7 offset = -7 hours from UTC perspective
+        sessionDate.setUTCHours(hours - 7, minutes, 0, 0);
 
-        // check_in_deadline = 1 hour before session (members must respond by then)
-        const checkInDeadline = new Date(sessionDate.getTime() - 60 * 60 * 1000);
+        // check_in_deadline = checkin_creation_time (UTC), since that's when members are notified
+        const [dlHour, dlMin] = (team.checkin_creation_time || '13:00').split(':').map(Number);
+        const checkInDeadline = new Date();
+        checkInDeadline.setUTCHours(dlHour, dlMin, 0, 0);
 
         // Create session
         const [session] = await db('attendance_sessions').insert({
@@ -128,34 +131,20 @@ const createAutoSession = async (teamId) => {
             session_type: session.session_type,
         });
 
-        // Broadcast notification to all team members
+        // Emit event — same as manual creation flow
         try {
-            const sessionTypeLabel = session.session_type === 'training' ? 'tập luyện' : 'thi đấu';
-            const sessionDate = new Date(session.session_date).toLocaleString('vi-VN', {
-                weekday: 'short',
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            await notificationService.broadcastNotification(teamId, {
-                type: 'session_created_auto',
-                title: `Có buổi ${sessionTypeLabel} mới`,
-                message: `Lịch ${sessionTypeLabel} được tạo tự động vào lúc ${sessionDate}`,
-                data: {
-                    session_id: session.id,
-                    session_date: session.session_date.toISOString(),
-                    session_type: session.session_type,
-                    deadline: session.check_in_deadline ? session.check_in_deadline.toISOString() : null
-                }
+            await notificationService.emitEvent('attendance.session_created', {
+                session_id: session.id,
+                team_id: teamId,
+                session_date: session.session_date,
+                session_type: session.session_type,
+                created_by: null, // auto-created
             });
         } catch (notifError) {
-            logger.warn('Failed to broadcast notification for auto-created session', {
+            logger.warn('Failed to emit event for auto-created session', {
                 session_id: session.id,
-                error: notifError.message
+                error: notifError.message,
             });
-            // Don't fail the session creation if notification broadcast fails
         }
 
         return session;

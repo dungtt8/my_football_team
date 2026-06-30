@@ -52,7 +52,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             }
         } catch (error) {
             console.error('Failed to load settings:', error)
-            toast('Failed to load payment settings', 'error')
+            toast('Không thể tải cài đặt', 'error')
         } finally {
             setLoading(false)
         }
@@ -64,13 +64,13 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            toast('Please select a valid image file', 'error')
+            toast('Vui lòng chọn file ảnh hợp lệ', 'error')
             return
         }
 
         // Validate file size (2MB max)
         if (file.size > 2 * 1024 * 1024) {
-            toast('File size must be less than 2MB', 'error')
+            toast('File phải nhỏ hơn 2MB', 'error')
             return
         }
 
@@ -86,7 +86,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
     const handleUploadQR = async () => {
         if (!selectedFile) {
-            toast('Please select a file first', 'error')
+            toast('Vui lòng chọn file trước', 'error')
             return
         }
 
@@ -106,26 +106,26 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
             if (!response.ok) {
                 const error = await response.json()
-                throw new Error(error.error || 'Upload failed')
+                throw new Error(error.error || 'Tải lên thất bại')
             }
 
             const data = await response.json()
             setSettings(prev => ({ ...prev, qr_code_url: data.qr_code_url }))
             setSelectedFile(null)
-            toast('QR code uploaded successfully', 'success')
+            toast('Đã tải lên mã QR thành công', 'success')
 
             // Reload settings to ensure consistency
             await loadSettings()
         } catch (error) {
             console.error('Upload error:', error)
-            toast(error instanceof Error ? error.message : 'Failed to upload QR code', 'error')
+            toast(error instanceof Error ? error.message : 'Không thể tải lên mã QR', 'error')
         } finally {
             setUploading(false)
         }
     }
 
     const handleDeleteQR = async () => {
-        if (!confirm('Are you sure you want to delete the QR code?')) return
+        if (!confirm('Bạn có chắc muốn xóa mã QR không?')) return
 
         try {
             setLoading(true)
@@ -134,11 +134,11 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             if (response?.message) {
                 setSettings(prev => ({ ...prev, qr_code_url: undefined }))
                 setPreviewUrl(null)
-                toast('QR code deleted successfully', 'success')
+                toast('Đã xóa mã QR', 'success')
             }
         } catch (error) {
             console.error('Delete error:', error)
-            toast('Failed to delete QR code', 'error')
+            toast('Không thể xóa mã QR', 'error')
         } finally {
             setLoading(false)
         }
@@ -159,17 +159,17 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                 bank_account_number: bankAccount,
                 bank_name: bankName
             }))
-            toast('Bank information saved successfully', 'success')
+            toast('Đã lưu thông tin ngân hàng', 'success')
         } catch (error) {
             console.error('Save error:', error)
-            toast('Failed to save bank information', 'error')
+            toast('Không thể lưu thông tin ngân hàng', 'error')
         } finally {
             setLoading(false)
         }
     }
 
     if (loading && !settings.qr_code_url) {
-        return <div style={{ padding: '12px', textAlign: 'center', color: '#999' }}>Loading payment settings...</div>
+        return <div style={{ padding: '12px', textAlign: 'center', color: '#999' }}>Đang tải cài đặt thanh toán...</div>
     }
 
     const editable = isOwner && !readOnly

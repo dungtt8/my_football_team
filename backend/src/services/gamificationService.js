@@ -71,16 +71,19 @@ class GamificationService {
           'u.id',
           'u.email',
           'u.full_name',
-          'u.role',
+          'tm.role',
           db.raw('COALESCE(SUM(up.points), 0) as total_points'),
           db.raw('COUNT(*) as transaction_count')
         )
         .from('user_points as up')
         .leftJoin('users as u', 'up.user_id', 'u.id')
+        .leftJoin('team_members as tm', function() {
+          this.on('tm.user_id', '=', 'up.user_id').andOn('tm.team_id', '=', 'up.team_id')
+        })
         .where('up.team_id', teamId)
         .where('up.month', month)
         .where('u.status', 'active')
-        .groupBy('u.id', 'u.email', 'u.full_name', 'u.role')
+        .groupBy('u.id', 'u.email', 'u.full_name', 'tm.role')
         .orderBy('total_points', 'desc')
         .limit(100);
 

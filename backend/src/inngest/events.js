@@ -1,5 +1,6 @@
 const inngest = require('../config/inngest');
 const monthlyReminderHandler = require('./handlers/monthlyReminder');
+const { autoCreateTeamFundHandler } = require('./handlers/monthlyReminder');
 const { onApprovalPending, onApprovalApproved, onApprovalRejected } = require('./handlers/financeEvents');
 const { onAttendanceSessionCreated, onAttendanceCheckIn, onAttendanceSessionClosed } = require('./handlers/attendanceEvents');
 
@@ -242,6 +243,7 @@ const checkInNotificationScheduledJob = inngest.createFunction(
 module.exports = {
   events,
   createMonthlyReminderFunction: monthlyReminderHandler,
+  autoCreateTeamFundHandler,
   createCampaignDeadlineCheckFunction,
   onApprovalPending,
   onApprovalApproved,

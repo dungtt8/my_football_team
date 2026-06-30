@@ -223,12 +223,17 @@ const getCampaign = async (req, res) => {
 const memberConfirm = async (req, res) => {
   try {
     const { id, userId } = req.params;
+    const { bill_image_url } = req.body;
     const memberId = req.user.id;
     const teamId = req.team.id;
 
     // Verify the requesting user is the one confirming
     if (parseInt(userId) !== memberId) {
       throw new ValidationError('Can only confirm your own assignment');
+    }
+
+    if (!bill_image_url || typeof bill_image_url !== 'string' || bill_image_url.trim().length === 0) {
+      throw new ValidationError('Bill image URL is required as proof of payment');
     }
 
     logger.info('Member confirming campaign assignment', {
@@ -261,13 +266,14 @@ const memberConfirm = async (req, res) => {
       throw new ConflictError(`Assignment status is ${assignment.status}, cannot confirm`);
     }
 
-    // Update assignment status
+    // Update assignment status with bill image proof
     await db('campaign_assignments_v2')
       .where('id', assignment.id)
       .update({
         status: 'pending_approval',
         confirmed_at: new Date(),
         confirmed_by: memberId,
+        bill_image_url: bill_image_url.trim(),
         updated_at: new Date()
       });
 
@@ -436,17 +442,18 @@ const coManagerApprove = async (req, res) => {
       );
     }
 
-    // Create auto-approved fund_transaction
+    // Create auto-approved fund_transaction (income — member đóng tiền vào quỹ)
     const [transactionId] = await db('fund_transactions').insert({
       team_id: teamId,
       campaign_id: id,
       submitted_by: userId,
       amount: campaign.amount_per_member,
-      description: `Auto-approved contribution for campaign: ${campaign.name}`,
+      description: `Đóng quỹ: ${campaign.name}`,
+      transaction_type: 'income',
       status: 'approved',
       approved_by: managerId,
       approved_at: new Date(),
-      bill_image_url: null,
+      bill_image_url: assignment.bill_image_url || null,
       transaction_date: new Date(),
       created_at: new Date(),
       updated_at: new Date()

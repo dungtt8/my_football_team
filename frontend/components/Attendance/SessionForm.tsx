@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { COLORS, TYPOGRAPHY } from '@/lib/constants'
 
 export interface SessionFormData {
     session_date: string
@@ -17,43 +16,65 @@ interface SessionFormProps {
     onCancel?: () => void
 }
 
-export const SessionForm: React.FC<SessionFormProps> = ({
-    onSubmit,
-    isLoading = false,
-    onCancel,
-}) => {
+const G = {
+    glassBorder: 'rgba(255,255,255,0.10)',
+    accent: '#00D68F',
+    t1: '#F0F4FF',
+    t2: 'rgba(240,244,255,0.55)',
+    t3: 'rgba(240,244,255,0.30)',
+    red: '#FF6B6B',
+}
+
+const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '12px',
+    background: 'rgba(255,255,255,0.05)',
+    border: `1px solid ${G.glassBorder}`,
+    color: G.t1,
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+    display: 'block',
+    marginBottom: '6px',
+    fontSize: '11px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.09em',
+    color: G.t3,
+}
+
+export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = false, onCancel }) => {
+    const toLocalDatetime = (d: Date) => {
+        const pad = (n: number) => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+
     const now = new Date()
-    const localDateStr = now.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:mm"
+    // Default session: today 18:00, deadline: today 17:00
+    const defaultSession = new Date(now); defaultSession.setHours(18, 0, 0, 0)
+    const defaultDeadline = new Date(now); defaultDeadline.setHours(17, 0, 0, 0)
 
     const [formData, setFormData] = useState<SessionFormData>({
-        session_date: localDateStr,
+        session_date: toLocalDatetime(defaultSession),
         session_type: 'training',
         location: '',
         description: '',
-        check_in_deadline: '',
+        check_in_deadline: toLocalDatetime(defaultDeadline),
     })
-
     const [errors, setErrors] = useState<Partial<Record<keyof SessionFormData, string>>>({})
 
     const validate = (): boolean => {
         const errs: Partial<Record<keyof SessionFormData, string>> = {}
-
-        if (!formData.session_date) {
-            errs.session_date = 'Ngày buổi tập là bắt buộc'
-        }
-
+        if (!formData.session_date) errs.session_date = 'Bắt buộc'
         if (!formData.check_in_deadline) {
-            errs.check_in_deadline = 'Hạn chót điểm danh là bắt buộc'
-        } else {
-            const deadline = new Date(formData.check_in_deadline)
-            const sessionDate = new Date(formData.session_date)
-            if (isNaN(deadline.getTime())) {
-                errs.check_in_deadline = 'Định dạng thời gian không hợp lệ'
-            } else if (deadline >= sessionDate) {
-                errs.check_in_deadline = 'Hạn chót phải trước thời gian buổi tập'
-            }
+            errs.check_in_deadline = 'Bắt buộc'
+        } else if (new Date(formData.check_in_deadline) >= new Date(formData.session_date)) {
+            errs.check_in_deadline = 'Hạn chót phải trước giờ diễn ra'
         }
-
         setErrors(errs)
         return Object.keys(errs).length === 0
     }
@@ -61,151 +82,102 @@ export const SessionForm: React.FC<SessionFormProps> = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (!validate()) return
-
-        const payload: SessionFormData = {
+        onSubmit({
             session_date: new Date(formData.session_date).toISOString(),
             session_type: formData.session_type,
             location: formData.location || undefined,
             description: formData.description || undefined,
             check_in_deadline: new Date(formData.check_in_deadline).toISOString(),
-        }
-        onSubmit(payload)
+        })
     }
 
-    const inputStyle: React.CSSProperties = {
-        width: '100%',
-        padding: '10px 12px',
-        border: `1px solid ${COLORS.lightGray}`,
-        borderRadius: '8px',
-        fontSize: TYPOGRAPHY.sizes.body,
-        color: COLORS.black,
-        backgroundColor: COLORS.white,
-        boxSizing: 'border-box',
-    }
-
-    const labelStyle: React.CSSProperties = {
-        display: 'block',
-        fontSize: TYPOGRAPHY.sizes.caption,
-        fontWeight: TYPOGRAPHY.weights.medium,
-        color: '#4A4540',
-        marginBottom: '6px',
-    }
-
-    const fieldStyle: React.CSSProperties = { marginBottom: '16px' }
-
-    const errorStyle: React.CSSProperties = {
-        fontSize: TYPOGRAPHY.sizes.caption,
-        color: '#E53E3E',
-        marginTop: '4px',
-    }
+    const sessionDateObj = formData.session_date ? new Date(formData.session_date) : null
+    const deadlineDateObj = formData.check_in_deadline ? new Date(formData.check_in_deadline) : null
+    const minutesBefore = sessionDateObj && deadlineDateObj
+        ? Math.round((sessionDateObj.getTime() - deadlineDateObj.getTime()) / 60000)
+        : null
 
     return (
-        <form onSubmit={handleSubmit} style={{ padding: '4px 0' }}>
-            {/* Session Date */}
-            <div style={fieldStyle}>
-                <label style={labelStyle}>
-                    Thời gian buổi tập <span style={{ color: '#E53E3E' }}>*</span>
-                </label>
-                <input
-                    type="datetime-local"
-                    style={inputStyle}
-                    value={formData.session_date}
-                    onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
-                />
-                {errors.session_date && <p style={errorStyle}>{errors.session_date}</p>}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {/* Loại sự kiện */}
+            <div>
+                <label style={labelStyle}>Loại sự kiện</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {(['training', 'match'] as const).map((type) => {
+                        const selected = formData.session_type === type
+                        return (
+                            <button key={type} type="button"
+                                onClick={() => setFormData({ ...formData, session_type: type })}
+                                style={{
+                                    flex: 1, padding: '11px', borderRadius: '12px', cursor: 'pointer',
+                                    border: `2px solid ${selected ? G.accent : G.glassBorder}`,
+                                    background: selected ? 'rgba(0,214,143,0.10)' : 'transparent',
+                                    color: selected ? G.accent : G.t2,
+                                    fontWeight: selected ? 700 : 500, fontSize: '14px',
+                                    transition: 'all 0.15s',
+                                }}>
+                                {type === 'training' ? '🏃 Tập luyện' : '⚽ Thi đấu'}
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
-            {/* Session Type */}
-            <div style={fieldStyle}>
-                <label style={labelStyle}>Loại buổi tập</label>
-                <select
-                    style={inputStyle}
-                    value={formData.session_type}
-                    onChange={(e) =>
-                        setFormData({ ...formData, session_type: e.target.value as 'training' | 'match' })
+            {/* Thời gian & Hạn chót — 2 cột */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Giờ diễn ra <span style={{ color: G.red }}>*</span></label>
+                    <input type="datetime-local" value={formData.session_date}
+                        onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
+                        style={{ ...inputStyle, borderColor: errors.session_date ? G.red : G.glassBorder }} />
+                    {errors.session_date && <p style={{ fontSize: '11px', color: G.red, margin: '3px 0 0 2px' }}>{errors.session_date}</p>}
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={labelStyle}>Hạn chót điểm danh <span style={{ color: G.red }}>*</span></label>
+                    <input type="datetime-local" value={formData.check_in_deadline}
+                        onChange={(e) => setFormData({ ...formData, check_in_deadline: e.target.value })}
+                        style={{ ...inputStyle, borderColor: errors.check_in_deadline ? G.red : G.glassBorder }} />
+                    {errors.check_in_deadline
+                        ? <p style={{ fontSize: '11px', color: G.red, margin: '3px 0 0 2px' }}>{errors.check_in_deadline}</p>
+                        : minutesBefore !== null && minutesBefore > 0 &&
+                            <p style={{ fontSize: '11px', color: G.accent, margin: '3px 0 0 2px' }}>
+                                Trước {minutesBefore >= 60 ? `${Math.round(minutesBefore / 60)} tiếng` : `${minutesBefore} phút`}
+                            </p>
                     }
-                >
-                    <option value="training">Tập luyện</option>
-                    <option value="match">Thi đấu</option>
-                </select>
+                </div>
             </div>
 
-            {/* Check-in Deadline */}
-            <div style={fieldStyle}>
-                <label style={labelStyle}>
-                    Hạn chót điểm danh <span style={{ color: '#E53E3E' }}>*</span>
-                </label>
-                <input
-                    type="datetime-local"
-                    style={inputStyle}
-                    value={formData.check_in_deadline}
-                    onChange={(e) => setFormData({ ...formData, check_in_deadline: e.target.value })}
-                />
-                {errors.check_in_deadline && <p style={errorStyle}>{errors.check_in_deadline}</p>}
-                <p style={{ fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray, marginTop: '4px' }}>
-                    Thành viên phải điểm danh trước thời gian này
-                </p>
-            </div>
-
-            {/* Location */}
-            <div style={fieldStyle}>
+            {/* Địa điểm */}
+            <div>
                 <label style={labelStyle}>Địa điểm</label>
-                <input
-                    type="text"
-                    style={inputStyle}
-                    placeholder="VD: Sân bóng Thống Nhất"
+                <input type="text" placeholder="VD: Sân Thống Nhất, 138 Đào Duy Từ..."
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
+                    style={inputStyle} />
             </div>
 
-            {/* Description */}
-            <div style={fieldStyle}>
-                <label style={labelStyle}>Ghi chú</label>
-                <textarea
-                    style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
-                    placeholder="Thông tin thêm về buổi tập..."
+            {/* Ghi chú */}
+            <div>
+                <label style={labelStyle}>Ghi chú <span style={{ color: G.t3, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(tuỳ chọn)</span></label>
+                <textarea placeholder="Thông tin thêm về buổi tập..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
+                    rows={2}
+                    style={{ ...inputStyle, resize: 'none' }} />
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
                 {onCancel && (
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        style={{
-                            flex: 1,
-                            padding: '12px',
-                            border: `1px solid ${COLORS.lightGray}`,
-                            borderRadius: '8px',
-                            background: COLORS.white,
-                            fontSize: TYPOGRAPHY.sizes.body,
-                            cursor: 'pointer',
-                            color: '#4A4540',
-                        }}
-                    >
+                    <button type="button" onClick={onCancel} disabled={isLoading}
+                        style={{ flex: 1, padding: '13px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`, background: 'transparent', color: G.t2, fontWeight: 600, fontSize: '14px', cursor: 'pointer', opacity: isLoading ? 0.5 : 1 }}>
                         Huỷ
                     </button>
                 )}
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                        flex: 2,
-                        padding: '12px',
-                        border: 'none',
-                        borderRadius: '8px',
-                        background: isLoading ? COLORS.lightGray : COLORS.black,
-                        color: COLORS.white,
-                        fontSize: TYPOGRAPHY.sizes.body,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                    }}
-                >
-                    {isLoading ? 'Đang tạo...' : 'Tạo lịch điểm danh'}
+                <button type="submit" disabled={isLoading}
+                    style={{ flex: 2, padding: '13px', borderRadius: '12px', border: 'none', background: isLoading ? 'rgba(0,214,143,0.4)' : G.accent, color: '#070B14', fontWeight: 700, fontSize: '14px', cursor: isLoading ? 'default' : 'pointer', transition: 'all 0.2s' }}>
+                    {isLoading ? 'Đang tạo...' : '✓ Tạo lịch điểm danh'}
                 </button>
             </div>
         </form>

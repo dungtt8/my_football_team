@@ -177,5 +177,122 @@ const monthlyReminderHandler = inngest.createFunction(
   monthlyReminderLogic
 );
 
+// ============================================================================
+// Auto-create team fund campaigns monthly
+// Triggered: 1st of each month at 01:30 UTC (after monthlyReminder)
+// Action: For each active team with team_fund_amount set, create a team_fund campaign
+//         and auto-assign to all active members
+// ============================================================================
+const autoCreateTeamFundLogic = async ({ step }) => {
+  const currentMonth = getCurrentMonth();
+
+  logger.info('Auto-create team fund job started', { month: currentMonth });
+
+  // Fetch all active teams that have team_fund_amount configured
+  const teams = await step.run('fetch-eligible-teams', async () => {
+    return db('teams')
+      .whereNull('deleted_at')
+      .whereNotNull('team_fund_amount')
+      .where('team_fund_amount', '>', 0)
+      .select('id', 'name', 'team_fund_amount');
+  });
+
+  logger.info('Teams eligible for team fund', { count: teams.length });
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const team of teams) {
+    await step.run(`create-team-fund-${team.id}`, async () => {
+      // Check if already created for this month
+      const existing = await db('campaigns')
+        .where('team_id', team.id)
+        .where('campaign_type', 'team_fund')
+        .where('fund_month', currentMonth)
+        .first();
+
+      if (existing) {
+        skipped++;
+        logger.info('Team fund already created for this month', {
+          team_id: team.id,
+          month: currentMonth
+        });
+        return;
+      }
+
+      // Create team_fund campaign
+      const [campaignId] = await db('campaigns').insert({
+        team_id: team.id,
+        created_by: null, // system-created
+        name: `Quỹ đội tháng ${currentMonth}`,
+        amount_per_member: team.team_fund_amount,
+        campaign_type: 'team_fund',
+        fund_month: currentMonth,
+        status: 'active',
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+
+      // Auto-assign to all active members
+      const activeMembers = await db('team_members')
+        .where('team_id', team.id)
+        .where('status', 'active')
+        .select('user_id');
+
+      if (activeMembers.length > 0) {
+        const assignments = activeMembers.map(m => ({
+          campaign_id: campaignId,
+          user_id: m.user_id,
+          status: 'pending_confirmation',
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
+        await db('campaign_assignments_v2').insert(assignments);
+      }
+
+      // Emit event for notifications
+      await inngest.send({
+        name: 'campaign.created',
+        data: {
+          campaign_id: campaignId,
+          team_id: team.id,
+          campaign_name: `Quỹ đội tháng ${currentMonth}`,
+          amount_per_member: team.team_fund_amount,
+          campaign_type: 'team_fund',
+          fund_month: currentMonth
+        }
+      });
+
+      created++;
+      logger.info('Team fund campaign created', {
+        team_id: team.id,
+        campaign_id: campaignId,
+        month: currentMonth,
+        amount_per_member: team.team_fund_amount,
+        member_count: activeMembers.length
+      });
+    });
+  }
+
+  logger.info('Auto-create team fund job completed', {
+    month: currentMonth,
+    created,
+    skipped
+  });
+
+  return { month: currentMonth, created, skipped };
+};
+
+const autoCreateTeamFundHandler = inngest.createFunction(
+  {
+    id: 'fund.auto-create-team-fund',
+    retryOptions: { maxRetries: 3, initialDelayMs: 60000 }
+  },
+  { cron: '30 1 1 * *' }, // 1st of month at 01:30 UTC
+  autoCreateTeamFundLogic
+);
+
 module.exports = monthlyReminderHandler;
+module.exports.autoCreateTeamFundHandler = autoCreateTeamFundHandler;
 module.exports.logic = monthlyReminderLogic;
+module.exports.autoCreateTeamFundLogic = autoCreateTeamFundLogic;

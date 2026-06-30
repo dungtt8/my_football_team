@@ -16,7 +16,7 @@ const logger = require('../utils/logger');
  */
 const submitTransaction = async (req, res) => {
   try {
-    const { amount, description, campaign_id, bill_image_url, transaction_date } = req.body;
+    const { amount, description, bill_image_url, transaction_date, transaction_type } = req.body;
     const userId = req.user.id;
     const teamId = req.team.id;
 
@@ -30,21 +30,27 @@ const submitTransaction = async (req, res) => {
     if (!description || typeof description !== 'string' || description.trim().length === 0) {
       throw new ValidationError('Description is required');
     }
+    const validTypes = ['income', 'expense'];
+    const resolvedType = transaction_type || 'expense';
+    if (!validTypes.includes(resolvedType)) {
+      throw new ValidationError('transaction_type must be income or expense');
+    }
 
     logger.info('Submitting transaction for approval', {
       user_id: userId,
       team_id: teamId,
       amount,
+      transaction_type: resolvedType,
       description: description.substring(0, 50)
     });
 
     // Insert transaction with pending status
     const [transactionId] = await db('fund_transactions').insert({
       team_id: teamId,
-      campaign_id: campaign_id || null,
       submitted_by: userId,
       amount,
       description,
+      transaction_type: resolvedType,
       status: 'pending',
       bill_image_url: bill_image_url || null,
       transaction_date: transaction_date ? new Date(transaction_date) : new Date(),
@@ -360,18 +366,25 @@ const getBalance = async (req, res) => {
       team_id: teamId
     });
 
-    // Calculate total approved amount
+    // Balance = SUM(income) - SUM(expense) từ các transaction đã approved
     const result = await db('fund_transactions')
       .where('team_id', teamId)
       .where('status', 'approved')
-      .sum({ total_balance: 'amount' })
+      .select(
+        db.raw(`SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income`),
+        db.raw(`SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expense`)
+      )
       .first();
 
-    const balance = result.total_balance || 0;
+    const totalIncome = parseFloat(result.total_income) || 0;
+    const totalExpense = parseFloat(result.total_expense) || 0;
+    const balance = totalIncome - totalExpense;
 
     return res.json({
       team_id: teamId,
       total_balance: balance,
+      total_income: totalIncome,
+      total_expense: totalExpense,
       currency: 'VND'
     });
   } catch (error) {

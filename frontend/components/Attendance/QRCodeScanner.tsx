@@ -36,7 +36,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
         console.error('Camera error:', error)
         setCameraDenied(true)
         if (onError) {
-          onError(error instanceof Error ? error : new Error('Camera access denied'))
+          onError(error instanceof Error ? error : new Error('Không có quyền truy cập camera'))
         }
       }
     }
@@ -98,7 +98,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             marginBottom: '16px',
           }}
         >
-          📷 Camera access denied
+          📷 Không có quyền truy cập camera
         </p>
         <p
           style={{
@@ -108,7 +108,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             marginBottom: '16px',
           }}
         >
-          Please enable camera permissions to scan QR codes
+          Vui lòng cấp quyền camera để quét mã QR
         </p>
         <button
           onClick={() => window.location.reload()}
@@ -123,7 +123,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             cursor: 'pointer',
           }}
         >
-          Try Again
+          Thử lại
         </button>
       </div>
     )
@@ -203,7 +203,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
             fontWeight: TYPOGRAPHY.weights.medium,
           }}
         >
-          Position QR code within frame
+          Đặt mã QR vào trong khung
         </p>
       </div>
 

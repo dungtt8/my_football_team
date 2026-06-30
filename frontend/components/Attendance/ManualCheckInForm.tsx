@@ -36,20 +36,20 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
     const newErrors: Record<string, string> = {}
 
     if (!formData.date) {
-      newErrors.date = 'Date is required'
+      newErrors.date = 'Ngày là bắt buộc'
     } else {
       const selectedDate = new Date(formData.date)
       if (selectedDate > new Date()) {
-        newErrors.date = 'Cannot select future date'
+        newErrors.date = 'Không thể chọn ngày trong tương lai'
       }
     }
 
     if (!formData.checkInTime) {
-      newErrors.checkInTime = 'Check-in time is required'
+      newErrors.checkInTime = 'Thời gian điểm danh là bắt buộc'
     }
 
     if (!formData.reason) {
-      newErrors.reason = 'Reason is required'
+      newErrors.reason = 'Lý do là bắt buộc'
     }
 
     setErrors(newErrors)
@@ -144,12 +144,12 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
             color: COLORS.black,
           }}
         >
-          Manual Check-In
+          Điểm danh thủ công
         </h2>
 
         {/* Date Field */}
         <FormField
-          label="Attendance Date"
+          label="Ngày điểm danh"
           name="date"
           type="date"
           required
@@ -160,7 +160,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
 
         {/* Check-In Time Field */}
         <FormField
-          label="Check-In Time"
+          label="Giờ điểm danh"
           name="checkInTime"
           type="time"
           required
@@ -171,7 +171,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
 
         {/* Check-Out Time Field */}
         <FormField
-          label="Check-Out Time"
+          label="Giờ kết thúc"
           name="checkOutTime"
           type="time"
           value={formData.checkOutTime}
@@ -180,7 +180,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
 
         {/* Reason Field */}
         <FormField
-          label="Reason for Manual Entry"
+          label="Lý do nhập thủ công"
           name="reason"
           required
           error={errors.reason}
@@ -200,16 +200,16 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
               cursor: 'pointer',
             }}
           >
-            <option value="">Select a reason</option>
-            <option value="late">Late</option>
-            <option value="makeup">Makeup</option>
-            <option value="special_permission">Special Permission</option>
+            <option value="">Chọn lý do</option>
+            <option value="late">Đi muộn</option>
+            <option value="makeup">Bù buổi</option>
+            <option value="special_permission">Phép đặc biệt</option>
           </select>
         </FormField>
 
         {/* Notes Field */}
         <FormField
-          label="Additional Notes"
+          label="Ghi chú thêm"
           name="notes"
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -217,7 +217,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Optional notes about this check-in..."
+            placeholder="Ghi chú tùy chọn..."
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -250,7 +250,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
               opacity: isLoading ? 0.7 : 1,
             }}
           >
-            {isLoading ? 'Submitting...' : 'Submit for Approval'}
+            {isLoading ? 'Đang gửi...' : 'Gửi để duyệt'}
           </button>
 
           {onCancel && (
@@ -269,7 +269,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Cancel
+              Huỷ
             </button>
           )}
         </div>

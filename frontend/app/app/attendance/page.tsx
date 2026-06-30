@@ -282,7 +282,13 @@ export default function AttendancePage() {
                     onClick={() => setShowForm(false)}>
                     <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
                         onClick={e => e.stopPropagation()}>
-                        <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: 600, color: G.t1 }}>Tạo lịch điểm danh</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.accent }}>Điểm danh</p>
+                                <h2 style={{ margin: '2px 0 0', fontSize: '22px', fontWeight: 300, fontFamily: 'serif', color: G.t1 }}>Tạo lịch điểm danh</h2>
+                            </div>
+                            <button onClick={() => setShowForm(false)} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${G.glassBorder}`, color: G.t2, borderRadius: '10px', padding: '6px 12px', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>✕</button>
+                        </div>
                         <SessionForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
                     </div>
                 </div>
