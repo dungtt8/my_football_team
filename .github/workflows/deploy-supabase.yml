@@ -50,14 +50,6 @@ jobs:
         working-directory: backend
         run: pnpm ci
 
-      - name: Cleanup old migration records
-        working-directory: backend
-        run: |
-          echo "🧹 Cleaning up old migration records..."
-          pnpm migrate:cleanup
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Run database migrations
         working-directory: backend
         run: |
@@ -70,10 +62,10 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
-      - name: Verify all 21 migrations applied
+      - name: Verify all migrations applied
         working-directory: backend
         run: |
-          echo "🔍 Checking all 21 migrations (001-021)..."
+          echo "🔍 Checking all migrations ..."
           npx knex migrate:status --env production || true
           echo ""
           echo "📋 Verifying migrations in database..."
