@@ -11,22 +11,20 @@ const { ValidationError, NotFoundError } = require('./errorService');
 const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 /**
- * Check if current UTC time matches team's configured auto-session creation time
- * Allows 1-hour window (matches if within the hour)
+ * Check if current UTC time matches the team's checkin_creation_time (stored in UTC).
+ * Session creation fires at the same moment notifications are sent.
+ * Allows 1-hour window (matches if within the same hour).
  */
-function isTimeWindowActive(configuredTime) {
-    if (!configuredTime) return true; // If no time set, always active
+function isTimeWindowActive(configuredUtcTime) {
+    if (!configuredUtcTime) return true;
 
     try {
-        const [configHour, configMinute] = configuredTime.split(':').map(Number);
-        const now = new Date();
-        const currentHour = now.getUTCHours();
-
-        // Active during the configured hour
+        const [configHour] = configuredUtcTime.split(':').map(Number);
+        const currentHour = new Date().getUTCHours();
         return currentHour === configHour;
     } catch (error) {
-        logger.warn('Invalid auto_session_creation_time format:', configuredTime);
-        return true; // Default to active if parsing fails
+        logger.warn('Invalid checkin_creation_time format:', configuredUtcTime);
+        return true;
     }
 }
 
@@ -43,8 +41,8 @@ const shouldCreateSession = (team) => {
         return false;
     }
 
-    // Check if current time matches configured auto-session creation time
-    if (!isTimeWindowActive(team.auto_session_creation_time || '03:00')) {
+    // Check if current time matches checkin_creation_time (session is created at notification time)
+    if (!isTimeWindowActive(team.checkin_creation_time || '13:00')) {
         return false;
     }
 
@@ -60,16 +58,21 @@ const shouldCreateSession = (team) => {
         }
     }
 
+    // Check if today is the configured notification/creation day
+    const todayName = DAYS_OF_WEEK[new Date().getDay()];
+    if (team.checkin_creation_day && team.checkin_creation_day !== todayName) {
+        return false;
+    }
+
     // Check frequency
     if (team.session_frequency === 'daily') {
         return true;
     }
 
     if (team.session_frequency === 'weekly' && team.session_days) {
-        const today = new Date();
-        const dayName = DAYS_OF_WEEK[today.getDay()];
-        const sessionDays = team.session_days.split(',').map(d => d.trim().toLowerCase());
-        return sessionDays.includes(dayName);
+        // For weekly, at least one session day must be in the upcoming window
+        // (checkin_start_day → checkin_end_day after today)
+        return true; // Day validity already handled by checkin_creation_day above
     }
 
     return false;

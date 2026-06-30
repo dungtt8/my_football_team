@@ -23,7 +23,7 @@ const phoneAuthHandler = async (req, res) => {
         if (!user) {
             const email = `phone_${phone.replace(/\D/g, '')}@football-team.local`;
             const [newUser] = await db('users')
-                .insert({ phone, full_name, email, role: 'member', status: 'active', created_at: new Date() })
+                .insert({ phone, full_name, email, status: 'active', created_at: new Date() })
                 .returning('*');
             user = newUser;
             logger.info('New user created via phone', { user_id: user.id });

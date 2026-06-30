@@ -73,9 +73,6 @@ const createTeam = async (req, res) => {
             team_id: team.id, user_id: userId, role: 'owner', status: 'active', created_at: new Date(),
         });
 
-        // Update user's role to owner
-        await db('users').where({ id: userId }).update({ role: 'owner' });
-
         // Get all user's teams for JWT
         const allTeams = await getUserTeams(userId);
 
@@ -263,9 +260,6 @@ const updateMemberRole = async (req, res) => {
         await db('team_members')
             .where({ team_id: teamId, user_id: targetUserId })
             .update({ role: newRole });
-
-        // Also update denormalized role on users table
-        await db('users').where({ id: targetUserId }).update({ role: newRole });
 
         logger.info('Member role updated', {
             team_id: teamId,

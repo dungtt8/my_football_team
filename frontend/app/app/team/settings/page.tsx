@@ -15,7 +15,7 @@ const G = {
     red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
 }
 
-type TabType = 'general' | 'attendance' | 'finance' | 'fund' | 'scheduling' | 'invite'
+type TabType = 'general' | 'attendance' | 'finance' | 'scheduling' | 'invite'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
@@ -186,7 +186,6 @@ export default function TeamSettingsPage() {
                     payment_start_day: settings.fund_payment_start_day || null,
                     payment_end_day: settings.fund_payment_end_day || null,
                 }
-            } else if (tab === 'fund') {
                 payload.fund = {
                     bank_account_number: settings.bank_account_number || null,
                     bank_name: settings.bank_name || null,
@@ -200,7 +199,6 @@ export default function TeamSettingsPage() {
                     session_time: settings.session_time,
                     session_type: settings.session_type,
                     session_location: settings.session_location,
-                    auto_session_creation_time: gmt7ToUtc(settings.auto_session_creation_time),
                     checkin_creation_day: settings.checkin_creation_day,
                     checkin_creation_time: gmt7ToUtc(settings.checkin_creation_time),
                     checkin_start_day: settings.checkin_start_day,
@@ -263,9 +261,8 @@ export default function TeamSettingsPage() {
             <div style={{ display: 'flex', gap: 'clamp(4px, 1vw, 6px)', marginBottom: 'clamp(16px, 3vh, 20px)', overflowX: 'auto', paddingBottom: '8px', scrollBehavior: 'smooth' }}>
                 {[
                     { id: 'general', label: 'Thông tin', icon: <Gear size={14} /> },
-                    { id: 'finance', label: 'Tài chính', icon: <CurrencyDollar size={14} /> },
+                    { id: 'finance', label: 'Tài chính & Quỹ', icon: <CurrencyDollar size={14} /> },
                     { id: 'attendance', label: 'Điểm danh', icon: <Clock size={14} /> },
-                    { id: 'fund', label: 'Quỹ', icon: <CurrencyDollar size={14} /> },
                     { id: 'scheduling', label: 'Lịch', icon: <Calendar size={14} /> },
                     { id: 'invite', label: 'Mời', icon: <CalendarPlus size={14} /> },
                 ].map((t) => (
@@ -579,30 +576,11 @@ export default function TeamSettingsPage() {
                             </p>
                         </div>
 
-                        {isOwner && (
-                            <button
-                                onClick={handleSaveSettings}
-                                disabled={loading}
-                                style={{
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    background: G.accent,
-                                    color: '#070B14',
-                                    fontWeight: 600,
-                                    cursor: loading ? 'default' : 'pointer',
-                                    opacity: loading ? 0.6 : 1,
-                                }}
-                            >
-                                {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
-                            </button>
-                        )}
-                    </div>
-                )}
+                        {/* Fund Section */}
+                        <div style={{ paddingTop: '8px', borderTop: `1px solid ${G.glassBorder}`, marginTop: '4px' }}>
+                            <p style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: G.t3, margin: '0 0 12px 0' }}>Thông tin tài khoản quỹ</p>
+                        </div>
 
-                {/* Fund Settings */}
-                {tab === 'fund' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box' }}>
                         <div style={{
                             background: G.glass,
                             border: `1px solid ${G.glassBorder}`,
@@ -632,9 +610,6 @@ export default function TeamSettingsPage() {
                                     opacity: isOwner ? 1 : 0.6,
                                 }}
                             />
-                            <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
-                                Số tài khoản ngân hàng để nhận thanh toán quỹ
-                            </p>
                         </div>
 
                         <div style={{
@@ -666,9 +641,6 @@ export default function TeamSettingsPage() {
                                     opacity: isOwner ? 1 : 0.6,
                                 }}
                             />
-                            <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
-                                Tên ngân hàng nơi lưu tài khoản
-                            </p>
                         </div>
 
                         <div style={{
@@ -698,9 +670,7 @@ export default function TeamSettingsPage() {
                                     outline: 'none',
                                     boxSizing: 'border-box',
                                     opacity: isOwner ? 1 : 0.6,
-                                    minHeight: '80px',
                                     fontFamily: 'monospace',
-                                    wordBreak: 'break-word',
                                 }}
                             />
                             {settings.fund_qr_code_url && (
@@ -750,338 +720,178 @@ export default function TeamSettingsPage() {
                 )}
 
                 {/* Scheduling Settings */}
-                {tab === 'scheduling' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 3vh, 16px)', boxSizing: 'border-box' }}>
-                        <div style={{
-                            background: G.glass,
-                            border: `1px solid ${G.glassBorder}`,
-                            borderRadius: '16px',
-                            padding: '20px',
-                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '8px', flexWrap: window.innerWidth < 480 ? 'wrap' : 'nowrap' }}>
-                                <label style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, flex: '1 1 auto', minWidth: '150px' }}>Tự động tạo sự kiện yêu cầu điểm danh</label>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.auto_create_sessions}
+                {tab === 'scheduling' && (() => {
+                    const inputStyle: React.CSSProperties = {
+                        width: '100%', padding: '11px 14px', borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.05)', border: `1px solid ${G.glassBorder}`,
+                        color: G.t1, fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+                        opacity: isOwner ? 1 : 0.6,
+                    }
+                    const labelStyle: React.CSSProperties = {
+                        display: 'block', marginBottom: '6px', fontSize: '11px', fontWeight: 600,
+                        textTransform: 'uppercase', letterSpacing: '0.09em', color: G.t3,
+                    }
+                    const DAY_OPTIONS = [
+                        { value: 'mon', label: 'Thứ 2' }, { value: 'tue', label: 'Thứ 3' },
+                        { value: 'wed', label: 'Thứ 4' }, { value: 'thu', label: 'Thứ 5' },
+                        { value: 'fri', label: 'Thứ 6' }, { value: 'sat', label: 'Thứ 7' },
+                        { value: 'sun', label: 'Chủ nhật' },
+                    ]
+                    const DAY_SHORT: any = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' }
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}>
+
+                            {/* Toggle tự động */}
+                            <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '16px 20px', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                <div>
+                                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1 }}>Tự động tạo lịch sự kiện</p>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: G.t3 }}>Hệ thống tự tạo sự kiện theo lịch định sẵn</p>
+                                </div>
+                                <input type="checkbox" checked={settings.auto_create_sessions}
                                     onChange={(e) => setSettings({ ...settings, auto_create_sessions: e.target.checked })}
                                     disabled={!isOwner}
-                                    style={{ width: '18px', height: '18px', cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6 }}
+                                    style={{ width: '20px', height: '20px', flexShrink: 0, cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6 }}
                                 />
                             </div>
 
-                            {settings.auto_create_sessions && (
-                                <>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Tần suất
-                                    </label>
-                                    <select
-                                        value={settings.session_frequency || 'disabled'}
-                                        onChange={(e) => setSettings({ ...settings, session_frequency: e.target.value as any })}
-                                        disabled={!isOwner}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            marginBottom: '16px',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    >
-                                        <option value="disabled">Vô hiệu hóa</option>
-                                        <option value="daily">Hàng ngày</option>
-                                        <option value="weekly">Hàng tuần</option>
-                                    </select>
+                            {settings.auto_create_sessions && (<>
 
-                                    {settings.session_frequency === 'weekly' && (
-                                        <>
-                                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                                Chọn ngày
-                                            </label>
-                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                                                {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => {
-                                                    const dayLabels: any = { mon: 'T2', tue: 'T3', wed: 'T4', thu: 'T5', fri: 'T6', sat: 'T7', sun: 'CN' };
-                                                    const sessionDays = (settings.session_days || '').split(',').map((d) => d.trim());
-                                                    const isSelected = sessionDays.includes(day);
-                                                    return (
-                                                        <button
-                                                            key={day}
-                                                            onClick={() => {
-                                                                const days = (settings.session_days || '').split(',').map((d) => d.trim());
-                                                                if (isSelected) {
-                                                                    setSettings({ ...settings, session_days: days.filter((d) => d !== day).join(',') });
-                                                                } else {
-                                                                    setSettings({ ...settings, session_days: [...days, day].filter(Boolean).join(',') });
-                                                                }
-                                                            }}
-                                                            disabled={!isOwner}
-                                                            style={{
-                                                                padding: '10px 16px',
-                                                                borderRadius: '10px',
-                                                                border: `2px solid ${isSelected ? G.accent : G.glassBorder}`,
-                                                                background: isSelected ? 'rgba(0,214,143,0.1)' : 'transparent',
-                                                                color: isSelected ? G.accent : G.t2,
-                                                                fontWeight: isSelected ? 600 : 500,
-                                                                cursor: isOwner ? 'pointer' : 'default',
-                                                                opacity: isOwner ? 1 : 0.6,
-                                                                fontSize: '13px',
-                                                            }}
-                                                        >
-                                                            {dayLabels[day]}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Thời gian tạo sự kiện (giờ:phút)
-                                    </label>
-                                    <input
-                                        type="time"
-                                        value={settings.session_time || '18:00'}
-                                        onChange={(e) => setSettings({ ...settings, session_time: e.target.value })}
-                                        disabled={!isOwner}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            marginBottom: '16px',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    />
-
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Loại sự kiện
-                                    </label>
-                                    <select
-                                        value={settings.session_type || 'training'}
-                                        onChange={(e) => setSettings({ ...settings, session_type: e.target.value as any })}
-                                        disabled={!isOwner}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            marginBottom: '16px',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    >
-                                        <option value="training">Tập luyện</option>
-                                        <option value="match">Trận đấu</option>
-                                        <option value="both">Cả hai</option>
-                                    </select>
-
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Địa điểm (tùy chọn)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={settings.session_location || ''}
-                                        onChange={(e) => setSettings({ ...settings, session_location: e.target.value })}
-                                        disabled={!isOwner}
-                                        placeholder="Sân bóng, địa chỉ..."
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    />
-
-                                    <label style={{ display: 'block', marginBottom: '8px', marginTop: '16px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                        Thời điểm chạy tự động (UTC)
-                                    </label>
-                                    <p style={{ fontSize: '11px', color: G.t3, marginBottom: '8px' }}>
-                                        Giờ UTC (ví dụ: 03:00 = 10 sáng giờ Hà Nội)
-                                    </p>
-                                    <input
-                                        type="time"
-                                        value={settings.auto_session_creation_time || '03:00'}
-                                        onChange={(e) => setSettings({ ...settings, auto_session_creation_time: e.target.value })}
-                                        disabled={!isOwner}
-                                        style={{
-                                            width: '100%',
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: `1px solid ${G.glassBorder}`,
-                                            color: G.t1,
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            opacity: isOwner ? 1 : 0.6,
-                                        }}
-                                    />
-
-                                    {/* Check-in Configuration Section */}
-                                    <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `1px solid ${G.glassBorder}` }}>
-                                        <h3 style={{ fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 600, color: G.t1, marginBottom: '16px' }}>
-                                            Cài đặt điểm danh thành viên
-                                        </h3>
-                                        <p style={{ fontSize: 'clamp(10px, 2.5vw, 12px)', color: G.t3, marginBottom: '16px' }}>
-                                            Cấu hình khi nào tạo thông báo điểm danh và thành viên có bao lâu để báo tham gia
-                                        </p>
-
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                            Thứ tạo thông báo
-                                        </label>
-                                        <select
-                                            value={settings.checkin_creation_day || 'mon'}
-                                            onChange={(e) => setSettings({ ...settings, checkin_creation_day: e.target.value })}
-                                            disabled={!isOwner}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px 14px',
-                                                borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${G.glassBorder}`,
-                                                color: G.t1,
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                boxSizing: 'border-box',
-                                                marginBottom: '16px',
-                                                opacity: isOwner ? 1 : 0.6,
-                                            }}
-                                        >
-                                            <option value="mon">Thứ 2 (Mon)</option>
-                                            <option value="tue">Thứ 3 (Tue)</option>
-                                            <option value="wed">Thứ 4 (Wed)</option>
-                                            <option value="thu">Thứ 5 (Thu)</option>
-                                            <option value="fri">Thứ 6 (Fri)</option>
-                                            <option value="sat">Thứ 7 (Sat)</option>
-                                            <option value="sun">Chủ nhật (Sun)</option>
-                                        </select>
-
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                            Giờ tạo thông báo (UTC)
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={settings.checkin_creation_time || '20:00'}
-                                            onChange={(e) => setSettings({ ...settings, checkin_creation_time: e.target.value })}
-                                            disabled={!isOwner}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px 14px',
-                                                borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${G.glassBorder}`,
-                                                color: G.t1,
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                boxSizing: 'border-box',
-                                                marginBottom: '16px',
-                                                opacity: isOwner ? 1 : 0.6,
-                                            }}
-                                        />
-
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                            Ngày bắt đầu cho phép điểm danh
-                                        </label>
-                                        <select
-                                            value={settings.checkin_start_day || 'fri'}
-                                            onChange={(e) => setSettings({ ...settings, checkin_start_day: e.target.value })}
-                                            disabled={!isOwner}
-                                            style={{
-                                                width: '100%',
-                                                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
-                                                borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${G.glassBorder}`,
-                                                color: G.t1,
-                                                fontSize: 'clamp(13px, 2.5vw, 14px)',
-                                                outline: 'none',
-                                                boxSizing: 'border-box',
-                                                marginBottom: '16px',
-                                                opacity: isOwner ? 1 : 0.6,
-                                            }}
-                                        >
-                                            <option value="mon">Thứ 2 (Mon)</option>
-                                            <option value="tue">Thứ 3 (Tue)</option>
-                                            <option value="wed">Thứ 4 (Wed)</option>
-                                            <option value="thu">Thứ 5 (Thu)</option>
-                                            <option value="fri">Thứ 6 (Fri)</option>
-                                            <option value="sat">Thứ 7 (Sat)</option>
-                                            <option value="sun">Chủ nhật (Sun)</option>
-                                        </select>
-
-                                        <label style={{ display: 'block', marginBottom: '8px', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
-                                            Ngày kết thúc cho phép điểm danh
-                                        </label>
-                                        <select
-                                            value={settings.checkin_end_day || 'tue'}
-                                            onChange={(e) => setSettings({ ...settings, checkin_end_day: e.target.value })}
-                                            disabled={!isOwner}
-                                            style={{
-                                                width: '100%',
-                                                padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
-                                                borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: `1px solid ${G.glassBorder}`,
-                                                color: G.t1,
-                                                fontSize: 'clamp(13px, 2.5vw, 14px)',
-                                                outline: 'none',
-                                                boxSizing: 'border-box',
-                                                opacity: isOwner ? 1 : 0.6,
-                                            }}
-                                        >
-                                            <option value="mon">Thứ 2 (Mon)</option>
-                                            <option value="tue">Thứ 3 (Tue)</option>
-                                            <option value="wed">Thứ 4 (Wed)</option>
-                                            <option value="thu">Thứ 5 (Thu)</option>
-                                            <option value="fri">Thứ 6 (Fri)</option>
-                                            <option value="sat">Thứ 7 (Sat)</option>
-                                            <option value="sun">Chủ nhật (Sun)</option>
-                                        </select>
+                                {/* Card 1: Thông tin sự kiện */}
+                                <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '20px', backdropFilter: 'blur(12px)', boxSizing: 'border-box' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                                        <div style={{ width: '3px', height: '16px', borderRadius: '2px', background: G.accent }} />
+                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: G.t1, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Thông tin sự kiện</p>
                                     </div>
-                                </>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                        <div>
+                                            <label style={labelStyle}>Loại sự kiện</label>
+                                            <select value={settings.session_type || 'training'}
+                                                onChange={(e) => setSettings({ ...settings, session_type: e.target.value as any })}
+                                                disabled={!isOwner} style={inputStyle}>
+                                                <option value="training">Tập luyện</option>
+                                                <option value="match">Trận đấu</option>
+                                                <option value="both">Cả hai</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label style={labelStyle}>Tần suất lặp lại</label>
+                                            <select value={settings.session_frequency || 'disabled'}
+                                                onChange={(e) => setSettings({ ...settings, session_frequency: e.target.value as any })}
+                                                disabled={!isOwner} style={inputStyle}>
+                                                <option value="disabled">Vô hiệu hóa</option>
+                                                <option value="daily">Hàng ngày</option>
+                                                <option value="weekly">Hàng tuần</option>
+                                            </select>
+                                        </div>
+
+                                        {settings.session_frequency === 'weekly' && (
+                                            <div>
+                                                <label style={labelStyle}>Các ngày diễn ra trong tuần</label>
+                                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                    {['mon','tue','wed','thu','fri','sat','sun'].map((day) => {
+                                                        const selected = (settings.session_days || '').split(',').map(d => d.trim()).includes(day)
+                                                        return (
+                                                            <button key={day} disabled={!isOwner}
+                                                                onClick={() => {
+                                                                    const days = (settings.session_days || '').split(',').map(d => d.trim())
+                                                                    setSettings({ ...settings, session_days: (selected ? days.filter(d => d !== day) : [...days, day]).filter(Boolean).join(',') })
+                                                                }}
+                                                                style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${selected ? G.accent : G.glassBorder}`, background: selected ? 'rgba(0,214,143,0.1)' : 'transparent', color: selected ? G.accent : G.t2, fontWeight: selected ? 700 : 500, cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6, fontSize: '13px' }}>
+                                                                {DAY_SHORT[day]}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label style={labelStyle}>Giờ diễn ra (GMT+7)</label>
+                                            <input type="time" value={settings.session_time || '18:00'}
+                                                onChange={(e) => setSettings({ ...settings, session_time: e.target.value })}
+                                                disabled={!isOwner} style={inputStyle} />
+                                        </div>
+
+                                        <div>
+                                            <label style={labelStyle}>Địa điểm (tùy chọn)</label>
+                                            <input type="text" value={settings.session_location || ''}
+                                                onChange={(e) => setSettings({ ...settings, session_location: e.target.value })}
+                                                disabled={!isOwner} placeholder="VD: Sân Thống Nhất, 138 Đào Duy Từ..."
+                                                style={inputStyle} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card 2: Thông báo & thời hạn điểm danh */}
+                                <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '20px', backdropFilter: 'blur(12px)', boxSizing: 'border-box' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                        <div style={{ width: '3px', height: '16px', borderRadius: '2px', background: G.blue }} />
+                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: G.t1, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Thông báo & Thời hạn điểm danh</p>
+                                    </div>
+                                    <p style={{ fontSize: '12px', color: G.t3, margin: '0 0 20px 0' }}>
+                                        Hệ thống gửi thông báo hỏi thành viên có tham gia không, và đóng lại khi hết hạn.
+                                    </p>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={labelStyle}>Ngày gửi thông báo</label>
+                                                <select value={settings.checkin_creation_day || 'mon'}
+                                                    onChange={(e) => setSettings({ ...settings, checkin_creation_day: e.target.value })}
+                                                    disabled={!isOwner} style={inputStyle}>
+                                                    {DAY_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                                                </select>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={labelStyle}>Giờ gửi thông báo (GMT+7)</label>
+                                                <input type="time" value={settings.checkin_creation_time || '20:00'}
+                                                    onChange={(e) => setSettings({ ...settings, checkin_creation_time: e.target.value })}
+                                                    disabled={!isOwner} style={inputStyle} />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ height: '1px', background: G.glassBorder }} />
+
+                                        <div>
+                                            <label style={{ ...labelStyle, marginBottom: '10px' }}>Thời hạn điểm danh</label>
+                                            <p style={{ fontSize: '12px', color: G.t3, margin: '0 0 10px 0' }}>
+                                                Thành viên chỉ có thể xác nhận tham gia trong khoảng thời gian này.
+                                            </p>
+                                            <div style={{ display: 'flex', gap: '12px' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={labelStyle}>Từ ngày</label>
+                                                    <select value={settings.checkin_start_day || 'fri'}
+                                                        onChange={(e) => setSettings({ ...settings, checkin_start_day: e.target.value })}
+                                                        disabled={!isOwner} style={inputStyle}>
+                                                        {DAY_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={labelStyle}>Đến ngày</label>
+                                                    <select value={settings.checkin_end_day || 'tue'}
+                                                        onChange={(e) => setSettings({ ...settings, checkin_end_day: e.target.value })}
+                                                        disabled={!isOwner} style={inputStyle}>
+                                                        {DAY_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </>)}
+
+                            {isOwner && (
+                                <button onClick={handleSaveSettings} disabled={loading}
+                                    style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: G.accent, color: '#070B14', fontWeight: 600, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+                                    {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
+                                </button>
                             )}
                         </div>
-
-                        {isOwner && settings.auto_create_sessions && (
-                            <button
-                                onClick={handleSaveSettings}
-                                disabled={loading}
-                                style={{
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
-                                    border: 'none',
-                                    background: G.accent,
-                                    color: '#070B14',
-                                    fontWeight: 600,
-                                    cursor: loading ? 'default' : 'pointer',
-                                    opacity: loading ? 0.6 : 1,
-                                }}
-                            >
-                                {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
-                            </button>
-                        )}
-                    </div>
-                )}
+                    )
+                })()}
 
                 {/* Invite Settings */}
                 {tab === 'invite' && (
