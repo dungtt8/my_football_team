@@ -70,6 +70,9 @@ export interface UserStats {
     month: string
     total_points: number
     rank: number
+    attended?: number
+    absent?: number
+    total?: number
 }
 
 export interface AttendanceHistory {
