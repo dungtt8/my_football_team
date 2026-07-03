@@ -1,8 +1,22 @@
 const inngest = require('../config/inngest');
 const monthlyReminderHandler = require('./handlers/monthlyReminder');
 const { autoCreateTeamFundHandler } = require('./handlers/monthlyReminder');
-const { onApprovalPending, onApprovalApproved, onApprovalRejected } = require('./handlers/financeEvents');
-const { onAttendanceSessionCreated, onAttendanceCheckIn, onAttendanceSessionClosed } = require('./handlers/attendanceEvents');
+const {
+  onApprovalPendingHandler: onApprovalPending,
+  onApprovalApprovedHandler: onApprovalApproved,
+  onApprovalRejectedHandler: onApprovalRejected,
+} = require('./handlers/financeEvents');
+const {
+  onSessionCreatedHandler: onAttendanceSessionCreated,
+  onCheckInHandler: onAttendanceCheckIn,
+  onSessionClosedHandler: onAttendanceSessionClosed,
+} = require('./handlers/attendanceEvents');
+const {
+  onCampaignCreatedHandler,
+  onCampaignMemberConfirmedHandler,
+  onCampaignChargedHandler,
+  onCampaignClosedHandler,
+} = require('./handlers/campaignEvents');
 
 // Event definitions
 const events = {
@@ -52,26 +66,8 @@ const onCampaignAssignmentCreatedHandler = inngest.createFunction(
   onCampaignAssignmentCreatedLogic
 );
 
-/**
- * Campaign Member Confirmed Handler
- * Triggered when: campaign.member-confirmed event is emitted
- * Action: Notify co-managers that member confirmed participation
- */
-const onCampaignMemberConfirmedLogic = async ({ event, step }) => {
-  const { campaign_id, team_id, member_id, confirmed_by } = event.data;
-  // Implementation: Notify co-managers of member confirmation
-  // Update campaign assignment status
-  return { status: 'completed', campaign_id, member_id };
-};
-
-const onCampaignMemberConfirmedHandler = inngest.createFunction(
-  {
-    id: 'campaign.member-confirmed',
-    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
-  },
-  { event: 'campaign.member-confirmed' },
-  onCampaignMemberConfirmedLogic
-);
+// Note: real "campaign member confirmed" handling lives in
+// ./handlers/campaignEvents.js (onCampaignMemberConfirmedHandler), imported above.
 
 /**
  * Campaign Member Rejected Handler
@@ -94,26 +90,8 @@ const onCampaignMemberRejectedHandler = inngest.createFunction(
   onCampaignMemberRejectedLogic
 );
 
-/**
- * Campaign Closed Handler
- * Triggered when: campaign.closed event is emitted
- * Action: Finalize campaign, award gamification points, notify team
- */
-const onCampaignClosedLogic = async ({ event, step }) => {
-  const { campaign_id, team_id, closed_by } = event.data;
-  // Implementation: Calculate results, award points, send notifications
-  // Archive campaign data
-  return { status: 'completed', campaign_id };
-};
-
-const onCampaignClosedHandler = inngest.createFunction(
-  {
-    id: 'campaign.closed',
-    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
-  },
-  { event: 'campaign.closed' },
-  onCampaignClosedLogic
-);
+// Note: real "campaign closed" handling lives in
+// ./handlers/campaignEvents.js (onCampaignClosedHandler), imported above.
 
 // Define functions (to be implemented in separate files)
 const createCampaignDeadlineCheckFunction = inngest.createFunction(
@@ -248,9 +226,11 @@ module.exports = {
   onApprovalPending,
   onApprovalApproved,
   onApprovalRejected,
+  onCampaignCreatedHandler,
   onCampaignAssignmentCreatedHandler,
   onCampaignMemberConfirmedHandler,
   onCampaignMemberRejectedHandler,
+  onCampaignChargedHandler,
   onCampaignClosedHandler,
   onAttendanceSessionCreatedHandler,
   onAttendanceCheckInHandler,

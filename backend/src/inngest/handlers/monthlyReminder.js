@@ -61,7 +61,7 @@ const monthlyReminderLogic = async ({ event, step }) => {
       return [];
     }
     return db('teams')
-      .where('deleted_at', null)
+      .whereNull('deleted_at')
       .select('id', 'name');
   });
 

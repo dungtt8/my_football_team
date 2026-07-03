@@ -6,6 +6,7 @@ import { BottomTabBar } from './BottomTabBar'
 import { MenuDrawer } from './MenuDrawer'
 import { Sidebar } from './Sidebar'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 
 interface AppLayoutProps {
     children: React.ReactNode
@@ -38,9 +39,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     }, [])
 
     const router = useRouter()
+    const { logout } = useAuth()
 
     const handleNavigate = (path: string) => {
         router.push(path)
+    }
+
+    const handleLogout = async () => {
+        await logout()
+        router.push('/login')
     }
 
     return (
@@ -89,6 +96,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         onClose={() => setIsMenuOpen(false)}
                         user={user}
                         onNavigate={handleNavigate}
+                        onLogout={handleLogout}
                     />
 
                     {/* Main content area */}

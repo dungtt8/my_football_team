@@ -55,6 +55,10 @@ export class ApiClient {
             const data = await response.json().catch(() => ({}))
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    this.handleUnauthorized()
+                }
+
                 const error = new Error(data.error || `API Error: ${response.status}`) as ApiError
                 error.status = response.status
                 error.data = data
@@ -73,6 +77,24 @@ export class ApiClient {
                 error: apiError.message || 'Failed to fetch',
                 status: apiError.status || 500,
             }
+        }
+    }
+
+    // Session expired or invalid token: clear stored auth and send user to login
+    private handleUnauthorized() {
+        if (typeof window === 'undefined') return
+
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('team')
+        localStorage.removeItem('role')
+        localStorage.removeItem('allTeams')
+        document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax'
+
+        // Avoid redirect loop if already on login page
+        if (!window.location.pathname.startsWith('/login')) {
+            const from = encodeURIComponent(window.location.pathname)
+            window.location.href = `/login?from=${from}`
         }
     }
 

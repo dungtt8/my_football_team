@@ -12,7 +12,8 @@ const DAYS_OF_WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 /**
  * Check if current UTC time matches the team's checkin_creation_time (stored in UTC).
- * Session creation fires at the same moment notifications are sent.
+ * Session creation reuses the same time window as the check-in notification
+ * ("Giờ gửi thông báo"), so both fire together.
  * Allows 1-hour window (matches if within the same hour).
  */
 function isTimeWindowActive(configuredUtcTime) {
@@ -32,8 +33,8 @@ function isTimeWindowActive(configuredUtcTime) {
  * Check if a session should be auto-created for a team today
  * Returns true if:
  * - auto_create_sessions is enabled
- * - frequency matches today (daily, or weekly on matching day)
- * - current time is within the configured creation time window
+ * - frequency matches today (daily, or weekly on one of the configured session_days)
+ * - current time is within the notification time window (checkin_creation_time)
  * - session hasn't been created today yet
  */
 const shouldCreateSession = (team) => {
@@ -41,7 +42,7 @@ const shouldCreateSession = (team) => {
         return false;
     }
 
-    // Check if current time matches checkin_creation_time (session is created at notification time)
+    // Fire at the same time as the check-in notification ("Giờ gửi thông báo")
     if (!isTimeWindowActive(team.checkin_creation_time || '13:00')) {
         return false;
     }
@@ -58,21 +59,17 @@ const shouldCreateSession = (team) => {
         }
     }
 
-    // Check if today is the configured notification/creation day
     const todayName = DAYS_OF_WEEK[new Date().getDay()];
-    if (team.checkin_creation_day && team.checkin_creation_day !== todayName) {
-        return false;
-    }
 
     // Check frequency
     if (team.session_frequency === 'daily') {
         return true;
     }
 
-    if (team.session_frequency === 'weekly' && team.session_days) {
-        // For weekly, at least one session day must be in the upcoming window
-        // (checkin_start_day → checkin_end_day after today)
-        return true; // Day validity already handled by checkin_creation_day above
+    if (team.session_frequency === 'weekly') {
+        // Today must be one of the days selected in "Các ngày diễn ra trong tuần"
+        const days = (team.session_days || '').split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
+        return days.includes(todayName);
     }
 
     return false;

@@ -38,8 +38,9 @@ export default function FinancePage() {
     const [rejectReason, setRejectReason] = useState('')
 
     useEffect(() => {
-        // Only load data after auth has finished loading
+        // Only load data after auth has finished loading and user is authenticated
         if (authLoading) return
+        if (!user) return
 
         const load = async () => {
             setIsLoading(true)
@@ -65,7 +66,7 @@ export default function FinancePage() {
             }
         }
         load()
-    }, [isManager, authLoading])
+    }, [isManager, authLoading, user])
 
     const handleSubmit = async (data: TransactionFormData) => {
         setIsSubmitting(true)

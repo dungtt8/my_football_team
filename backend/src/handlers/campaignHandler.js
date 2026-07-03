@@ -282,12 +282,17 @@ const memberConfirm = async (req, res) => {
       .where('id', assignment.id)
       .first();
 
-    // Emit event
-    await notificationService.emitEvent('campaign_assignment.confirmed', {
+    // Fetch member name for the notification
+    const member = await db('users').where('id', memberId).first();
+
+    // Emit event - name must match the listener in inngest/handlers/campaignEvents.js
+    // ('campaign.member_confirmed'), otherwise co-managers never get notified
+    await notificationService.emitEvent('campaign.member_confirmed', {
       assignment_id: assignment.id,
       campaign_id: id,
       team_id: teamId,
       user_id: memberId,
+      member_name: member?.full_name || member?.name || 'Thành viên',
       campaign_name: campaign.name
     });
 

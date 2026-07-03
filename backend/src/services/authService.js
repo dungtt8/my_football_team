@@ -10,7 +10,8 @@ class AuthService {
    */
   generateJWT(user, teams = []) {
     const payload = {
-      user_id: user.id,
+      id: user.id,       // primary field used by handlers
+      user_id: user.id,  // keep for backward compat with existing tokens
       team_id: user.team_id,
       email: user.email,
       role: user.role, // Current team role

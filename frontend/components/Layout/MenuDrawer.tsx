@@ -23,6 +23,7 @@ interface MenuDrawerProps {
     role?: string
   }
   onNavigate?: (path: string) => void
+  onLogout?: () => void
 }
 
 interface MenuItem {
@@ -85,6 +86,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   onClose,
   user,
   onNavigate,
+  onLogout,
 }) => {
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -252,6 +254,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
         <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <button
             onClick={() => {
+              onLogout?.()
               onClose()
             }}
             style={{

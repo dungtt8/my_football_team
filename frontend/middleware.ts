@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Decode JWT payload and check exp claim (no signature check here -
+// the backend already verifies the signature on every API call;
+// this is just so routing can redirect expired sessions to login)
+function isTokenExpired(token: string): boolean {
+    try {
+        const payload = token.split('.')[1]
+        const decoded = JSON.parse(atob(payload))
+        if (!decoded.exp) return false
+        return Date.now() >= decoded.exp * 1000
+    } catch {
+        // Malformed token - treat as expired
+        return true
+    }
+}
+
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
@@ -27,12 +42,15 @@ export function middleware(request: NextRequest) {
     const tokenFromHeader = request.headers.get('authorization')?.replace('Bearer ', '')
     const token = tokenFromCookie || tokenFromHeader
 
-    // If no token and trying to access protected route, redirect to login
-    if (!token) {
+    // If no token, or token is expired, redirect to login
+    if (!token || isTokenExpired(token)) {
         const loginUrl = new URL('/login', request.url)
         // Preserve the original URL so we can redirect back after login
         loginUrl.searchParams.set('from', pathname)
-        return NextResponse.redirect(loginUrl)
+        const response = NextResponse.redirect(loginUrl)
+        // Clear stale cookie so it doesn't keep bouncing through this check
+        response.cookies.delete('auth_token')
+        return response
     }
 
     return NextResponse.next()
