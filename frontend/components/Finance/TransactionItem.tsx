@@ -88,10 +88,10 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-xs" style={{ color: '#9F9A93' }}>
-                        {formatDate(transaction.createdAt)}
+                        {formatDate(transaction.transaction_date || transaction.created_at || '')}
                     </p>
-                    {transaction.category && (
-                        <Badge variant="info">{transaction.category}</Badge>
+                    {transaction.transaction_type && (
+                        <Badge variant="info">{transaction.transaction_type === 'income' ? 'Thu' : 'Chi'}</Badge>
                     )}
                 </div>
             </div>

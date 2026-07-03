@@ -2,6 +2,7 @@ const db = require('../../config/database');
 const inngest = require('../../config/inngest');
 const notificationService = require('../../services/notificationService');
 const logger = require('../../utils/logger');
+const { getTeamUsers } = require('../../utils/teamUsers');
 
 // ============================================================================
 // onApprovalPending Handler
@@ -55,11 +56,7 @@ const onApprovalPendingLogic = async ({ event, step }) => {
 
   // Step 3: Fetch all co-managers for the team
   const coManagers = await step.run('fetch-co-managers', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('role', 'co_manager')
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { role: 'co_manager', status: 'active' });
   });
 
   logger.info('Found co-managers for notification', {
@@ -257,11 +254,7 @@ const onApprovalApprovedLogic = async ({ event, step }) => {
 
   // Step 6: Fetch all team members (except submitter)
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .whereNot('id', submitted_by)
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active', excludeUserId: submitted_by });
   });
 
   // Step 7: Send FUND_UPDATED notification to all team members

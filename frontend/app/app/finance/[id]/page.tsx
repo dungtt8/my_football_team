@@ -156,7 +156,7 @@ export default function TransactionDetailPage() {
                 {transaction.description}
               </h1>
               <p className="text-body text-gray">
-                Submitted by: {transaction.submittedBy || 'Unknown'}
+                Submitted by: {transaction.submitted_by_name || 'Unknown'}
               </p>
             </div>
             <Badge variant={getStatusVariant(transaction.status)}>
@@ -174,15 +174,15 @@ export default function TransactionDetailPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-lg mb-lg">
             <div>
-              <p className="text-caption text-gray mb-md">Category</p>
+              <p className="text-caption text-gray mb-md">Loại giao dịch</p>
               <p className="text-body font-medium text-black">
-                {transaction.category}
+                {transaction.transaction_type === 'income' ? 'Thu' : 'Chi'}
               </p>
             </div>
             <div>
               <p className="text-caption text-gray mb-md">Date Submitted</p>
               <p className="text-body font-medium text-black">
-                {formatDate(transaction.createdAt)}
+                {formatDate(transaction.transaction_date || transaction.created_at || '')}
               </p>
             </div>
           </div>
@@ -258,8 +258,8 @@ export default function TransactionDetailPage() {
                 ? '✓ This expense has been approved'
                 : '✗ This expense has been rejected'}
             </p>
-            {transaction.approverInfo && (
-              <p className="text-small text-gray mt-md">{transaction.approverInfo}</p>
+            {transaction.status === 'rejected' && transaction.rejection_reason && (
+              <p className="text-small text-gray mt-md">Lý do: {transaction.rejection_reason}</p>
             )}
           </div>
         )}

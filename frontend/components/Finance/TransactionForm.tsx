@@ -7,7 +7,6 @@ export interface TransactionFormData {
     amount: number
     transaction_date?: string
     bill_image_url?: string
-    category?: string
 }
 
 interface TransactionFormProps {
@@ -74,12 +73,18 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
         if (!validate()) return
         try {
             setIsSubmitting(true)
+            // Backend `fund_transactions` has no `category` column — fold the
+            // chosen category into the description instead of silently dropping it.
+            const categoryLabel = CATEGORIES.find(c => c.key === formData.category)?.label
+            const description = categoryLabel
+                ? `[${categoryLabel.replace(/^\S+\s/, '')}] ${formData.description.trim()}`
+                : formData.description.trim()
+
             await onSubmit({
-                description: formData.description.trim(),
+                description,
                 amount: Number(formData.amount),
                 transaction_date: formData.transaction_date || undefined,
                 bill_image_url: formData.bill_image_url || undefined,
-                category: formData.category || undefined,
             })
             setFormData({ description: '', amount: '', transaction_date: todayStr, bill_image_url: '', category: '' })
         } catch (err) {

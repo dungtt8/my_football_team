@@ -18,6 +18,7 @@ export default function CampaignDetailPage() {
 
     const {
         getCampaign,
+        uploadBillImage,
         memberConfirm,
         memberReject,
         coManagerApprove,
@@ -33,6 +34,9 @@ export default function CampaignDetailPage() {
     const [report, setReport] = useState<CampaignReport | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isActing, setIsActing] = useState(false)
+    const [billFile, setBillFile] = useState<File | null>(null)
+    const [billPreview, setBillPreview] = useState<string | null>(null)
+    const [isUploading, setIsUploading] = useState(false)
 
     useEffect(() => {
         if (authLoading) return
@@ -64,17 +68,44 @@ export default function CampaignDetailPage() {
 
     const assignmentLabel = (s: string) => ({
         pending_confirmation: 'Chờ xác nhận',
-        confirmed: 'Đã xác nhận',
+        pending_approval: 'Chờ duyệt',
         rejected: 'Từ chối',
         approved: 'Đã duyệt',
-        exempted: 'Miễn',
+        exempt: 'Miễn',
     }[s] || s)
 
     const assignmentVariant = (s: string): 'approved' | 'pending' | 'rejected' | 'info' => {
-        if (s === 'approved' || s === 'confirmed') return 'approved'
+        if (s === 'approved') return 'approved'
         if (s === 'rejected') return 'rejected'
-        if (s === 'exempted') return 'info'
-        return 'pending'
+        if (s === 'exempt') return 'info'
+        return 'pending' // pending_confirmation, pending_approval
+    }
+
+    const handleSelectBillFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setBillFile(file)
+        setBillPreview(URL.createObjectURL(file))
+    }
+
+    const handleConfirmWithBill = async () => {
+        if (!billFile) { toast('Vui lòng chọn ảnh hoá đơn/chuyển khoản', 'error'); return }
+        setIsActing(true)
+        setIsUploading(true)
+        try {
+            const url = await uploadBillImage(billFile)
+            setIsUploading(false)
+            await memberConfirm(id, user!.id, url)
+            toast('Đã xác nhận đóng quỹ', 'success')
+            setBillFile(null)
+            setBillPreview(null)
+            loadData()
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi', 'error')
+        } finally {
+            setIsActing(false)
+            setIsUploading(false)
+        }
     }
 
     const fmtDate = (d: string) =>
@@ -138,10 +169,33 @@ export default function CampaignDetailPage() {
                     <p className="text-sm mb-4" style={{ color: '#6B6660' }}>
                         {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ cần đóng góp
                     </p>
+
+                    <label className="block text-xs font-medium mb-2" style={{ color: '#6B6660' }}>
+                        Ảnh hoá đơn / minh chứng chuyển khoản
+                    </label>
+                    <label
+                        htmlFor="bill-image-input"
+                        className="flex flex-col items-center justify-center rounded-xl border border-dashed cursor-pointer mb-4 overflow-hidden"
+                        style={{ borderColor: '#E5E5E5', minHeight: '120px', background: '#F5F3F0' }}
+                    >
+                        {billPreview ? (
+                            <img src={billPreview} alt="Xem trước hoá đơn" className="w-full max-h-56 object-contain" />
+                        ) : (
+                            <span className="text-sm py-8" style={{ color: '#9F9A93' }}>Chạm để chọn ảnh từ máy</span>
+                        )}
+                    </label>
+                    <input
+                        id="bill-image-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        onChange={handleSelectBillFile}
+                        className="hidden"
+                    />
+
                     <div className="flex gap-3">
-                        <button disabled={isActing} onClick={() => act(() => memberConfirm(id, user!.id), 'Đã xác nhận tham gia')}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#3D5A50', color: '#fff' }}>
-                            Xác nhận tham gia
+                        <button disabled={isActing || !billFile} onClick={handleConfirmWithBill}
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50" style={{ background: '#3D5A50', color: '#fff' }}>
+                            {isUploading ? 'Đang tải ảnh lên...' : isActing ? 'Đang xác nhận...' : 'Xác nhận đã đóng quỹ'}
                         </button>
                         <button disabled={isActing} onClick={() => act(() => memberReject(id, user!.id), 'Đã từ chối')}
                             className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E5E5E5', color: '#E53E3E' }}>
@@ -167,7 +221,13 @@ export default function CampaignDetailPage() {
                                     <p className="font-medium text-sm">{a.full_name || a.user_id}</p>
                                     <Badge variant={assignmentVariant(a.status)}>{assignmentLabel(a.status)}</Badge>
                                 </div>
-                                {a.status === 'confirmed' && (
+                                {a.bill_image_url && (
+                                    <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
+                                        className="text-xs font-medium underline mr-2" style={{ color: '#3D5A50' }}>
+                                        Xem hoá đơn
+                                    </a>
+                                )}
+                                {a.status === 'pending_approval' && (
                                     <div className="flex gap-2">
                                         <button disabled={isActing} onClick={() => act(() => coManagerApprove(id, a.user_id), 'Đã duyệt')}
                                             className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#3D5A50', color: '#fff' }}>Duyệt</button>
@@ -176,6 +236,10 @@ export default function CampaignDetailPage() {
                                         <button disabled={isActing} onClick={() => act(() => coManagerReject(id, a.user_id), 'Đã từ chối')}
                                             className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEE2E2', color: '#E53E3E' }}>Từ chối</button>
                                     </div>
+                                )}
+                                {a.status === 'pending_confirmation' && (
+                                    <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
+                                        className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E5E5E5', color: '#4A4540' }}>Miễn</button>
                                 )}
                             </div>
                         ))}

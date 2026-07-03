@@ -12,6 +12,7 @@
  */
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const notificationService = require('./notificationService');
 
 const POINTS_YES = 10;
 
@@ -198,6 +199,68 @@ async function getSessionStats(sessionId) {
     return { total: checkins.length, yes, no, pending };
 }
 
+/**
+ * Send a reminder notification to members who still haven't responded (yes/no)
+ * to an active session's check-in, for teams whose configured notification
+ * hour (checkin_creation_time, UTC) matches the current hour.
+ *
+ * Runs hourly via the `attendance.checkin-notifications` Inngest cron. Gating
+ * by the team's configured hour means this only fires once per session per
+ * day (the cron itself only ticks once per hour), so it won't spam members.
+ */
+async function checkAndCreateCheckInNotifications() {
+    const currentHour = new Date().getUTCHours();
+
+    const teams = await db('teams')
+        .whereNull('deleted_at')
+        .select('id', 'name', 'checkin_creation_time');
+
+    let sessionsChecked = 0;
+    let notificationsSent = 0;
+
+    for (const team of teams) {
+        const [configHour] = (team.checkin_creation_time || '13:00').split(':').map(Number);
+        if (configHour !== currentHour) continue;
+
+        const activeSessions = await db('attendance_sessions')
+            .where('team_id', team.id)
+            .where('status', 'active')
+            .where(function () {
+                this.whereNull('check_in_deadline').orWhere('check_in_deadline', '>', new Date());
+            });
+
+        for (const session of activeSessions) {
+            sessionsChecked++;
+
+            const pending = await db('attendance_checkins')
+                .where('session_id', session.id)
+                .whereNull('response')
+                .select('user_id');
+
+            for (const checkin of pending) {
+                try {
+                    await notificationService.sendInternalNotification(
+                        checkin.user_id,
+                        `Nhắc điểm danh: vui lòng phản hồi buổi ${session.session_type === 'match' ? 'thi đấu' : 'tập'} ngày ${new Date(session.session_date).toLocaleDateString('vi-VN')}`,
+                        { session_id: session.id },
+                        team.id
+                    );
+                    notificationsSent++;
+                } catch (error) {
+                    logger.warn('Failed to send checkin reminder', {
+                        session_id: session.id,
+                        user_id: checkin.user_id,
+                        error: error.message,
+                    });
+                }
+            }
+        }
+    }
+
+    logger.info('Checkin notification sweep complete', { sessionsChecked, notificationsSent });
+    return { sessions_checked: sessionsChecked, notifications_sent: notificationsSent };
+}
+
 module.exports = {
     createCheckinsForSession,
     getCheckinForUser,
@@ -206,4 +269,5 @@ module.exports = {
     getSessionCheckins,
     awardPointsForSession,
     getSessionStats,
+    checkAndCreateCheckInNotifications,
 };

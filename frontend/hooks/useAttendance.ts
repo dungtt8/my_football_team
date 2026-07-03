@@ -231,12 +231,18 @@ export const useAttendance = () => {
         } catch { return [] }
     }, [getAttendanceHistory])
 
-    const getAttendanceDetail = useCallback(async (sessionId: string) => {
+    // Fetches a single checkin/record by its own id (attendance_checkins.id).
+    // There's no dedicated "get one checkin" backend endpoint, so we pull the
+    // user's full history (already joined with session info) and find it there
+    // — this only works for the current user's own records, which is the only
+    // case the UI needs (record detail page is reached from the user's own
+    // history/recent-records lists).
+    const getAttendanceDetail = useCallback(async (recordId: string) => {
         try {
-            const result = await getSession(sessionId)
-            return result?.records?.[0]
+            const history = await getAttendanceHistory()
+            return history?.history?.find(r => String(r.id) === String(recordId))
         } catch { return undefined }
-    }, [getSession])
+    }, [getAttendanceHistory])
 
     // Deprecated — no-op, kept so old call sites don't crash at compile time
     const memberCheckIn = useCallback(async (_sessionId: string) => {

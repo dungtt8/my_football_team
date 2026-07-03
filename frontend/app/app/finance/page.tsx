@@ -126,8 +126,8 @@ export default function FinancePage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>
                 {[
                     { label: 'Số dư', value: balance?.totalBalance != null ? fmtMoney(balance.totalBalance) : '—', accent: true },
-                    { label: 'Tháng này', value: balance?.monthlySpent != null ? fmtMoney(balance.monthlySpent) : '—', accent: false },
-                    { label: 'Chờ duyệt', value: balance?.pendingCount ?? '—', accent: false },
+                    { label: 'Thu', value: balance?.totalIncome != null ? fmtMoney(balance.totalIncome) : '—', accent: false },
+                    { label: 'Chi', value: balance?.totalExpense != null ? fmtMoney(balance.totalExpense) : '—', accent: false },
                 ].map(s => (
                     <div key={s.label} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '16px 12px', backdropFilter: 'blur(12px)' }}>
                         <p style={{ fontSize: '11px', color: G.t3, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</p>
@@ -148,7 +148,7 @@ export default function FinancePage() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                     <div>
                                         <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1 }}>{a.description || 'Báo cáo chi tiêu'}</p>
-                                        <p style={{ margin: '3px 0 0', fontSize: '12px', color: G.t3 }}>{(a as any).user_name || (a as any).submitted_by || a.submittedBy || 'Thành viên'} · {fmtDate((a as any).transaction_date || a.createdAt)}</p>
+                                        <p style={{ margin: '3px 0 0', fontSize: '12px', color: G.t3 }}>{a.submitted_by_name || 'Thành viên'} · {fmtDate(a.transaction_date || a.created_at)}</p>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: G.accent }}>{fmtMoney(a.amount)}</p>
                                 </div>
@@ -186,7 +186,7 @@ export default function FinancePage() {
                             }}>
                                 <div>
                                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: G.t1 }}>{tx.description || 'Chi tiêu'}</p>
-                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>{fmtDate((tx as any).transaction_date || tx.createdAt)}</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>{fmtDate(tx.transaction_date || tx.created_at)}</p>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: G.t1 }}>{fmtMoney(tx.amount)}</p>

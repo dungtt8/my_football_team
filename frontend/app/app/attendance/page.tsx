@@ -17,7 +17,7 @@ export default function AttendancePage() {
     const router = useRouter()
     const { user, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
-    const { listSessions, memberCheckIn, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
+    const { listSessions, getActiveCheckin, respondToCheckin, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
     const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [stats, setStats] = useState<UserStats | null>(null)
@@ -25,6 +25,7 @@ export default function AttendancePage() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
     const [activeSession, setActiveSession] = useState<AttendanceSession | null>(null)
     const [allSessions, setAllSessions] = useState<AttendanceSession[]>([])
+    const [activeCheckinId, setActiveCheckinId] = useState<string | null>(null)
     const [myCheckedIn, setMyCheckedIn] = useState(false)
     const [isCheckingIn, setIsCheckingIn] = useState(false)
     const [showForm, setShowForm] = useState(false)
@@ -45,8 +46,15 @@ export default function AttendancePage() {
                     const hist = await getAttendanceHistory()
                     const records = hist?.history || []
                     setRecentRecords(records.slice(0, 5))
-                    const todayRec = records.find((r: AttendanceRecord) => r.checked_in_at && new Date(r.checked_in_at).toDateString() === today)
-                    if (todayRec) setMyCheckedIn(true)
+                } catch { }
+
+                // The user's own Yes/No response for the current active session
+                try {
+                    const active = await getActiveCheckin()
+                    if (active?.check_in) {
+                        setActiveCheckinId(active.check_in.id)
+                        setMyCheckedIn(active.check_in.response === 'yes')
+                    }
                 } catch { }
 
                 try {
@@ -62,10 +70,10 @@ export default function AttendancePage() {
     }, [user, authLoading])
 
     const handleCheckIn = async () => {
-        if (!activeSession) { toast('Không có buổi active hôm nay', 'error'); return }
+        if (!activeCheckinId) { toast('Không tìm thấy phiếu điểm danh cho buổi này', 'error'); return }
         setIsCheckingIn(true)
         try {
-            await memberCheckIn(activeSession.id)
+            await respondToCheckin(activeCheckinId, 'yes')
             setMyCheckedIn(true)
             toast('✅ Điểm danh thành công! +10 điểm', 'success')
         } catch (e: any) { toast(e?.message || 'Lỗi điểm danh', 'error') }
@@ -224,14 +232,14 @@ export default function AttendancePage() {
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                                     <span style={{ fontSize: '20px' }}>
-                                        {(['attended', 'present', 'late'].includes(record.status ?? '') ? '✅' : record.status === 'absent' || record.status === 'marked_absent' ? '❌' : '⏳')}
+                                        {record.response === 'yes' ? '✅' : record.response === 'no' ? '❌' : '⏳'}
                                     </span>
                                     <div>
                                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: G.t1 }}>
                                             {record.session_type === 'match' ? '⚽' : '🏃'} {record.session_date ? new Date(record.session_date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }) : 'N/A'}
                                         </p>
                                         <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
-                                            {['attended', 'present', 'late'].includes(record.status ?? '') ? (record.checked_in_at ? `${new Date(record.checked_in_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Checked in') : record.status === 'absent' || record.status === 'marked_absent' ? 'Vắng' : 'Chưa điểm danh'}
+                                            {record.response === 'yes' ? 'Tham gia' : record.response === 'no' ? 'Vắng' : 'Chưa phản hồi'}
                                         </p>
                                     </div>
                                 </div>

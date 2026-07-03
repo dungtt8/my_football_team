@@ -1,182 +1,118 @@
 'use client'
 
 import React from 'react'
-import { COLORS, TYPOGRAPHY, SPACING } from '@/lib/constants'
-import { AttendanceRecord } from '@/hooks/useAttendance'
+import { AttendanceCheckin } from '@/hooks/useAttendance'
+
+const G = {
+  glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)', glassHover: 'rgba(255,255,255,0.11)',
+  accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
+  t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+}
 
 interface AttendanceListProps {
-    records: AttendanceRecord[]
-    isLoading: boolean
-    onRecordClick?: (id: string) => void
-    emptyMessage?: string
+  records: AttendanceCheckin[]
+  isLoading: boolean
+  onRecordClick?: (id: string) => void
+  emptyMessage?: string
+}
+
+const SESSION_TYPE_LABEL: Record<string, string> = {
+  training: 'Tập luyện',
+  match: 'Trận đấu',
 }
 
 export const AttendanceList: React.FC<AttendanceListProps> = ({
-    records,
-    isLoading,
-    onRecordClick,
-    emptyMessage = 'No attendance records found',
+  records,
+  isLoading,
+  onRecordClick,
+  emptyMessage = 'Không có bản ghi điểm danh nào',
 }) => {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'present':
-                return '#4CAF50'
-            case 'late':
-                return '#FFC107'
-            case 'absent':
-                return '#F44336'
-            case 'pending':
-            default:
-                return '#999999'
-        }
-    }
-
-    const getStatusBadge = (status: string) => {
-        const colors = {
-            present: { bg: COLORS.paleGreen, text: '#2E7D32' },
-            late: { bg: COLORS.paleYellow, text: '#F57F17' },
-            absent: { bg: COLORS.paleRed, text: '#C62828' },
-            pending: { bg: '#F0F0F0', text: '#666666' },
-        }
-        const style = colors[status as keyof typeof colors] || colors.pending
-        return (
-            <span
-                style={{
-                    display: 'inline-block',
-                    padding: '4px 8px',
-                    backgroundColor: style.bg,
-                    color: style.text,
-                    borderRadius: '4px',
-                    fontSize: TYPOGRAPHY.sizes.caption,
-                    fontWeight: TYPOGRAPHY.weights.medium,
-                    textTransform: 'capitalize',
-                }}
-            >
-                {status}
-            </span>
-        )
-    }
-
-    const formatTime = (timeString: string) => {
-        return new Date(timeString).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-    }
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' })
-    }
-
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '--'
-        const hours = Math.floor(seconds / 3600)
-        const minutes = Math.floor((seconds % 3600) / 60)
-        return `${hours}h ${minutes}m`
-    }
-
-    if (isLoading) {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.sm }}>
-                {[...Array(5)].map((_, i) => (
-                    <div
-                        key={i}
-                        style={{
-                            height: '60px',
-                            backgroundColor: COLORS.bone,
-                            borderRadius: '8px',
-                            animation: 'pulse 2s infinite',
-                        }}
-                    />
-                ))}
-            </div>
-        )
-    }
-
-    if (records.length === 0) {
-        return (
-            <div
-                style={{
-                    textAlign: 'center',
-                    padding: '32px 16px',
-                    color: COLORS.gray,
-                }}
-            >
-                <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body }}>{emptyMessage}</p>
-            </div>
-        )
-    }
+  const getResponseBadge = (response: 'yes' | 'no' | null) => {
+    const style =
+      response === 'yes'
+        ? { bg: G.accentDim, text: G.accent, label: 'Tham gia' }
+        : response === 'no'
+          ? { bg: G.redDim, text: G.red, label: 'Vắng' }
+          : { bg: 'rgba(255,255,255,0.08)', text: G.t2, label: 'Chưa phản hồi' }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: SPACING.sm }}>
-            {records.map((record) => (
-                <div
-                    key={record.id}
-                    onClick={() => onRecordClick?.(record.id)}
-                    style={{
-                        padding: '12px',
-                        border: `1px solid ${COLORS.lightGray}`,
-                        borderRadius: '8px',
-                        backgroundColor: COLORS.white,
-                        cursor: onRecordClick ? 'pointer' : 'default',
-                        transition: 'background-color 0.2s',
-                        display: 'grid',
-                        gridTemplateColumns: '80px 80px 80px 80px 1fr',
-                        alignItems: 'center',
-                        gap: '12px',
-                    }}
-                    onMouseOver={(e) => {
-                        if (onRecordClick) {
-                            (e.currentTarget as HTMLElement).style.backgroundColor = COLORS.bone
-                        }
-                    }}
-                    onMouseOut={(e) => {
-                        (e.currentTarget as HTMLElement).style.backgroundColor = COLORS.white
-                    }}
-                >
-                    {/* Date */}
-                    <div>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Date
-                        </p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {formatDate(record.created_at || record.createdAt || '')}
-                        </p>
-                    </div>
-
-                    {/* Check-In Time */}
-                    <div>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Check-In
-                        </p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {formatTime(record.checked_in_at || record.checkInTime || '')}
-                        </p>
-                    </div>
-
-                    {/* Check-Out Time */}
-                    <div>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Check-Out
-                        </p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {(record.checkOutTime) ? formatTime(record.checkOutTime) : '--:--'}
-                        </p>
-                    </div>
-
-                    {/* Duration */}
-                    <div>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Duration
-                        </p>
-                        <p style={{ margin: '4px 0 0 0', fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {formatDuration(record.duration)}
-                        </p>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        {getStatusBadge(record.status ?? '')}
-                    </div>
-                </div>
-            ))}
-        </div>
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '4px 10px',
+          background: style.bg,
+          color: style.text,
+          borderRadius: '999px',
+          fontSize: '12px',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {style.label}
+      </span>
     )
+  }
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '--'
+    return new Date(dateString).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} style={{ height: '60px', background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '14px', animation: 'pulse 2s infinite' }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (records.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '32px 16px', color: G.t2 }}>
+        <p style={{ margin: 0, fontSize: '14px' }}>{emptyMessage}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {records.map((record) => (
+        <div
+          key={record.id}
+          onClick={() => onRecordClick?.(record.id)}
+          style={{
+            padding: '14px 16px',
+            border: `1px solid ${G.glassBorder}`,
+            borderRadius: '14px',
+            background: G.glass,
+            cursor: onRecordClick ? 'pointer' : 'default',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+          onMouseOver={(e) => { if (onRecordClick) (e.currentTarget as HTMLElement).style.background = G.glassHover }}
+          onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = G.glass }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1 }}>
+              {formatDate(record.session_date)} · {SESSION_TYPE_LABEL[record.session_type ?? ''] || 'Buổi tập'}
+            </p>
+            {record.location && (
+              <p style={{ margin: 0, fontSize: '12px', color: G.t3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                📍 {record.location}
+              </p>
+            )}
+          </div>
+
+          <div style={{ flexShrink: 0 }}>
+            {getResponseBadge(record.response)}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }

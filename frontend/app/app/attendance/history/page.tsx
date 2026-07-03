@@ -5,9 +5,32 @@ import { useRouter } from 'next/navigation'
 import { useAttendance, AttendanceRecord, UserStats } from '@/hooks/useAttendance'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { COLORS, TYPOGRAPHY, SPACING } from '@/lib/constants'
 import { AttendanceList } from '@/components/Attendance/AttendanceList'
 import { AttendanceStatsCard } from '@/components/Attendance/AttendanceStatsCard'
+
+const G = {
+    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
+    accent: '#00D68F', blue: '#4A7CFF',
+    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+}
+
+const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: '10px',
+    border: `1px solid ${G.glassBorder}`,
+    background: 'rgba(255,255,255,0.05)',
+    color: G.t1,
+    fontSize: '13px',
+    boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: G.t2,
+    display: 'block',
+    marginBottom: '6px',
+}
 
 export default function AttendanceHistoryPage() {
     const router = useRouter()
@@ -40,7 +63,7 @@ export default function AttendanceHistoryPage() {
                 }
             } catch (error) {
                 console.error('Error loading attendance history:', error)
-                toast('Failed to load attendance history', 'error')
+                toast('Không thể tải lịch sử điểm danh', 'error')
             }
         }
 
@@ -51,7 +74,7 @@ export default function AttendanceHistoryPage() {
     useEffect(() => {
         let filtered = allRecords
 
-        // Status filter
+        // Status filter (based on real response field: yes / no / null)
         if (statusFilter !== 'all') {
             filtered = filtered.filter((r) => {
                 if (statusFilter === 'present') return r.response === 'yes'
@@ -61,14 +84,14 @@ export default function AttendanceHistoryPage() {
             })
         }
 
-        // Date range filter
+        // Date range filter — based on the actual session date, not record creation time
         if (dateRange.from) {
             const fromDate = new Date(dateRange.from).getTime()
-            filtered = filtered.filter((r) => new Date(r.created_at || r.createdAt || '').getTime() >= fromDate)
+            filtered = filtered.filter((r) => new Date(r.session_date || r.created_at || '').getTime() >= fromDate)
         }
         if (dateRange.to) {
             const toDate = new Date(dateRange.to).getTime() + 86400000 // Add 1 day
-            filtered = filtered.filter((r) => new Date(r.created_at || r.createdAt || '').getTime() <= toDate)
+            filtered = filtered.filter((r) => new Date(r.session_date || r.created_at || '').getTime() <= toDate)
         }
 
         setFilteredRecords(filtered)
@@ -81,75 +104,59 @@ export default function AttendanceHistoryPage() {
     )
     const totalPages = Math.ceil(filteredRecords.length / recordsPerPage)
 
+    const pendingCount = filteredRecords.filter((r) => r.response === null).length
+
     const exportToCSV = () => {
-        const headers = ['Date', 'Check-In', 'Check-Out', 'Duration', 'Status']
+        const headers = ['Ngày', 'Loại buổi', 'Địa điểm', 'Phản hồi']
         const rows = filteredRecords.map((r) => [
             new Date(r.session_date || r.created_at || '').toLocaleDateString('vi-VN'),
-            '--',
-            '--',
-            '--',
-            r.response === 'yes' ? 'present' : r.response === 'no' ? 'absent' : 'pending',
+            r.session_type === 'match' ? 'Trận đấu' : 'Tập luyện',
+            r.location || '--',
+            r.response === 'yes' ? 'Tham gia' : r.response === 'no' ? 'Vắng' : 'Chưa phản hồi',
         ])
 
         const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
-        const blob = new Blob([csv], { type: 'text/csv' })
+        const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `attendance-history-${new Date().toISOString().split('T')[0]}.csv`
+        a.download = `lich-su-diem-danh-${new Date().toISOString().split('T')[0]}.csv`
         a.click()
+        URL.revokeObjectURL(url)
     }
 
     return (
         <div
             style={{
-                padding: '24px 16px',
+                padding: '20px 16px',
                 paddingBottom: '100px',
-                backgroundColor: COLORS.white,
-                minHeight: '100vh',
+                minHeight: '100%',
                 width: '100%',
                 boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '24px',
             }}
         >
             {/* Header */}
-            <div style={{ marginBottom: '24px' }}>
-                <h1
-                    style={{
-                        margin: 0,
-                        fontSize: TYPOGRAPHY.sizes.hero,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Attendance History
+            <div>
+                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: G.t1 }}>
+                    Lịch sử điểm danh
                 </h1>
-                <p
-                    style={{
-                        margin: '8px 0 0 0',
-                        fontSize: TYPOGRAPHY.sizes.body,
-                        color: COLORS.gray,
-                    }}
-                >
-                    View and download your complete attendance records
+                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: G.t2 }}>
+                    Xem và tải toàn bộ lịch sử điểm danh của bạn
                 </p>
             </div>
 
             {/* Stats Summary */}
-            <div style={{ marginBottom: '32px' }}>
-                <h2
-                    style={{
-                        margin: '0 0 16px 0',
-                        fontSize: TYPOGRAPHY.sizes.sectionTitle,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Summary
-                </h2>
+            <div>
+                <p style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 700, color: G.t1, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Tổng quan
+                </p>
                 <AttendanceStatsCard
                     totalPresent={stats?.attended ?? 0}
                     totalAbsent={stats?.absent ?? 0}
-                    totalLate={0}
+                    totalPending={pendingCount}
                     attendancePercentage={
                         stats && ((stats.attended ?? 0) + (stats.absent ?? 0)) > 0
                             ? Math.round(((stats.attended ?? 0) / ((stats.attended ?? 0) + (stats.absent ?? 0))) * 100)
@@ -162,100 +169,59 @@ export default function AttendanceHistoryPage() {
             {/* Filters */}
             <div
                 style={{
-                    border: `1px solid ${COLORS.lightGray}`,
-                    borderRadius: '12px',
+                    border: `1px solid ${G.glassBorder}`,
+                    borderRadius: '16px',
                     padding: '16px',
-                    marginBottom: '24px',
-                    backgroundColor: COLORS.bone,
+                    background: G.glass,
+                    backdropFilter: 'blur(12px)',
+                    boxSizing: 'border-box',
                 }}
             >
-                <h3
-                    style={{
-                        margin: '0 0 12px 0',
-                        fontSize: TYPOGRAPHY.sizes.heading3,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Filters
-                </h3>
+                <p style={{ margin: '0 0 14px 0', fontSize: '13px', fontWeight: 700, color: G.t1, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Bộ lọc
+                </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
                     {/* Status Filter */}
                     <div>
-                        <label style={{ fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray, display: 'block', marginBottom: '6px' }}>
-                            Status
-                        </label>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: `1px solid ${COLORS.lightGray}`,
-                                borderRadius: '6px',
-                                fontSize: TYPOGRAPHY.sizes.small,
-                            }}
-                        >
-                            <option value="all">All Status</option>
-                            <option value="present">Present</option>
-                            <option value="absent">Absent</option>
-                            <option value="pending">Pending</option>
+                        <label style={labelStyle}>Trạng thái</label>
+                        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={inputStyle}>
+                            <option value="all">Tất cả</option>
+                            <option value="present">Tham gia</option>
+                            <option value="absent">Vắng</option>
+                            <option value="pending">Chưa phản hồi</option>
                         </select>
                     </div>
 
                     {/* From Date */}
                     <div>
-                        <label style={{ fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray, display: 'block', marginBottom: '6px' }}>
-                            From Date
-                        </label>
+                        <label style={labelStyle}>Từ ngày</label>
                         <input
                             type="date"
                             value={dateRange.from}
                             onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
-                            style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: `1px solid ${COLORS.lightGray}`,
-                                borderRadius: '6px',
-                                fontSize: TYPOGRAPHY.sizes.small,
-                            }}
+                            style={inputStyle}
                         />
                     </div>
 
                     {/* To Date */}
                     <div>
-                        <label style={{ fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray, display: 'block', marginBottom: '6px' }}>
-                            To Date
-                        </label>
+                        <label style={labelStyle}>Đến ngày</label>
                         <input
                             type="date"
                             value={dateRange.to}
                             onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
-                            style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: `1px solid ${COLORS.lightGray}`,
-                                borderRadius: '6px',
-                                fontSize: TYPOGRAPHY.sizes.small,
-                            }}
+                            style={inputStyle}
                         />
                     </div>
                 </div>
             </div>
 
             {/* Records */}
-            <div style={{ marginBottom: '24px' }}>
-                <h2
-                    style={{
-                        margin: '0 0 16px 0',
-                        fontSize: TYPOGRAPHY.sizes.sectionTitle,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Records ({filteredRecords.length})
-                </h2>
+            <div>
+                <p style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 700, color: G.t1, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Bản ghi ({filteredRecords.length})
+                </p>
                 <AttendanceList
                     records={paginatedRecords}
                     isLoading={loading}
@@ -265,36 +231,24 @@ export default function AttendanceHistoryPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: SPACING.sm,
-                        marginBottom: '24px',
-                    }}
-                >
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
                     <button
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
                         style={{
-                            padding: '8px 12px',
-                            backgroundColor: currentPage === 1 ? COLORS.bone : COLORS.black,
-                            color: currentPage === 1 ? COLORS.gray : COLORS.white,
+                            padding: '8px 14px',
+                            background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : G.accent,
+                            color: currentPage === 1 ? G.t3 : '#06110D',
                             border: 'none',
-                            borderRadius: '4px',
-                            fontSize: TYPOGRAPHY.sizes.small,
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: 600,
                             cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                         }}
                     >
-                        Previous
+                        Trước
                     </button>
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: SPACING.sm,
-                        }}
-                    >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             const page = i + 1
                             return (
@@ -304,11 +258,12 @@ export default function AttendanceHistoryPage() {
                                     style={{
                                         width: '32px',
                                         height: '32px',
-                                        backgroundColor: currentPage === page ? COLORS.black : COLORS.bone,
-                                        color: currentPage === page ? COLORS.white : COLORS.black,
-                                        border: `1px solid ${COLORS.lightGray}`,
-                                        borderRadius: '4px',
-                                        fontSize: TYPOGRAPHY.sizes.small,
+                                        background: currentPage === page ? G.accent : 'rgba(255,255,255,0.05)',
+                                        color: currentPage === page ? '#06110D' : G.t2,
+                                        border: `1px solid ${G.glassBorder}`,
+                                        borderRadius: '8px',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
                                         cursor: 'pointer',
                                     }}
                                 >
@@ -321,16 +276,17 @@ export default function AttendanceHistoryPage() {
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
                         style={{
-                            padding: '8px 12px',
-                            backgroundColor: currentPage === totalPages ? COLORS.bone : COLORS.black,
-                            color: currentPage === totalPages ? COLORS.gray : COLORS.white,
+                            padding: '8px 14px',
+                            background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : G.accent,
+                            color: currentPage === totalPages ? G.t3 : '#06110D',
                             border: 'none',
-                            borderRadius: '4px',
-                            fontSize: TYPOGRAPHY.sizes.small,
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: 600,
                             cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
                         }}
                     >
-                        Next
+                        Sau
                     </button>
                 </div>
             )}
@@ -340,17 +296,17 @@ export default function AttendanceHistoryPage() {
                 <button
                     onClick={exportToCSV}
                     style={{
-                        padding: '12px 20px',
-                        backgroundColor: COLORS.black,
-                        color: COLORS.white,
+                        padding: '12px 22px',
+                        background: G.blue,
+                        color: '#fff',
                         border: 'none',
-                        borderRadius: '8px',
-                        fontSize: TYPOGRAPHY.sizes.small,
-                        fontWeight: TYPOGRAPHY.weights.medium,
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: 600,
                         cursor: 'pointer',
                     }}
                 >
-                    Download as CSV
+                    Tải về dạng CSV
                 </button>
             </div>
         </div>

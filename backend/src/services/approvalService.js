@@ -139,9 +139,16 @@ class ApprovalService {
         updated_at: new Date()
       };
 
-      // Add rejection_reason if the table supports it
+      // Column name differs per table: fund_transactions uses `rejection_reason`
+      // (002_finance.js) while campaign_assignments uses `rejected_reason` (003_campaigns.js).
       if (reason) {
-        updateData.rejection_reason = reason;
+        updateData[tableName === 'campaign_assignments' ? 'rejected_reason' : 'rejection_reason'] = reason;
+      }
+      if (tableName === 'campaign_assignments') {
+        updateData.rejected_at = new Date();
+      } else {
+        updateData.rejected_by = rejectedBy;
+        updateData.rejected_at = new Date();
       }
 
       await db(tableName)
@@ -202,20 +209,25 @@ class ApprovalService {
       }
 
       if (approvalType === 'campaign_confirmation' || approvalType === 'all') {
+        // campaign_assignments has no team_id column — must join through `campaigns`
+        // (not `fund_campaigns`, which doesn't exist; see migration 003_campaigns.js).
+        // Status lifecycle is pending_confirmation -> pending_approval -> approved/rejected/exempt,
+        // so "awaiting co-manager decision" is 'pending_approval', not 'pending'.
         const campaigns = await db('campaign_assignments')
+          .join('campaigns', 'campaign_assignments.campaign_id', 'campaigns.id')
           .where({
-            'campaign_assignments.team_id': teamId,
-            'campaign_assignments.status': 'pending'
+            'campaigns.team_id': teamId,
+            'campaign_assignments.status': 'pending_approval'
           })
-          .join('fund_campaigns', 'campaign_assignments.campaign_id', 'fund_campaigns.id')
           .select(
             'campaign_assignments.id',
             'campaign_assignments.campaign_id',
             'campaign_assignments.user_id',
             'campaign_assignments.status',
+            'campaign_assignments.bill_image_url',
             'campaign_assignments.created_at',
-            'fund_campaigns.name as campaign_name',
-            'fund_campaigns.team_id'
+            'campaigns.name as campaign_name',
+            'campaigns.team_id'
           )
           .orderBy('campaign_assignments.created_at', 'asc');
 
@@ -251,6 +263,9 @@ class ApprovalService {
   _getTableName(entityType) {
     const tableMap = {
       transaction: 'fund_transactions',
+      // campaignHandler.js's coManagerReject() calls rejectEntity with 'campaign_assignment'
+      // (singular); keep 'campaign_confirmation' too since other code paths use that name.
+      campaign_assignment: 'campaign_assignments',
       campaign_confirmation: 'campaign_assignments'
     };
 

@@ -68,7 +68,8 @@ class GamificationService {
     try {
       const result = await db('user_points')
         .select(
-          'u.id',
+          // Alias to user_id — frontend LeaderboardEntry matches on user_id/userId
+          'u.id as user_id',
           'u.email',
           'u.full_name',
           'tm.role',
@@ -148,12 +149,26 @@ class GamificationService {
 
       const rank = usersWithHigherPoints.length + 1;
 
+      // Attendance counts for the month (frontend stats cards read these)
+      const attendanceCounts = await db('attendance_checkins as ac')
+        .join('attendance_sessions as s', 's.id', 'ac.session_id')
+        .where('ac.user_id', userId)
+        .where('ac.team_id', teamId)
+        .whereRaw("TO_CHAR(s.session_date, 'YYYY-MM') = ?", [month])
+        .select(
+          db.raw("COUNT(*) FILTER (WHERE ac.response = 'yes') as attended"),
+          db.raw("COUNT(*) FILTER (WHERE ac.response = 'no') as absent")
+        )
+        .first();
+
       const stats = {
         user_id: userId,
         team_id: teamId,
         month,
         total_points: userTotalPoints,
-        rank
+        rank,
+        attended: Number(attendanceCounts?.attended || 0),
+        absent: Number(attendanceCounts?.absent || 0)
       };
 
       logger.info('User stats retrieved', stats);
@@ -168,7 +183,9 @@ class GamificationService {
           team_id: teamId,
           month,
           total_points: 0,
-          rank: 1
+          rank: 1,
+          attended: 0,
+          absent: 0
         };
       }
       logger.error('Failed to get user stats', {
@@ -196,7 +213,6 @@ class GamificationService {
           'u.id',
           'u.email',
           'u.full_name',
-          'u.role',
           db.raw('COALESCE(SUM(up.points), 0) as total_points')
         )
         .from('user_points as up')
@@ -204,15 +220,15 @@ class GamificationService {
         .where('up.team_id', teamId)
         .where('up.month', month)
         .where('u.status', 'active')
-        .groupBy('u.id', 'u.email', 'u.full_name', 'u.role')
+        .groupBy('u.id', 'u.email', 'u.full_name')
         .orderBy('total_points', 'desc')
         .limit(3);
 
-      // Insert archive record
+      // Insert archive record — column is `top_3` per migration 004_attendance.js
       const archiveRecord = await db('leaderboard_archives').insert({
         team_id: teamId,
         month,
-        top_3_users: JSON.stringify(top3),
+        top_3: JSON.stringify(top3),
         created_at: db.fn.now()
       }).returning('*');
 
@@ -224,7 +240,7 @@ class GamificationService {
 
       return {
         ...archiveRecord[0],
-        top_3_users: top3
+        top_3: top3
       };
     } catch (error) {
       logger.error('Failed to archive leaderboard', {

@@ -3,29 +3,36 @@
 import { useState, useCallback } from 'react'
 import { useApi } from './useApi'
 
+// Matches backend `fund_transactions` table (financeHandler.js) — there is no
+// `category` column, and field names are snake_case, not camelCase.
 export interface Transaction {
     id: string
+    team_id?: string
     description: string
     amount: number
-    category: string
+    transaction_type?: 'income' | 'expense'
     status: 'pending' | 'approved' | 'rejected'
-    createdAt: string
-    submittedBy?: string
-    approverInfo?: string
+    bill_image_url?: string | null
+    submitted_by?: string
+    submitted_by_name?: string
+    approved_by?: string | null
+    rejected_by?: string | null
+    rejection_reason?: string | null
+    transaction_date?: string
+    created_at?: string
+    updated_at?: string
 }
 
-export interface Approval {
-    id: string
-    description: string
-    amount: number
-    submittedBy: string
-    createdAt: string
-}
+// getPendingApprovals hits GET /finance/approvals/pending, which now returns
+// fund_transactions rows directly (status = 'pending'), left-joined with the
+// submitter's name.
+export type Approval = Transaction
 
 export interface FinanceBalance {
     totalBalance: number
-    monthlySpent: number
-    pendingCount: number
+    totalIncome: number
+    totalExpense: number
+    currency: string
 }
 
 export interface UseFinanceReturn {
@@ -51,8 +58,9 @@ export const useFinance = (): UseFinanceReturn => {
             try {
                 setLocalError(null)
                 const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-                const data = await request<Transaction[]>(`/finance/transactions${queryString}`, 'GET')
-                return data || []
+                // Backend wraps results as { data, pagination }, not a bare array
+                const res = await request<{ data: Transaction[]; pagination: any }>(`/finance/transactions${queryString}`, 'GET')
+                return res?.data || []
             } catch (err) {
                 const error = err instanceof Error ? err : new Error('Failed to fetch transactions')
                 setLocalError(error)
@@ -136,8 +144,9 @@ export const useFinance = (): UseFinanceReturn => {
             try {
                 setLocalError(null)
                 const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-                const data = await request<Approval[]>(`/finance/approvals/pending${queryString}`, 'GET')
-                return data || []
+                // Backend wraps results as { data, pagination }, not a bare array
+                const res = await request<{ data: Approval[]; pagination: any }>(`/finance/approvals/pending${queryString}`, 'GET')
+                return res?.data || []
             } catch (err) {
                 const error = err instanceof Error ? err : new Error('Failed to fetch pending approvals')
                 setLocalError(error)
@@ -152,8 +161,15 @@ export const useFinance = (): UseFinanceReturn => {
         async () => {
             try {
                 setLocalError(null)
-                const data = await request<FinanceBalance>('/finance/balance', 'GET')
-                return data
+                // Backend returns { team_id, total_balance, total_income, total_expense, currency }
+                const data = await request<{ total_balance: number; total_income: number; total_expense: number; currency: string }>('/finance/balance', 'GET')
+                if (!data) return data as unknown as FinanceBalance
+                return {
+                    totalBalance: data.total_balance,
+                    totalIncome: data.total_income,
+                    totalExpense: data.total_expense,
+                    currency: data.currency,
+                }
             } catch (err) {
                 const error = err instanceof Error ? err : new Error('Failed to fetch balance')
                 setLocalError(error)

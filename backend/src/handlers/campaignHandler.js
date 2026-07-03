@@ -298,10 +298,11 @@ const memberConfirm = async (req, res) => {
 
     // Send notification to user
     try {
-      const user = await db('users').where('id', memberId).first();
       await notificationService.sendInternalNotification(
         memberId,
-        `You confirmed the campaign "${campaign.name}". Awaiting co-manager approval.`
+        `You confirmed the campaign "${campaign.name}". Awaiting co-manager approval.`,
+        {},
+        teamId
       );
     } catch (notifError) {
       logger.warn('Failed to send notification', {
@@ -786,6 +787,42 @@ const getReport = async (req, res) => {
   }
 };
 
+/**
+ * Upload a payment proof / bill image for campaign confirmation
+ * POST /api/campaigns/bill-image/upload
+ * multipart/form-data, field name: bill_image
+ * Returns { url } to be passed as bill_image_url to memberConfirm
+ */
+const uploadBillImage = async (req, res) => {
+  try {
+    const teamId = req.team.id;
+
+    if (!req.file) {
+      throw new ValidationError('No image file uploaded');
+    }
+
+    const storageService = require('../services/storageService');
+    const { url } = await storageService.uploadBillImage(
+      req.file.buffer,
+      req.file.originalname,
+      teamId
+    );
+
+    logger.info('Bill image uploaded', {
+      user_id: req.user.id,
+      team_id: teamId,
+      url
+    });
+
+    return res.status(201).json({ url });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/api/campaigns/bill-image/upload',
+      method: 'POST'
+    });
+  }
+};
+
 module.exports = {
   createCampaign,
   listCampaigns,
@@ -796,5 +833,6 @@ module.exports = {
   coManagerReject,
   coManagerExempt,
   closeCampaign,
-  getReport
+  getReport,
+  uploadBillImage
 };

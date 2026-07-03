@@ -118,7 +118,9 @@ const onAttendanceSessionCreatedHandler = inngest.createFunction(
     id: 'attendance.session-created',
     retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
   },
-  { event: 'attendance.session-created' },
+  // NOTE: id above uses a hyphen, but the actual event trigger must match what's
+  // emitted (attendanceHandler.js / sessionSchedulingService.js use underscores)
+  { event: 'attendance.session_created' },
   onAttendanceSessionCreated
 );
 
@@ -146,7 +148,7 @@ const onAttendanceSessionClosedHandler = inngest.createFunction(
     id: 'attendance.session-closed',
     retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
   },
-  { event: 'attendance.session-closed' },
+  { event: 'attendance.session_closed' },
   onAttendanceSessionClosed
 );
 

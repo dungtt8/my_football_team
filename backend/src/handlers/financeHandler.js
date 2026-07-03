@@ -145,9 +145,11 @@ const getTransaction = async (req, res) => {
       team_id: teamId
     });
 
-    const transaction = await db('fund_transactions')
-      .where('id', id)
-      .where('team_id', teamId)
+    const transaction = await db('fund_transactions as ft')
+      .leftJoin('users as u', 'u.id', 'ft.submitted_by')
+      .where('ft.id', id)
+      .where('ft.team_id', teamId)
+      .select('ft.*', 'u.full_name as submitted_by_name')
       .first();
 
     if (!transaction) {
@@ -308,38 +310,25 @@ const getPendingApprovals = async (req, res) => {
       offset: parsedOffset
     });
 
-    // Get pending approvals with transaction details
-    const query = db('approvals')
-      .where('team_id', teamId)
-      .where('status', 'pending')
-      .where('entity_type', 'transaction');
+    // NOTE: previously this queried the generic `approvals` table, but nothing
+    // in the codebase ever inserts a row there (approvalService.submitForApproval
+    // only updates fund_transactions.status) — so it always returned an empty
+    // list. Query fund_transactions directly instead, which is the actual
+    // source of truth for transaction status.
+    const baseQuery = () => db('fund_transactions as ft')
+      .leftJoin('users as u', 'u.id', 'ft.submitted_by')
+      .where('ft.team_id', teamId)
+      .where('ft.status', 'pending');
 
-    const total = await query.clone().count('* as count').first();
-    const approvals = await query
-      .orderBy('created_at', 'desc')
+    const total = await baseQuery().count('ft.id as count').first();
+    const transactions = await baseQuery()
+      .select('ft.*', 'u.full_name as submitted_by_name')
+      .orderBy('ft.created_at', 'desc')
       .limit(parsedLimit)
       .offset(parsedOffset);
 
-    // Fetch associated transactions
-    const approvalIds = approvals.map(a => a.entity_id);
-    let transactions = [];
-    if (approvalIds.length > 0) {
-      transactions = await db('fund_transactions')
-        .whereIn('id', approvalIds);
-    }
-
-    // Combine approvals with transaction data
-    const enrichedApprovals = approvals.map(approval => {
-      const transaction = transactions.find(t => t.id === approval.entity_id);
-      return {
-        approval_id: approval.id,
-        ...approval,
-        transaction
-      };
-    });
-
     return res.json({
-      data: enrichedApprovals,
+      data: transactions,
       pagination: {
         limit: parsedLimit,
         offset: parsedOffset,

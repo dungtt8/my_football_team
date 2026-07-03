@@ -1,12 +1,17 @@
 'use client'
 
 import React from 'react'
-import { COLORS, TYPOGRAPHY, SPACING } from '@/lib/constants'
+
+const G = {
+  glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
+  accent: '#00D68F', blue: '#4A7CFF', red: '#FF6B6B',
+  t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+}
 
 interface AttendanceStatsCardProps {
   totalPresent: number
   totalAbsent: number
-  totalLate: number
+  totalPending?: number
   attendancePercentage: number
   isLoading?: boolean
 }
@@ -14,63 +19,32 @@ interface AttendanceStatsCardProps {
 export const AttendanceStatsCard: React.FC<AttendanceStatsCardProps> = ({
   totalPresent,
   totalAbsent,
-  totalLate,
+  totalPending = 0,
   attendancePercentage,
   isLoading = false,
 }) => {
-  const StatBox = ({
-    label,
-    value,
-    color,
-  }: {
-    label: string
-    value: number | string
-    color: string
-  }) => (
+  const StatBox = ({ label, value, color }: { label: string; value: number | string; color: string }) => (
     <div
       style={{
         padding: '16px',
-        borderRadius: '12px',
-        background: '#FFFFFF',
-        boxShadow: '0 6px 16px rgba(15, 14, 12, 0.10)',
+        borderRadius: '14px',
+        background: G.glass,
+        border: `1px solid ${G.glassBorder}`,
         textAlign: 'center',
       }}
     >
-      <p style={{ margin: 0, fontSize: '14px', color: '#9F9A93' }}>
-        {label}
-      </p>
-      <p
-        style={{
-          margin: '8px 0 0 0',
-          fontSize: '24px',
-          fontWeight: 300,
-          fontFamily: 'serif',
-          color,
-        }}
-      >
-        {value}
-      </p>
+      <p style={{ margin: 0, fontSize: '12px', color: G.t2 }}>{label}</p>
+      <p style={{ margin: '8px 0 0 0', fontSize: '22px', fontWeight: 700, color }}>{value}</p>
     </div>
   )
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-          gap: SPACING.md,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            style={{
-              height: '80px',
-              backgroundColor: COLORS.bone,
-              borderRadius: '8px',
-              animation: 'pulse 2s infinite',
-            }}
+            style={{ height: '78px', background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '14px', animation: 'pulse 2s infinite' }}
           />
         ))}
       </div>
@@ -78,58 +52,26 @@ export const AttendanceStatsCard: React.FC<AttendanceStatsCardProps> = ({
   }
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-        gap: SPACING.md,
-      }}
-    >
-      <StatBox label="Present" value={totalPresent} color="#4CAF50" />
-      <StatBox label="Late" value={totalLate} color="#FFC107" />
-      <StatBox label="Absent" value={totalAbsent} color="#F44336" />
-      <StatBox label="Percentage" value={`${Math.round(attendancePercentage)}%`} color={COLORS.black} />
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
+      <StatBox label="Đã tham gia" value={totalPresent} color={G.accent} />
+      <StatBox label="Vắng" value={totalAbsent} color={G.red} />
+      <StatBox label="Chưa phản hồi" value={totalPending} color={G.t2} />
+      <StatBox label="Tỉ lệ tham gia" value={`${Math.round(attendancePercentage)}%`} color={G.blue} />
 
       {/* Attendance Rate Bar - spans full width */}
-      <div
-        style={{
-          gridColumn: 'span 4',
-          marginTop: '12px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              height: '8px',
-              backgroundColor: COLORS.lightGray,
-              borderRadius: '4px',
-              overflow: 'hidden',
-            }}
-          >
+      <div style={{ gridColumn: 'span 4', marginTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.10)', borderRadius: '4px', overflow: 'hidden' }}>
             <div
               style={{
                 height: '100%',
                 width: `${attendancePercentage}%`,
-                backgroundColor: COLORS.black,
+                background: G.accent,
                 transition: 'width 0.3s ease',
               }}
             />
           </div>
-          <span
-            style={{
-              fontSize: TYPOGRAPHY.sizes.small,
-              fontWeight: TYPOGRAPHY.weights.medium,
-              color: COLORS.gray,
-              minWidth: '40px',
-            }}
-          >
+          <span style={{ fontSize: '13px', fontWeight: 600, color: G.t2, minWidth: '40px' }}>
             {Math.round(attendancePercentage)}%
           </span>
         </div>

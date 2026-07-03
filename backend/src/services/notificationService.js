@@ -2,6 +2,7 @@ const db = require('../config/database');
 const inngest = require('../config/inngest');
 const zaloService = require('./zaloService');
 const logger = require('../utils/logger');
+const { getTeamUsers } = require('../utils/teamUsers');
 
 class NotificationService {
   /**
@@ -83,9 +84,12 @@ class NotificationService {
    * @param {number} userId - User ID
    * @param {string} message - Notification message
    * @param {object} metadata - Additional metadata
+   * @param {number} [teamId] - Team ID (required by the notifications table;
+   *   `users` has no team_id column, so this must be passed in by the caller —
+   *   it's looked up via team_members as a fallback if omitted)
    * @returns {Promise<object>} Created notification record
    */
-  async sendInternalNotification(userId, message, metadata = {}) {
+  async sendInternalNotification(userId, message, metadata = {}, teamId = null) {
     try {
       // Verify user exists
       const user = await db('users')
@@ -101,11 +105,24 @@ class NotificationService {
         throw new Error(error);
       }
 
+      let resolvedTeamId = teamId;
+      if (!resolvedTeamId) {
+        const membership = await db('team_members')
+          .where('user_id', userId)
+          .where('status', 'active')
+          .first();
+        resolvedTeamId = membership?.team_id;
+      }
+
+      if (!resolvedTeamId) {
+        throw new Error(`Could not resolve team_id for user ${userId}`);
+      }
+
       // Store notification
       const notification = await db('notifications')
         .insert({
           user_id: userId,
-          team_id: user.team_id,
+          team_id: resolvedTeamId,
           message,
           metadata: JSON.stringify(metadata),
           is_read: false,
@@ -115,7 +132,7 @@ class NotificationService {
 
       logger.info('Internal notification stored', {
         user_id: userId,
-        team_id: user.team_id,
+        team_id: resolvedTeamId,
         notification_id: notification[0].id
       });
 
@@ -127,6 +144,52 @@ class NotificationService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Broadcast an internal notification to every active member of a team.
+   * @param {object} notification
+   * @param {number} notification.team_id
+   * @param {string} notification.message
+   * @param {object} [notification.data]
+   * @returns {Promise<{successful: number, failed: number}>}
+   */
+  async broadcastNotification(notification) {
+    const { team_id, message, title, data } = notification;
+    const results = { successful: 0, failed: 0 };
+
+    if (!team_id || !message) {
+      throw new Error('broadcastNotification requires team_id and message');
+    }
+
+    const members = await getTeamUsers(team_id, { status: 'active' });
+
+    for (const member of members) {
+      try {
+        await this.sendInternalNotification(
+          member.id,
+          title ? `${title}: ${message}` : message,
+          data || {},
+          team_id
+        );
+        results.successful++;
+      } catch (error) {
+        results.failed++;
+        logger.error('Failed to broadcast notification to member', {
+          team_id,
+          user_id: member.id,
+          error: error.message
+        });
+      }
+    }
+
+    logger.info('Broadcast notification completed', {
+      team_id,
+      successful: results.successful,
+      failed: results.failed
+    });
+
+    return results;
   }
 
   /**

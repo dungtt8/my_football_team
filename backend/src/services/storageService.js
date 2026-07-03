@@ -3,15 +3,17 @@ const logger = require('../utils/logger');
 
 const BUCKET_NAME = 'team-assets';
 const QR_FOLDER = 'qr-codes';
+const BILLS_FOLDER = 'bills';
 
 /**
- * Upload QR code image to Supabase Storage
+ * Generic image upload to Supabase Storage
  * @param {Buffer} fileBuffer - Image file buffer
  * @param {string} fileName - Original file name
+ * @param {string} folder - Storage folder (e.g. 'qr-codes', 'bills')
  * @param {number} teamId - Team ID for organizing files
  * @returns {Promise<{url: string, path: string}>} - Public URL and storage path
  */
-const uploadQRCode = async (fileBuffer, fileName, teamId) => {
+const uploadImage = async (fileBuffer, fileName, folder, teamId) => {
     try {
         // Validate file size (max 2MB)
         if (fileBuffer.length > 2 * 1024 * 1024) {
@@ -27,10 +29,10 @@ const uploadQRCode = async (fileBuffer, fileName, teamId) => {
             throw new Error('Only JPEG, PNG, GIF, and WebP images are allowed');
         }
 
-        // Create unique file path: qr-codes/team-{teamId}/timestamp-filename
+        // Create unique file path: {folder}/team-{teamId}/timestamp-filename
         const timestamp = Date.now();
         const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filePath = `${QR_FOLDER}/team-${teamId}/${timestamp}-${sanitizedFileName}`;
+        const filePath = `${folder}/team-${teamId}/${timestamp}-${sanitizedFileName}`;
 
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage
@@ -41,7 +43,7 @@ const uploadQRCode = async (fileBuffer, fileName, teamId) => {
             });
 
         if (error) {
-            logger.error('Supabase upload error', { error, teamId, fileName });
+            logger.error('Supabase upload error', { error, teamId, fileName, folder });
 
             // Provide helpful error messages
             if (error.message?.includes('Bucket not found')) {
@@ -59,7 +61,7 @@ const uploadQRCode = async (fileBuffer, fileName, teamId) => {
             .from(BUCKET_NAME)
             .getPublicUrl(filePath);
 
-        logger.info('QR code uploaded successfully', {
+        logger.info('Image uploaded successfully', {
             team_id: teamId,
             file_path: filePath,
             url: publicData.publicUrl
@@ -70,10 +72,28 @@ const uploadQRCode = async (fileBuffer, fileName, teamId) => {
             path: filePath
         };
     } catch (error) {
-        logger.error('Error uploading QR code', { error: error.message, teamId, fileName });
+        logger.error('Error uploading image', { error: error.message, teamId, fileName, folder });
         throw error;
     }
 };
+
+/**
+ * Upload QR code image to Supabase Storage
+ * @param {Buffer} fileBuffer - Image file buffer
+ * @param {string} fileName - Original file name
+ * @param {number} teamId - Team ID for organizing files
+ * @returns {Promise<{url: string, path: string}>} - Public URL and storage path
+ */
+const uploadQRCode = (fileBuffer, fileName, teamId) => uploadImage(fileBuffer, fileName, QR_FOLDER, teamId);
+
+/**
+ * Upload a campaign payment bill/proof image to Supabase Storage
+ * @param {Buffer} fileBuffer - Image file buffer
+ * @param {string} fileName - Original file name
+ * @param {number} teamId - Team ID for organizing files
+ * @returns {Promise<{url: string, path: string}>} - Public URL and storage path
+ */
+const uploadBillImage = (fileBuffer, fileName, teamId) => uploadImage(fileBuffer, fileName, BILLS_FOLDER, teamId);
 
 /**
  * Delete QR code image from Supabase Storage
@@ -102,8 +122,11 @@ const deleteQRCode = async (filePath, teamId) => {
 };
 
 module.exports = {
+    uploadImage,
     uploadQRCode,
+    uploadBillImage,
     deleteQRCode,
     BUCKET_NAME,
-    QR_FOLDER
+    QR_FOLDER,
+    BILLS_FOLDER
 };

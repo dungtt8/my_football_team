@@ -3,6 +3,7 @@ const inngest = require('../../config/inngest');
 const notificationService = require('../../services/notificationService');
 const gamificationService = require('../../services/gamificationService');
 const logger = require('../../utils/logger');
+const { getTeamUsers, getTeamUser } = require('../../utils/teamUsers');
 
 // ============================================================================
 // onSessionCreated Handler
@@ -35,10 +36,7 @@ const onSessionCreatedLogic = async ({ event, step }) => {
 
   // Step 2: Fetch all active team members
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active' });
   });
 
   logger.info('Found team members for notification', {
@@ -140,10 +138,7 @@ const onCheckInLogic = async ({ event, step }) => {
 
   // Step 2: Fetch user details
   const user = await step.run('fetch-user', async () => {
-    return db('users')
-      .where('id', user_id)
-      .where('team_id', team_id)
-      .first();
+    return getTeamUser(user_id, team_id);
   });
 
   if (!user) {
@@ -261,10 +256,7 @@ const onSessionClosedLogic = async ({ event, step }) => {
 
   // Step 2: Fetch all active team members
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active' });
   });
 
   logger.info('Found team members for session closure', {

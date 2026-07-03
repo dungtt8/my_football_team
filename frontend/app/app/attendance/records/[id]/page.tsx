@@ -4,7 +4,17 @@ import React, { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAttendance, AttendanceRecord } from '@/hooks/useAttendance'
 import { useToast } from '@/hooks/useToast'
-import { COLORS, TYPOGRAPHY, SPACING } from '@/lib/constants'
+
+const G = {
+    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
+    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
+    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+}
+
+const SESSION_TYPE_LABEL: Record<string, string> = {
+    training: 'Tập luyện',
+    match: 'Trận đấu',
+}
 
 export default function AttendanceDetailPage() {
     const router = useRouter()
@@ -13,6 +23,7 @@ export default function AttendanceDetailPage() {
     const { getAttendanceDetail, loading } = useAttendance()
 
     const [record, setRecord] = useState<AttendanceRecord | null>(null)
+    const [notFound, setNotFound] = useState(false)
 
     useEffect(() => {
         const loadRecord = async () => {
@@ -20,22 +31,20 @@ export default function AttendanceDetailPage() {
                 const id = params.id as string
                 if (id) {
                     const data = await getAttendanceDetail(id)
+                    if (!data) setNotFound(true)
                     setRecord(data ?? null)
                 }
             } catch (error) {
                 console.error('Error loading attendance record:', error)
-                toast('Failed to load attendance record', 'error')
+                toast('Không thể tải bản ghi điểm danh', 'error')
             }
         }
 
         loadRecord()
     }, [params.id])
 
-    const formatTime = (timeString: string) => {
-        return new Date(timeString).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-    }
-
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return '--'
         return new Date(dateString).toLocaleDateString('vi-VN', {
             weekday: 'long',
             year: 'numeric',
@@ -44,209 +53,107 @@ export default function AttendanceDetailPage() {
         })
     }
 
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '--'
-        const hours = Math.floor(seconds / 3600)
-        const minutes = Math.floor((seconds % 3600) / 60)
-        return `${hours}h ${minutes}m`
+    const getResponseStyle = (response: 'yes' | 'no' | null | undefined) => {
+        if (response === 'yes') return { bg: G.accentDim, text: G.accent, label: 'Đã tham gia' }
+        if (response === 'no') return { bg: G.redDim, text: G.red, label: 'Vắng mặt' }
+        return { bg: 'rgba(255,255,255,0.08)', text: G.t2, label: 'Chưa phản hồi' }
     }
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'present':
-                return { bg: COLORS.paleGreen, text: '#2E7D32' }
-            case 'late':
-                return { bg: COLORS.paleYellow, text: '#F57F17' }
-            case 'absent':
-                return { bg: COLORS.paleRed, text: '#C62828' }
-            case 'pending':
-            default:
-                return { bg: '#F0F0F0', text: '#666666' }
-        }
-    }
-
-    if (loading || !record) {
+    if (loading && !record) {
         return (
-            <div style={{ padding: '24px 16px', paddingBottom: '100px' }}>
-                <div style={{ height: '400px', backgroundColor: COLORS.bone, borderRadius: '8px', animation: 'pulse 2s infinite' }} />
+            <div style={{ padding: '24px 16px', paddingBottom: '100px', minHeight: '100vh' }}>
+                <div style={{ height: '400px', background: G.glass, borderRadius: '16px', animation: 'pulse 2s infinite' }} />
             </div>
         )
     }
 
-    const statusColor = getStatusColor(record.status ?? '')
+    if (notFound || !record) {
+        return (
+            <div style={{ padding: '24px 16px', paddingBottom: '100px', minHeight: '100vh' }}>
+                <button onClick={() => router.back()} style={{
+                    marginBottom: '20px', padding: '8px 12px', background: 'transparent', color: G.t1,
+                    border: `1px solid ${G.glassBorder}`, borderRadius: '10px', fontSize: '13px', cursor: 'pointer',
+                }}>← Quay lại</button>
+                <p style={{ color: G.t2, textAlign: 'center', marginTop: '40px' }}>Không tìm thấy bản ghi điểm danh</p>
+            </div>
+        )
+    }
+
+    const responseStyle = getResponseStyle(record.response)
 
     return (
-        <div
-            style={{
-                padding: '24px 16px',
-                paddingBottom: '100px',
-                backgroundColor: COLORS.white,
-                minHeight: '100vh',
-            }}
-        >
+        <div style={{ padding: '24px 16px', paddingBottom: '100px', minHeight: '100vh' }}>
             {/* Back Button */}
             <button
                 onClick={() => router.back()}
                 style={{
-                    marginBottom: '20px',
-                    padding: '8px 12px',
-                    backgroundColor: 'transparent',
-                    color: COLORS.black,
-                    border: `1px solid ${COLORS.lightGray}`,
-                    borderRadius: '4px',
-                    fontSize: TYPOGRAPHY.sizes.small,
-                    fontWeight: TYPOGRAPHY.weights.medium,
-                    cursor: 'pointer',
+                    marginBottom: '20px', padding: '8px 12px', background: 'transparent', color: G.t1,
+                    border: `1px solid ${G.glassBorder}`, borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 }}
             >
-                ← Back
+                ← Quay lại
             </button>
 
             {/* Header */}
             <div style={{ marginBottom: '24px' }}>
-                <h1
-                    style={{
-                        margin: 0,
-                        fontSize: TYPOGRAPHY.sizes.hero,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Attendance Detail
-                </h1>
-                <p
-                    style={{
-                        margin: '8px 0 0 0',
-                        fontSize: TYPOGRAPHY.sizes.body,
-                        color: COLORS.gray,
-                    }}
-                >
-                    {formatDate(record.created_at || record.createdAt || '')}
+                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: G.t1 }}>Chi tiết điểm danh</h1>
+                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: G.t2 }}>
+                    {formatDate(record.session_date || record.created_at || undefined)}
                 </p>
             </div>
 
             {/* Main Card */}
-            <div
-                style={{
-                    border: `1px solid ${COLORS.lightGray}`,
-                    borderRadius: '12px',
-                    padding: '20px',
-                    backgroundColor: COLORS.white,
-                    marginBottom: '24px',
-                }}
-            >
-                {/* Status Badge */}
+            <div style={{ border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '20px', background: G.glass, backdropFilter: 'blur(12px)', marginBottom: '20px' }}>
+                {/* Response Badge */}
                 <div style={{ marginBottom: '20px' }}>
-                    <span
-                        style={{
-                            display: 'inline-block',
-                            padding: '8px 12px',
-                            backgroundColor: statusColor.bg,
-                            color: statusColor.text,
-                            borderRadius: '6px',
-                            fontSize: TYPOGRAPHY.sizes.small,
-                            fontWeight: TYPOGRAPHY.weights.medium,
-                            textTransform: 'capitalize',
-                        }}
-                    >
-                        {record.status}
+                    <span style={{
+                        display: 'inline-block', padding: '8px 14px', background: responseStyle.bg, color: responseStyle.text,
+                        borderRadius: '999px', fontSize: '13px', fontWeight: 700,
+                    }}>
+                        {responseStyle.label}
                     </span>
                 </div>
 
                 {/* Detail Grid */}
                 <div style={{ display: 'grid', gap: '16px' }}>
-                    {/* Check-In Time */}
                     <div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Check-In Time
-                        </p>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body, fontWeight: TYPOGRAPHY.weights.semibold, color: COLORS.black }}>
-                            {formatTime(record.checked_in_at || record.checkInTime || '')}
+                        <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: G.t3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Loại buổi</p>
+                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: G.t1 }}>
+                            {SESSION_TYPE_LABEL[record.session_type ?? ''] || 'Buổi tập'}
                         </p>
                     </div>
 
-                    {/* Check-Out Time */}
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Check-Out Time
-                        </p>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body, fontWeight: TYPOGRAPHY.weights.semibold, color: COLORS.black }}>
-                            {(record.checkOutTime) ? formatTime(record.checkOutTime) : 'Not checked out yet'}
-                        </p>
-                    </div>
-
-                    {/* Duration */}
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Duration
-                        </p>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body, fontWeight: TYPOGRAPHY.weights.semibold, color: COLORS.black }}>
-                            {formatDuration(record.duration)}
-                        </p>
-                    </div>
-
-                    {/* Location */}
                     {record.location && (
                         <div>
-                            <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                                Location
-                            </p>
-                            <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body, color: COLORS.black }}>
-                                {record.location}
-                            </p>
+                            <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: G.t3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Địa điểm</p>
+                            <p style={{ margin: 0, fontSize: '15px', color: G.t1 }}>{record.location}</p>
                         </div>
                     )}
 
-                    {/* Notes */}
-                    {record.notes && (
+                    {record.responded_at && (
                         <div>
-                            <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                                Notes
-                            </p>
-                            <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.body, color: COLORS.black }}>
-                                {record.notes}
+                            <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: G.t3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Thời điểm phản hồi</p>
+                            <p style={{ margin: 0, fontSize: '15px', color: G.t1 }}>
+                                {new Date(record.responded_at).toLocaleString('vi-VN')}
                             </p>
                         </div>
                     )}
-                </div>
-            </div>
 
-            {/* Related Stats */}
-            <div
-                style={{
-                    border: `1px solid ${COLORS.lightGray}`,
-                    borderRadius: '12px',
-                    padding: '20px',
-                    backgroundColor: COLORS.bone,
-                }}
-            >
-                <h3
-                    style={{
-                        margin: '0 0 16px 0',
-                        fontSize: TYPOGRAPHY.sizes.heading3,
-                        fontWeight: TYPOGRAPHY.weights.semibold,
-                        color: COLORS.black,
-                    }}
-                >
-                    Related Information
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Record ID
-                        </p>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {record.id}
-                        </p>
-                    </div>
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', fontSize: TYPOGRAPHY.sizes.caption, color: COLORS.gray }}>
-                            Created Date
-                        </p>
-                        <p style={{ margin: 0, fontSize: TYPOGRAPHY.sizes.small, color: COLORS.black }}>
-                            {new Date(record.created_at || record.createdAt || '').toLocaleString('vi-VN')}
-                        </p>
-                    </div>
+                    {record.check_in_deadline && (
+                        <div>
+                            <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: G.t3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Hạn phản hồi</p>
+                            <p style={{ margin: 0, fontSize: '15px', color: G.t1 }}>
+                                {new Date(record.check_in_deadline).toLocaleString('vi-VN')}
+                            </p>
+                        </div>
+                    )}
+
+                    {record.description && (
+                        <div>
+                            <p style={{ margin: '0 0 6px 0', fontSize: '11px', color: G.t3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ghi chú</p>
+                            <p style={{ margin: 0, fontSize: '15px', color: G.t1 }}>{record.description}</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -55,12 +55,12 @@ export const ApprovalItem: React.FC<ApprovalItemProps> = ({
       <div className="flex items-start justify-between mb-md">
         <div>
           <h4 className="font-bold text-black mb-sm">{approval.description}</h4>
-          <p className="text-small text-gray">{approval.submittedBy}</p>
+          <p className="text-small text-gray">{approval.submitted_by_name || approval.submitted_by}</p>
         </div>
         <p className="text-lg font-bold text-black">{formatCurrency(approval.amount)}</p>
       </div>
 
-      <p className="text-caption text-gray mb-lg">{formatDate(approval.createdAt)}</p>
+      <p className="text-caption text-gray mb-lg">{formatDate(approval.transaction_date || approval.created_at || '')}</p>
 
       {isRejectingWithReason && (
         <div className="mb-md p-md bg-pale-red border border-light-gray rounded-card">

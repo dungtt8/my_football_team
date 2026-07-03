@@ -108,6 +108,8 @@ app.get('/api/team/finance/closing-period', rbacMiddleware(['member', 'co_manage
 
 // Campaign routes
 const campaignHandler = require('./handlers/campaignHandler');
+// Upload payment proof image (used before memberConfirm)
+app.post('/api/campaigns/bill-image/upload', rbacMiddleware(['member', 'co_manager', 'owner']), upload.single('bill_image'), campaignHandler.uploadBillImage);
 // Create new campaign (co-managers and owners only)
 app.post('/api/campaigns', rbacMiddleware(['co_manager', 'owner']), campaignHandler.createCampaign);
 // List all campaigns (accessible to all roles)

@@ -2,6 +2,7 @@ const db = require('../../config/database');
 const inngest = require('../../config/inngest');
 const notificationService = require('../../services/notificationService');
 const logger = require('../../utils/logger');
+const { getTeamUsers } = require('../../utils/teamUsers');
 
 // ============================================================================
 // onCampaignCreated Handler
@@ -32,24 +33,14 @@ const onCampaignCreatedLogic = async ({ event, step }) => {
     throw new Error(`Campaign ${campaign_id} not found`);
   }
 
-  // Step 2: Fetch creator user info
-  const creator = await step.run('fetch-creator', async () => {
-    return db('users')
-      .where('id', created_by)
-      .first();
-  });
-
-  if (!creator) {
-    logger.warn('Creator not found', { user_id: created_by });
-    throw new Error(`Creator ${created_by} not found`);
-  }
+  // Step 2: Fetch creator user info (created_by is null for auto-created team-fund campaigns)
+  const creator = created_by
+    ? await step.run('fetch-creator', async () => db('users').where('id', created_by).first())
+    : null;
 
   // Step 3: Fetch all active team members
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active' });
   });
 
   logger.info('Found team members for notification', {
@@ -71,7 +62,7 @@ const onCampaignCreatedLogic = async ({ event, step }) => {
             campaign_name: campaign.name,
             amount_per_member: campaign.amount_per_member.toString(),
             deadline: deadline ? new Date(deadline).toLocaleDateString('vi-VN') : 'No deadline',
-            created_by: creator.full_name
+            created_by: creator?.full_name || 'Hệ thống'
           }
         );
         notificationsSent++;
@@ -151,11 +142,7 @@ const onCampaignMemberConfirmedLogic = async ({ event, step }) => {
 
   // Step 2: Fetch all co-managers for the team
   const coManagers = await step.run('fetch-co-managers', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('role', 'co_manager')
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { role: 'co_manager', status: 'active' });
   });
 
   logger.info('Found co-managers for notification', {
@@ -335,11 +322,7 @@ const onCampaignChargedLogic = async ({ event, step }) => {
 
   // Step 6: Fetch all team members (except member)
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .whereNot('id', user_id)
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active', excludeUserId: user_id });
   });
 
   // Step 7: Send FUND_UPDATED notification to all team members
@@ -484,10 +467,7 @@ const onCampaignClosedLogic = async ({ event, step }) => {
 
   // Step 4: Fetch all team members
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return db('users')
-      .where('team_id', team_id)
-      .where('status', 'active')
-      .select('id', 'zalo_user_id', 'full_name');
+    return getTeamUsers(team_id, { status: 'active' });
   });
 
   // Step 5: Send Zalo notifications to each team member
