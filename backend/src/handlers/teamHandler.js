@@ -4,6 +4,7 @@ const { handleError, ValidationError, NotFoundError } = require('../services/err
 const logger = require('../utils/logger');
 const authService = require('../services/authService');
 const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
+const { isDayInRange } = require('../services/financeClosingService');
 
 const VALID_ROLES = ['member', 'co_manager', 'owner'];
 
@@ -14,11 +15,11 @@ function generateInviteCode() {
     return code;
 }
 
+// Delegates to financeClosingService.isDayInRange, which also handles ranges
+// that wrap around month-end (e.g. start_day=25, end_day=5).
 function isPaymentDeadlineActive(startDay, endDay) {
-    if (!startDay || !endDay) return false;
     const today = new Date();
-    const currentDay = today.getDate();
-    return currentDay >= startDay && currentDay <= endDay;
+    return isDayInRange(today.getDate(), startDay, endDay);
 }
 
 /**

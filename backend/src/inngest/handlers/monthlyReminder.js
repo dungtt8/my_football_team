@@ -1,6 +1,7 @@
 const db = require('../../config/database');
 const zaloService = require('../../services/zaloService');
 const gamificationService = require('../../services/gamificationService');
+const notificationService = require('../../services/notificationService');
 const logger = require('../../utils/logger');
 const inngest = require('../../config/inngest');
 
@@ -250,17 +251,16 @@ const autoCreateTeamFundLogic = async ({ step }) => {
         await db('campaign_assignments').insert(assignments);
       }
 
-      // Emit event for notifications
-      await inngest.send({
-        name: 'campaign.created',
-        data: {
-          campaign_id: campaignId,
-          team_id: team.id,
-          campaign_name: `Quỹ đội tháng ${currentMonth}`,
-          amount_per_member: team.team_fund_amount,
-          campaign_type: 'team_fund',
-          fund_month: currentMonth
-        }
+      // Emit event for notifications — use emitEvent() (not inngest.send directly)
+      // so a missing INNGEST_EVENT_KEY or Inngest outage can't fail this step
+      // after the campaign has already been created.
+      await notificationService.emitEvent('campaign.created', {
+        campaign_id: campaignId,
+        team_id: team.id,
+        campaign_name: `Quỹ đội tháng ${currentMonth}`,
+        amount_per_member: team.team_fund_amount,
+        campaign_type: 'team_fund',
+        fund_month: currentMonth
       });
 
       created++;

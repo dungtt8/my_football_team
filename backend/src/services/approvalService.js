@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const inngest = require('../config/inngest');
+const notificationService = require('./notificationService');
 const logger = require('../utils/logger');
 
 class ApprovalService {
@@ -21,15 +21,14 @@ class ApprovalService {
           updated_at: new Date()
         });
 
-      // Emit event for notifications
-      await inngest.send({
-        name: 'approval.pending',
-        data: {
-          entity_id: entity.id,
-          entity_type: entityType,
-          team_id: entity.team_id,
-          submitted_by: submittedBy
-        }
+      // Emit event for notifications — emitEvent() swallows failures (e.g.
+      // missing INNGEST_EVENT_KEY) instead of throwing, since this is a
+      // fire-and-forget side effect and must never fail the approval itself.
+      await notificationService.emitEvent('approval.pending', {
+        entity_id: entity.id,
+        entity_type: entityType,
+        team_id: entity.team_id,
+        submitted_by: submittedBy
       });
 
       logger.info('Approval submitted', {
@@ -85,16 +84,14 @@ class ApprovalService {
         .where('id', entityId)
         .update(updateData);
 
-      // Emit event for notifications and downstream processing
-      await inngest.send({
-        name: 'approval.approved',
-        data: {
-          entity_id: entityId,
-          entity_type: entityType,
-          team_id: entity.team_id,
-          approved_by: approvedBy,
-          approval_notes: approvalNotes
-        }
+      // Emit event for notifications and downstream processing — never throws
+      // (see comment in submitForApproval above).
+      await notificationService.emitEvent('approval.approved', {
+        entity_id: entityId,
+        entity_type: entityType,
+        team_id: entity.team_id,
+        approved_by: approvedBy,
+        approval_notes: approvalNotes
       });
 
       logger.info('Entity approved', {
@@ -155,16 +152,13 @@ class ApprovalService {
         .where('id', entityId)
         .update(updateData);
 
-      // Emit event for notifications
-      await inngest.send({
-        name: 'approval.rejected',
-        data: {
-          entity_id: entityId,
-          entity_type: entityType,
-          team_id: entity.team_id,
-          rejected_by: rejectedBy,
-          reason
-        }
+      // Emit event for notifications — never throws (see comment above).
+      await notificationService.emitEvent('approval.rejected', {
+        entity_id: entityId,
+        entity_type: entityType,
+        team_id: entity.team_id,
+        rejected_by: rejectedBy,
+        reason
       });
 
       logger.info('Entity rejected', {

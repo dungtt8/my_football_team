@@ -17,6 +17,19 @@ function getCurrentMonthString() {
 }
 
 /**
+ * Whether `day` falls within [startDay, endDay] (both day-of-month, 1-31).
+ * Handles ranges that wrap around the end of the month, e.g. startDay=25,
+ * endDay=5 means "the 25th through the 5th of the following month".
+ */
+function isDayInRange(day, startDay, endDay) {
+    if (!startDay || !endDay) return false;
+    if (startDay <= endDay) {
+        return day >= startDay && day <= endDay;
+    }
+    return day >= startDay || day <= endDay;
+}
+
+/**
  * Check if today is the first day of payment deadline and send notification
  */
 async function checkAndNotifyPaymentDeadline() {
@@ -29,7 +42,8 @@ async function checkAndNotifyPaymentDeadline() {
         const teams = await db('teams')
             .where('finance_payment_start_day', currentDay)
             .whereNotNull('finance_payment_start_day')
-            .whereNotNull('finance_payment_end_day');
+            .whereNotNull('finance_payment_end_day')
+            .whereNull('deleted_at');
 
         logger.info(`Found ${teams.length} teams with payment deadline starting today (day ${currentDay})`);
 
@@ -100,14 +114,14 @@ async function getActivePaymentDeadline(teamId) {
             return null;
         }
 
-        const isActive = currentDay >= team.finance_payment_start_day && currentDay <= team.finance_payment_end_day;
+        const isActive = isDayInRange(currentDay, team.finance_payment_start_day, team.finance_payment_end_day);
 
         if (isActive) {
             return {
                 start_day: team.finance_payment_start_day,
                 end_day: team.finance_payment_end_day,
                 is_active: true,
-                days_remaining: calculateDaysRemaining(team.finance_payment_end_day),
+                days_remaining: calculateDaysRemaining(team.finance_payment_end_day, team.finance_payment_start_day),
             };
         }
 
@@ -119,16 +133,32 @@ async function getActivePaymentDeadline(teamId) {
 }
 
 /**
- * Calculate days remaining until end day of current month
+ * Calculate days remaining until endDay. If startDay is given and the range
+ * wraps around month-end (startDay > endDay), endDay is treated as falling
+ * in the following month when the current day hasn't wrapped yet.
  */
-function calculateDaysRemaining(endDay) {
+function calculateDaysRemaining(endDay, startDay = null) {
     const today = new Date();
     const currentDay = today.getDate();
+    const wraps = startDay != null && startDay > endDay;
 
-    if (currentDay > endDay) {
-        return 0; // Payment deadline has passed
+    if (!wraps) {
+        if (currentDay > endDay) {
+            return 0; // Payment deadline has passed
+        }
+        return endDay - currentDay;
     }
 
+    // Wrapping range, e.g. 25 -> 5. If we're still in the "start" month
+    // portion (currentDay >= startDay), endDay is next month.
+    if (currentDay >= startDay) {
+        const daysInCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        return (daysInCurrentMonth - currentDay) + endDay;
+    }
+    // Otherwise we're already past the month boundary, in the "end" portion.
+    if (currentDay > endDay) {
+        return 0; // Shouldn't normally happen if isDayInRange gated this call
+    }
     return endDay - currentDay;
 }
 
@@ -136,4 +166,5 @@ module.exports = {
     checkAndNotifyPaymentDeadline,
     getActivePaymentDeadline,
     calculateDaysRemaining,
+    isDayInRange,
 };
