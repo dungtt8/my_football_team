@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const authService = require('../services/authService');
 const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
 const { isDayInRange } = require('../services/financeClosingService');
+const { DAYS_OF_WEEK, daysUntil } = require('../services/sessionSchedulingService');
 
 const VALID_ROLES = ['member', 'co_manager', 'owner'];
 
@@ -351,6 +352,10 @@ const getSettings = async (req, res) => {
                 checkin_creation_time: utcToGmt7(team.checkin_creation_time || '20:00'),
                 checkin_start_day: team.checkin_start_day || 'fri',
                 checkin_end_day: team.checkin_end_day || 'tue',
+                // Deadline time-of-day for auto-created sessions, set independently
+                // from checkin_creation_time (falls back to it for teams that
+                // haven't configured this yet, matching the migration backfill).
+                checkin_deadline_time: utcToGmt7(team.checkin_deadline_time || team.checkin_creation_time || '20:00'),
             },
             invite: {
                 code: team.invite_code,
@@ -550,6 +555,56 @@ const updateSettings = async (req, res) => {
                 }
                 updates.checkin_end_day = scheduling.checkin_end_day || 'tue';
             }
+            if (scheduling.checkin_deadline_time !== undefined) {
+                if (scheduling.checkin_deadline_time) {
+                    const timeRegex = /^([0-1]\d|2[0-3]):[0-5]\d$/;
+                    if (!timeRegex.test(scheduling.checkin_deadline_time)) {
+                        throw new ValidationError('Check-in deadline time must be in HH:mm format (GMT+7)');
+                    }
+                    // Convert from GMT+7 (user input) to UTC (storage)
+                    updates.checkin_deadline_time = gmt7ToUtc(scheduling.checkin_deadline_time);
+                } else {
+                    updates.checkin_deadline_time = '13:00'; // Default to 1 PM UTC (8 PM GMT+7)
+                }
+            }
+
+            // Cross-field validation: checkin_end_day (deadline day) and
+            // session_days (event day) are configured independently, so a
+            // mismatched combination could otherwise produce a deadline that
+            // falls AFTER the match/training itself — same "week cycle" math
+            // as sessionSchedulingService.createAutoSession's safety clamp,
+            // just enforced up front here so the owner sees it immediately.
+            // Validated against the merged (existing + incoming) values so a
+            // partial update is checked consistently with what will actually
+            // be stored.
+            const effectiveFrequency = updates.session_frequency !== undefined
+                ? updates.session_frequency : currentTeam.session_frequency;
+            const effectiveSessionDays = updates.session_days !== undefined
+                ? updates.session_days : currentTeam.session_days;
+            const effectiveCreationDay = updates.checkin_creation_day !== undefined
+                ? updates.checkin_creation_day : currentTeam.checkin_creation_day;
+            const effectiveEndDay = updates.checkin_end_day !== undefined
+                ? updates.checkin_end_day : currentTeam.checkin_end_day;
+
+            if (effectiveFrequency === 'weekly' && effectiveSessionDays && effectiveCreationDay && effectiveEndDay) {
+                const eventDayIdxs = effectiveSessionDays
+                    .split(',').map(d => d.trim().toLowerCase()).filter(Boolean)
+                    .map(d => DAYS_OF_WEEK.indexOf(d))
+                    .filter(idx => idx >= 0);
+                const creationDayIdx = DAYS_OF_WEEK.indexOf(effectiveCreationDay.toLowerCase());
+                const endDayIdx = DAYS_OF_WEEK.indexOf(effectiveEndDay.toLowerCase());
+
+                if (eventDayIdxs.length > 0 && creationDayIdx >= 0 && endDayIdx >= 0) {
+                    const eventOffset = Math.min(...eventDayIdxs.map(idx => daysUntil(creationDayIdx, idx)));
+                    const deadlineOffset = daysUntil(creationDayIdx, endDayIdx);
+
+                    if (deadlineOffset > eventOffset) {
+                        throw new ValidationError(
+                            'Ngày hết hạn điểm danh ("Đến ngày") phải trước hoặc trùng với ngày diễn ra sự kiện gần nhất tính từ ngày gửi thông báo. Vui lòng chọn lại "Đến ngày" hoặc "Các ngày diễn ra trong tuần".'
+                        );
+                    }
+                }
+            }
         }
 
         // Update fund settings
@@ -633,6 +688,7 @@ const updateSettings = async (req, res) => {
                 checkin_creation_time: utcToGmt7(updatedTeam.checkin_creation_time || '20:00'),
                 checkin_start_day: updatedTeam.checkin_start_day || 'fri',
                 checkin_end_day: updatedTeam.checkin_end_day || 'tue',
+                checkin_deadline_time: utcToGmt7(updatedTeam.checkin_deadline_time || updatedTeam.checkin_creation_time || '20:00'),
             },
         });
     } catch (error) {

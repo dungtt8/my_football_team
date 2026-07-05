@@ -15,6 +15,8 @@ export interface Campaign {
     created_by?: string
     created_at?: string
     updated_at?: string
+    campaign_type?: 'general' | 'team_fund'
+    fund_month?: string | null // YYYY-MM, only set for campaign_type: 'team_fund'
     assignments?: CampaignAssignment[]
 }
 

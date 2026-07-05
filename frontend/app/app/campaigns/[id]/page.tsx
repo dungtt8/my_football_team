@@ -59,6 +59,20 @@ export default function CampaignDetailPage() {
 
     const myAssignment = campaign?.assignments?.find((a) => a.user_id === user?.id)
 
+    // fund_month (YYYY-MM) is only set for auto-created team_fund campaigns;
+    // fall back to the campaign's created_at month for any other campaign type.
+    const campaignMonthLabel = (c: Campaign) => {
+        if (c.fund_month) {
+            const [year, month] = c.fund_month.split('-')
+            return `${month}/${year}`
+        }
+        if (c.created_at) {
+            const d = new Date(c.created_at)
+            return `${d.getMonth() + 1}/${d.getFullYear()}`
+        }
+        return ''
+    }
+
     const act = async (fn: () => Promise<unknown>, successMsg: string) => {
         setIsActing(true)
         try { await fn(); toast(successMsg, 'success'); loadData() }
@@ -176,9 +190,14 @@ export default function CampaignDetailPage() {
                 </div>
             )}
 
-            {!isManager && myAssignment?.status === 'pending_confirmation' && (
+            {/* Own payment confirmation — shown to EVERY member with an assignment,
+                including co_manager/owner, since managers are also auto-assigned
+                to team_fund campaigns and must confirm their own payment just
+                like anyone else. This is independent of the manager-only admin
+                panel below (a manager sees both). */}
+            {myAssignment?.status === 'pending_confirmation' && (
                 <div className="rounded-2xl p-5 border" style={{ borderColor: '#E5E5E5' }}>
-                    <p className="font-semibold mb-1">Bạn được phân công vào khoản thu này</p>
+                    <p className="font-semibold mb-1">Bạn có 1 yêu cầu đóng quỹ tháng {campaignMonthLabel(campaign)}</p>
                     <p className="text-sm mb-4" style={{ color: '#6B6660' }}>
                         {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ cần đóng góp
                     </p>
@@ -218,7 +237,7 @@ export default function CampaignDetailPage() {
                 </div>
             )}
 
-            {!isManager && myAssignment && myAssignment.status !== 'pending_confirmation' && (
+            {myAssignment && myAssignment.status !== 'pending_confirmation' && (
                 <div className="rounded-2xl p-4" style={{ background: '#F5F3F0' }}>
                     <p className="text-sm font-medium">Trạng thái: <span className="font-semibold">{assignmentLabel(myAssignment.status)}</span></p>
                 </div>

@@ -155,11 +155,22 @@ const createAutoSession = async (teamId) => {
         // ---- Check-in deadline ("Thời hạn điểm danh") ----
         // The deadline day is checkin_end_day (from the same "Thông báo & Thời
         // hạn điểm danh" section as the creation trigger) — not the event's day —
-        // at the configured notification time-of-day (checkin_creation_time, UTC).
-        const [dlHour, dlMin] = (team.checkin_creation_time || '13:00').split(':').map(Number);
+        // at the dedicated checkin_deadline_time (UTC), configured independently
+        // from the notification time. Falls back to checkin_creation_time for
+        // teams that haven't set a distinct deadline time.
+        const [dlHour, dlMin] = (team.checkin_deadline_time || team.checkin_creation_time || '13:00').split(':').map(Number);
         const endDayIdx = DAYS_OF_WEEK.indexOf((team.checkin_end_day || 'tue').toLowerCase());
         const deadlineOffset = endDayIdx >= 0 ? daysUntil(todayIdx, endDayIdx) : 0;
-        const checkInDeadline = utcDateAt(deadlineOffset, dlHour, dlMin);
+        let checkInDeadline = utcDateAt(deadlineOffset, dlHour, dlMin);
+
+        // Safety clamp: checkin_end_day is configured independently from
+        // session_days, so a mismatched config (e.g. end_day set later in the
+        // week than the actual match day) could otherwise produce a deadline
+        // AFTER the event itself — letting members "confirm" a match that
+        // already happened. Never let the deadline be later than the event.
+        if (checkInDeadline > sessionDate) {
+            checkInDeadline = sessionDate;
+        }
 
         // Create session
         const [session] = await db('attendance_sessions').insert({
@@ -320,6 +331,8 @@ const updateSessionSchedule = async (teamId, settings) => {
 };
 
 module.exports = {
+    DAYS_OF_WEEK,
+    daysUntil,
     shouldCreateSession,
     createAutoSession,
     processAutoSessions,

@@ -43,6 +43,7 @@ interface TeamSettings {
     checkin_creation_time?: string // HH:mm GMT+7 (user display), stored as UTC in backend
     checkin_start_day?: string // mon-sun
     checkin_end_day?: string // mon-sun
+    checkin_deadline_time?: string // HH:mm GMT+7 (user display), stored as UTC in backend
 }
 
 export default function TeamSettingsPage() {
@@ -72,6 +73,7 @@ export default function TeamSettingsPage() {
         checkin_creation_time: '20:00',
         checkin_start_day: 'fri',
         checkin_end_day: 'tue',
+        checkin_deadline_time: '20:00',
     })
 
     const [schedule, setSchedule] = useState<Array<{ day: number; time: string }>>([])
@@ -116,6 +118,7 @@ export default function TeamSettingsPage() {
                     checkin_creation_time: data.scheduling?.checkin_creation_time || '20:00',
                     checkin_start_day: data.scheduling?.checkin_start_day || 'fri',
                     checkin_end_day: data.scheduling?.checkin_end_day || 'tue',
+                    checkin_deadline_time: data.scheduling?.checkin_deadline_time || '20:00',
                 })
                 const code = data.invite?.code
                 setInviteCode(code || '')
@@ -208,6 +211,7 @@ export default function TeamSettingsPage() {
                     checkin_creation_time: settings.checkin_creation_time,
                     checkin_start_day: settings.checkin_start_day,
                     checkin_end_day: settings.checkin_end_day,
+                    checkin_deadline_time: settings.checkin_deadline_time,
                 }
             }
 
@@ -242,7 +246,7 @@ export default function TeamSettingsPage() {
             if (data.scheduling) {
                 // Backend response is already in GMT+7 (see teamHandler.js updateSettings) —
                 // no conversion needed here (see NOTE above about the double-conversion bug).
-                setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location, auto_session_creation_time: data.scheduling.auto_session_creation_time, checkin_creation_day: data.scheduling.checkin_creation_day, checkin_creation_time: data.scheduling.checkin_creation_time, checkin_start_day: data.scheduling.checkin_start_day, checkin_end_day: data.scheduling.checkin_end_day }))
+                setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location, auto_session_creation_time: data.scheduling.auto_session_creation_time, checkin_creation_day: data.scheduling.checkin_creation_day, checkin_creation_time: data.scheduling.checkin_creation_time, checkin_start_day: data.scheduling.checkin_start_day, checkin_end_day: data.scheduling.checkin_end_day, checkin_deadline_time: data.scheduling.checkin_deadline_time }))
             }
 
             toast('Cài đặt đã được lưu', 'success')
@@ -825,6 +829,12 @@ export default function TeamSettingsPage() {
                                                         disabled={!isOwner} style={inputStyle}>
                                                         {DAY_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                                                     </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={labelStyle}>Giờ hết hạn (GMT+7)</label>
+                                                    <input type="time" value={settings.checkin_deadline_time || settings.checkin_creation_time || '20:00'}
+                                                        onChange={(e) => setSettings({ ...settings, checkin_deadline_time: e.target.value })}
+                                                        disabled={!isOwner} style={inputStyle} />
                                                 </div>
                                             </div>
                                         </div>
