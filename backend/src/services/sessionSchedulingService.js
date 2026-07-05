@@ -90,11 +90,18 @@ const createAutoSession = async (teamId) => {
             return null; // Don't create
         }
 
-        // session_date = today at configured session_time (session_time is GMT+7, convert to UTC)
+        // session_date = today at configured session_time (session_time is GMT+7, convert to UTC).
+        // Build the intended GMT+7 wall-clock date/time first, then convert to UTC via
+        // millisecond arithmetic (subtracting the 7h offset). Using setUTCHours(hours - 7, ...)
+        // directly is wrong when hours < 7, since a negative hour value rolls the UTC date
+        // back a day instead of just adjusting the hour.
         const [hours, minutes] = (team.session_time || '18:00').split(':').map(Number);
-        const sessionDate = new Date();
-        // GMT+7 offset = -7 hours from UTC perspective
-        sessionDate.setUTCHours(hours - 7, minutes, 0, 0);
+        const now = new Date();
+        // "Today" in GMT+7 terms, expressed as a UTC instant at GMT+7's midnight,
+        // then add the configured hours/minutes as GMT+7 wall-clock time.
+        const gmt7Today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, minutes, 0, 0));
+        // Convert that GMT+7 wall-clock instant to the equivalent UTC instant.
+        const sessionDate = new Date(gmt7Today.getTime() - 7 * 60 * 60 * 1000);
 
         // check_in_deadline = checkin_creation_time (UTC), since that's when members are notified
         const [dlHour, dlMin] = (team.checkin_creation_time || '13:00').split(':').map(Number);

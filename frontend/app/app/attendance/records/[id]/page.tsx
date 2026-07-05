@@ -24,18 +24,23 @@ export default function AttendanceDetailPage() {
 
     const [record, setRecord] = useState<AttendanceRecord | null>(null)
     const [notFound, setNotFound] = useState(false)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     useEffect(() => {
         const loadRecord = async () => {
             try {
                 const id = params.id as string
                 if (id) {
+                    // getAttendanceDetail returns `undefined` for a genuine not-found,
+                    // but throws for network/auth failures — handle them separately so
+                    // the user sees the right message instead of always "not found".
                     const data = await getAttendanceDetail(id)
                     if (!data) setNotFound(true)
                     setRecord(data ?? null)
                 }
             } catch (error) {
                 console.error('Error loading attendance record:', error)
+                setLoadError('Không thể tải bản ghi điểm danh. Vui lòng thử lại.')
                 toast('Không thể tải bản ghi điểm danh', 'error')
             }
         }
@@ -63,6 +68,18 @@ export default function AttendanceDetailPage() {
         return (
             <div style={{ padding: '24px 16px', paddingBottom: '100px', minHeight: '100vh' }}>
                 <div style={{ height: '400px', background: G.glass, borderRadius: '16px', animation: 'pulse 2s infinite' }} />
+            </div>
+        )
+    }
+
+    if (loadError) {
+        return (
+            <div style={{ padding: '24px 16px', paddingBottom: '100px', minHeight: '100vh' }}>
+                <button onClick={() => router.back()} style={{
+                    marginBottom: '20px', padding: '8px 12px', background: 'transparent', color: G.t1,
+                    border: `1px solid ${G.glassBorder}`, borderRadius: '10px', fontSize: '13px', cursor: 'pointer',
+                }}>← Quay lại</button>
+                <p style={{ color: G.red, textAlign: 'center', marginTop: '40px' }}>{loadError}</p>
             </div>
         )
     }

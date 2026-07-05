@@ -6,7 +6,7 @@ import { Approval } from '@/hooks/useFinance'
 interface ApprovalItemProps {
   approval: Approval
   onApprove: (id: string) => void | Promise<void>
-  onReject: (id: string, reason?: string) => void | Promise<void>
+  onReject: (id: string, reason: string) => void | Promise<void>
   isLoading?: boolean
 }
 
@@ -37,12 +37,15 @@ export const ApprovalItem: React.FC<ApprovalItemProps> = ({
   const [rejectReason, setRejectReason] = React.useState('')
 
   const handleApprove = () => {
+    if (isLoading) return
     onApprove(approval.id)
   }
 
   const handleRejectClick = () => {
+    if (isLoading) return
     if (isRejectingWithReason) {
-      onReject(approval.id, rejectReason)
+      if (!rejectReason.trim()) return // reason is required
+      onReject(approval.id, rejectReason.trim())
       setIsRejectingWithReason(false)
       setRejectReason('')
     } else {
@@ -67,7 +70,7 @@ export const ApprovalItem: React.FC<ApprovalItemProps> = ({
           <textarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="Rejection reason (optional)..."
+            placeholder="Rejection reason (required)..."
             rows={2}
             className="w-full px-sm py-sm border border-light-gray rounded-card text-small focus:outline-none focus:border-black resize-none"
           />
@@ -84,7 +87,7 @@ export const ApprovalItem: React.FC<ApprovalItemProps> = ({
         </button>
         <button
           onClick={handleRejectClick}
-          disabled={isLoading}
+          disabled={isLoading || (isRejectingWithReason && !rejectReason.trim())}
           className="flex-1 py-md px-sm bg-pale-red text-black rounded-card hover:bg-opacity-70 transition-colors font-medium text-small disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isRejectingWithReason ? '✗ Confirm Reject' : '✗ Reject'}

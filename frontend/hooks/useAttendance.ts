@@ -237,11 +237,14 @@ export const useAttendance = () => {
     // — this only works for the current user's own records, which is the only
     // case the UI needs (record detail page is reached from the user's own
     // history/recent-records lists).
+    //
+    // Returns `undefined` only for a genuine "not found" (history loaded fine,
+    // record just isn't in it). Network/auth failures are re-thrown instead of
+    // being collapsed into the same `undefined` result, so callers can tell
+    // "doesn't exist" apart from "couldn't check" and show the right message.
     const getAttendanceDetail = useCallback(async (recordId: string) => {
-        try {
-            const history = await getAttendanceHistory()
-            return history?.history?.find(r => String(r.id) === String(recordId))
-        } catch { return undefined }
+        const history = await getAttendanceHistory() // throws on network/auth failure
+        return history?.history?.find(r => String(r.id) === String(recordId))
     }, [getAttendanceHistory])
 
     // Deprecated — no-op, kept so old call sites don't crash at compile time

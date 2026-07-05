@@ -1,6 +1,6 @@
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
-const { handleError, ValidationError, NotFoundError } = require('../services/errorService');
+const { handleError, ValidationError, NotFoundError, ConflictError } = require('../services/errorService');
 const logger = require('../utils/logger');
 const authService = require('../services/authService');
 const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
@@ -28,11 +28,12 @@ function isPaymentDeadlineActive(startDay, endDay) {
  */
 const verifyPassword = async (plainPassword, hash) => {
     try {
-        // Try bcrypt first (modern)
         return await bcrypt.compare(plainPassword, hash);
     } catch (e) {
-        // Fallback: plain text comparison (for testing/legacy)
-        return plainPassword === hash;
+        // Do NOT fall back to a plaintext comparison — if bcrypt.compare throws
+        // (e.g. malformed hash), treat it as an auth failure, not a bypass.
+        logger.warn('bcrypt.compare failed during password verification', { error: e.message });
+        return false;
     }
 };
 
@@ -64,10 +65,21 @@ const createTeam = async (req, res) => {
             attempts++;
         }
 
-        // Create team
-        const [team] = await db('teams')
-            .insert({ name: name.trim(), description: description || null, owner_id: userId, invite_code, created_at: new Date() })
-            .returning('*');
+        // Create team — if all 10 uniqueness-check attempts collided (or a
+        // last-moment race still hits the unique constraint), fail cleanly
+        // instead of letting an unhandled DB error surface.
+        let team;
+        try {
+            [team] = await db('teams')
+                .insert({ name: name.trim(), description: description || null, owner_id: userId, invite_code, created_at: new Date() })
+                .returning('*');
+        } catch (insertError) {
+            logger.error('Failed to create team due to invite code collision', {
+                owner_id: userId,
+                error: insertError.message,
+            });
+            throw new ConflictError('Could not generate a unique invite code, please try again');
+        }
 
         // Add creator as owner in team_members
         await db('team_members').insert({
@@ -183,7 +195,15 @@ const regenerateInviteCode = async (req, res) => {
             if (!exists) break;
             attempts++;
         }
-        await db('teams').where({ id: teamId }).update({ invite_code });
+        try {
+            await db('teams').where({ id: teamId }).update({ invite_code });
+        } catch (updateError) {
+            logger.error('Failed to regenerate invite code due to collision', {
+                team_id: teamId,
+                error: updateError.message,
+            });
+            throw new ConflictError('Could not generate a unique invite code, please try again');
+        }
         logger.info('Invite code regenerated', { team_id: teamId });
         return res.json({ invite_code });
     } catch (error) {
@@ -358,6 +378,11 @@ const updateSettings = async (req, res) => {
             return res.status(403).json({ error: 'Only team owner can update settings' });
         }
 
+        // Fetch current settings so partial updates can be validated against
+        // the merged (existing + incoming) values, not just the request body.
+        const currentTeam = await db('teams').where({ id: teamId }).first();
+        if (!currentTeam) throw new NotFoundError('Team not found');
+
         const updates = {};
 
         // Update general info
@@ -419,7 +444,15 @@ const updateSettings = async (req, res) => {
                     if (isNaN(day) || day < 1 || day > 31) {
                         throw new ValidationError('Payment end day must be between 1 and 31');
                     }
-                    if (finance.payment_start_day && finance.payment_end_day < finance.payment_start_day) {
+                    // Validate against the merged value (incoming start_day if provided
+                    // in this same request, otherwise the persisted start_day), not just
+                    // whatever happens to be in this request's body — a partial update
+                    // that only sends payment_end_day must still be checked against the
+                    // team's existing payment_start_day.
+                    const effectiveStartDay = finance.payment_start_day !== undefined
+                        ? finance.payment_start_day
+                        : currentTeam.finance_payment_start_day;
+                    if (effectiveStartDay && day < effectiveStartDay) {
                         throw new ValidationError('Payment end day must be after or equal to start day');
                     }
                     updates.finance_payment_end_day = day;
@@ -809,13 +842,14 @@ const kickMember = async (req, res) => {
 };
 
 /**
- * PUT /api/members/jersey-number  (auth required, NO tenancy, self-update)
- * Member sets their own jersey number for a team
+ * PUT /api/members/jersey-number  (auth + tenancy, self-update)
+ * Member sets their own jersey number for their current team
  */
 const updateJerseyNumber = async (req, res) => {
     try {
         const userId = req.user.user_id;
-        const { team_id, jersey_number } = req.body;
+        const team_id = req.user.team_id;
+        const { jersey_number } = req.body;
 
         if (!team_id) {
             throw new ValidationError('team_id is required');
@@ -921,8 +955,8 @@ const changePassword = async (req, res) => {
         if (new_password !== new_password_confirm) {
             throw new ValidationError('New passwords do not match');
         }
-        if (new_password.length < 6) {
-            throw new ValidationError('New password must be at least 6 characters');
+        if (new_password.length < 8) {
+            throw new ValidationError('New password must be at least 8 characters');
         }
         if (new_password === current_password) {
             throw new ValidationError('New password must be different from current password');

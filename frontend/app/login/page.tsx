@@ -53,38 +53,41 @@ function LoginFormContent() {
             }
 
             console.log('[Login] Setting auth data...')
-            // Update AuthContext state + localStorage atomically
+            // setAuthData writes the token to localStorage and sets the auth cookie
+            // synchronously (before touching React state), so by the time this call
+            // returns, both the cookie (read by middleware) and localStorage (read by
+            // AuthContext on next mount) are already durably updated. We no longer
+            // need an arbitrary setTimeout "to let context settle" before navigating —
+            // navigating immediately is safe since the underlying storage is already
+            // consistent, and middleware.ts reads the cookie directly regardless of
+            // React state timing.
             // Pass teams array if available from login response
             setAuthData(data.token, data.user, data.team ?? null, data.user.role, data.teams || [])
 
-            console.log('[Login] Auth data set, preparing redirect...')
-            // Redirect after context update completes
-            // Use setTimeout to ensure context state updates before navigation
-            setTimeout(() => {
-                try {
-                    let targetUrl = '/'
+            console.log('[Login] Auth data set, redirecting...')
+            try {
+                let targetUrl = '/'
 
-                    // Priority 1: If user doesn't have team → go to onboarding
-                    if (data.has_team === false) {
-                        targetUrl = '/onboarding'
-                        console.log('[Login] User has no team, redirecting to onboarding')
-                    } else {
-                        // Priority 2: If there's a redirect param and user has team → use it
-                        const redirect = searchParams.get('redirect') || searchParams.get('from')
-                        if (redirect && redirect !== '/login') {
-                            targetUrl = redirect
-                            console.log('[Login] Using redirect param:', targetUrl)
-                        }
+                // Priority 1: If user doesn't have team → go to onboarding
+                if (data.has_team === false) {
+                    targetUrl = '/onboarding'
+                    console.log('[Login] User has no team, redirecting to onboarding')
+                } else {
+                    // Priority 2: If there's a redirect param and user has team → use it
+                    const redirect = searchParams.get('redirect') || searchParams.get('from')
+                    if (redirect && redirect !== '/login') {
+                        targetUrl = redirect
+                        console.log('[Login] Using redirect param:', targetUrl)
                     }
-
-                    console.log('[Login] Final redirect to:', targetUrl)
-                    router.push(targetUrl)
-                } catch (redirectErr) {
-                    console.error('[Login] Redirect error:', redirectErr)
-                    setError('Redirect failed, please try again')
-                    setIsPhoneLoading(false)
                 }
-            }, 150)
+
+                console.log('[Login] Final redirect to:', targetUrl)
+                router.push(targetUrl)
+            } catch (redirectErr) {
+                console.error('[Login] Redirect error:', redirectErr)
+                setError('Redirect failed, please try again')
+                setIsPhoneLoading(false)
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed'
             console.error('[Login] Error:', message, err)

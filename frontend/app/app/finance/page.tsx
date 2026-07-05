@@ -23,7 +23,7 @@ const statusBg = (s: string) => s === 'approved' ? G.accentDim : s === 'rejected
 
 export default function FinancePage() {
     const router = useRouter()
-    const { user, role, isLoading: authLoading } = useAuth()
+    const { user, team, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listTransactions, getFinanceBalance, getPendingApprovals, approveTransaction, rejectTransaction, submitTransaction, loading } = useFinance()
     const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
@@ -36,11 +36,18 @@ export default function FinancePage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [rejectModal, setRejectModal] = useState<{ id: string } | null>(null)
     const [rejectReason, setRejectReason] = useState('')
+    const [processingId, setProcessingId] = useState<string | null>(null)
 
     useEffect(() => {
         // Only load data after auth has finished loading and user is authenticated
         if (authLoading) return
         if (!user) return
+
+        // Reset local state so stale data from a previous team isn't shown
+        // while the new team's data is loading.
+        setTransactions([])
+        setApprovals([])
+        setBalance(null)
 
         const load = async () => {
             setIsLoading(true)
@@ -66,7 +73,7 @@ export default function FinancePage() {
             }
         }
         load()
-    }, [isManager, authLoading, user])
+    }, [isManager, authLoading, user, team?.id])
 
     const handleSubmit = async (data: TransactionFormData) => {
         setIsSubmitting(true)
@@ -80,22 +87,28 @@ export default function FinancePage() {
     }
 
     const handleApprove = async (id: string) => {
+        if (processingId) return // guard against double-submit while another request is in flight
+        setProcessingId(id)
         try {
             await approveTransaction(id)
             toast('Đã duyệt', 'success')
             const [app, bal] = await Promise.all([getPendingApprovals(), getFinanceBalance()])
             setApprovals(app); setBalance(bal)
         } catch (e: any) { toast(e?.message || 'Lỗi', 'error') }
+        finally { setProcessingId(null) }
     }
 
     const handleRejectConfirm = async () => {
-        if (!rejectModal || !rejectReason.trim()) { toast('Nhập lý do từ chối', 'error'); return }
+        if (!rejectModal || processingId) return
+        if (!rejectReason.trim()) { toast('Nhập lý do từ chối', 'error'); return }
+        setProcessingId(rejectModal.id)
         try {
             await rejectTransaction(rejectModal.id, rejectReason.trim())
             toast('Đã từ chối', 'success')
             setRejectModal(null); setRejectReason('')
             setApprovals(await getPendingApprovals())
         } catch (e: any) { toast(e?.message || 'Lỗi', 'error') }
+        finally { setProcessingId(null) }
     }
 
     const fmtMoney = (n: number) => n?.toLocaleString('vi-VN') + '₫'
@@ -153,8 +166,10 @@ export default function FinancePage() {
                                     <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: G.accent }}>{fmtMoney(a.amount)}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => handleApprove(a.id)} style={{ flex: 1, padding: '9px', borderRadius: '10px', background: G.accentDim, color: G.accent, fontWeight: 600, fontSize: '13px', cursor: 'pointer', border: `1px solid rgba(0,214,143,0.25)` } as React.CSSProperties}>Duyệt</button>
-                                    <button onClick={() => { setRejectModal({ id: a.id }); setRejectReason('') }} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: `1px solid rgba(255,107,107,0.25)`, background: G.redDim, color: G.red, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>Từ chối</button>
+                                    <button disabled={processingId === a.id} onClick={() => handleApprove(a.id)} style={{ flex: 1, padding: '9px', borderRadius: '10px', background: G.accentDim, color: G.accent, fontWeight: 600, fontSize: '13px', cursor: processingId === a.id ? 'not-allowed' : 'pointer', border: `1px solid rgba(0,214,143,0.25)`, opacity: processingId === a.id ? 0.6 : 1 } as React.CSSProperties}>
+                                        {processingId === a.id ? 'Đang xử lý...' : 'Duyệt'}
+                                    </button>
+                                    <button disabled={processingId === a.id} onClick={() => { setRejectModal({ id: a.id }); setRejectReason('') }} style={{ flex: 1, padding: '9px', borderRadius: '10px', border: `1px solid rgba(255,107,107,0.25)`, background: G.redDim, color: G.red, fontWeight: 600, fontSize: '13px', cursor: processingId === a.id ? 'not-allowed' : 'pointer', opacity: processingId === a.id ? 0.6 : 1 }}>Từ chối</button>
                                 </div>
                             </div>
                         ))}
@@ -242,8 +257,10 @@ export default function FinancePage() {
                         <textarea rows={3} value={rejectReason} onChange={e => setRejectReason(e.target.value)}
                             placeholder="Nhập lý do..." style={{ width: '100%', padding: '12px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`, background: 'rgba(255,255,255,0.05)', color: G.t1, fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
                         <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                            <button onClick={() => setRejectModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`, background: 'transparent', color: G.t2, fontWeight: 500, cursor: 'pointer' }}>Huỷ</button>
-                            <button onClick={handleRejectConfirm} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: G.red, color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
+                            <button disabled={!!processingId} onClick={() => setRejectModal(null)} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`, background: 'transparent', color: G.t2, fontWeight: 500, cursor: processingId ? 'not-allowed' : 'pointer' }}>Huỷ</button>
+                            <button disabled={!rejectReason.trim() || !!processingId} onClick={handleRejectConfirm} style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: G.red, color: '#fff', fontWeight: 600, cursor: (!rejectReason.trim() || processingId) ? 'not-allowed' : 'pointer', opacity: (!rejectReason.trim() || processingId) ? 0.6 : 1 }}>
+                                {processingId ? 'Đang xử lý...' : 'Từ chối'}
+                            </button>
                         </div>
                     </div>
                 </div>

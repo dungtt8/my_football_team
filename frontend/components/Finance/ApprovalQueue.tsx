@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { ApprovalItem } from './ApprovalItem'
 import { EmptyState } from '@/components/Common/EmptyState'
 import { ListSkeleton } from '@/components/Common/LoadingSkeletons'
@@ -10,7 +10,7 @@ interface ApprovalQueueProps {
     approvals: Approval[]
     isLoading: boolean
     onApprove: (id: string) => void | Promise<void>
-    onReject: (id: string, reason?: string) => void | Promise<void>
+    onReject: (id: string, reason: string) => void | Promise<void>
     emptyMessage?: string
 }
 
@@ -21,6 +21,29 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
     onReject,
     emptyMessage = 'Không có yêu cầu duyệt',
 }) => {
+    // Track which approval is currently being processed to prevent double-submit
+    const [processingId, setProcessingId] = useState<string | null>(null)
+
+    const handleApprove = async (id: string) => {
+        if (processingId) return
+        setProcessingId(id)
+        try {
+            await onApprove(id)
+        } finally {
+            setProcessingId(null)
+        }
+    }
+
+    const handleReject = async (id: string, reason: string) => {
+        if (processingId) return
+        setProcessingId(id)
+        try {
+            await onReject(id, reason)
+        } finally {
+            setProcessingId(null)
+        }
+    }
+
     if (isLoading) {
         return (
             <div>
@@ -54,8 +77,9 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
                         <ApprovalItem
                             key={approval.id}
                             approval={approval}
-                            onApprove={onApprove}
-                            onReject={onReject}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            isLoading={processingId === approval.id}
                         />
                     ))}
                 </div>

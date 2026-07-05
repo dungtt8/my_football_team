@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const notificationService = require('./notificationService');
 const logger = require('../utils/logger');
+const { ConflictError } = require('./errorService');
 
 class ApprovalService {
   /**
@@ -58,7 +59,8 @@ class ApprovalService {
     try {
       const tableName = this._getTableName(entityType);
 
-      // Fetch entity to get team_id
+      // Fetch entity to get team_id (for the event payload / logging only —
+      // the actual approval decision below is guarded by a conditional update)
       const entity = await db(tableName)
         .where('id', entityId)
         .first();
@@ -80,9 +82,20 @@ class ApprovalService {
         updateData.approval_notes = approvalNotes;
       }
 
-      await db(tableName)
-        .where('id', entityId)
-        .update(updateData);
+      // Guard against a concurrent approve/reject race: only transition rows
+      // that are still in their "awaiting decision" status. If another
+      // request already approved/rejected this entity, affectedRows will be
+      // 0 and we bail out instead of silently overwriting the other decision.
+      const pendingStatus = this._getPendingStatus(tableName);
+      const affectedRows = await db.transaction(async (trx) => {
+        return trx(tableName)
+          .where({ id: entityId, status: pendingStatus })
+          .update(updateData);
+      });
+
+      if (affectedRows === 0) {
+        throw new ConflictError(`${entityType} with id ${entityId} is already processed`);
+      }
 
       // Emit event for notifications and downstream processing — never throws
       // (see comment in submitForApproval above).
@@ -121,7 +134,8 @@ class ApprovalService {
     try {
       const tableName = this._getTableName(entityType);
 
-      // Fetch entity to get team_id
+      // Fetch entity to get team_id (for the event payload / logging only —
+      // the actual rejection decision below is guarded by a conditional update)
       const entity = await db(tableName)
         .where('id', entityId)
         .first();
@@ -148,9 +162,18 @@ class ApprovalService {
         updateData.rejected_at = new Date();
       }
 
-      await db(tableName)
-        .where('id', entityId)
-        .update(updateData);
+      // Guard against a concurrent approve/reject race: only transition rows
+      // that are still in their "awaiting decision" status.
+      const pendingStatus = this._getPendingStatus(tableName);
+      const affectedRows = await db.transaction(async (trx) => {
+        return trx(tableName)
+          .where({ id: entityId, status: pendingStatus })
+          .update(updateData);
+      });
+
+      if (affectedRows === 0) {
+        throw new ConflictError(`${entityType} with id ${entityId} is already processed`);
+      }
 
       // Emit event for notifications — never throws (see comment above).
       await notificationService.emitEvent('approval.rejected', {
@@ -269,6 +292,18 @@ class ApprovalService {
     }
 
     return tableName;
+  }
+
+  /**
+   * The status value that means "awaiting a decision" for a given table.
+   * fund_transactions uses 'pending'; campaign_assignments uses 'pending_approval'
+   * (its lifecycle is pending_confirmation -> pending_approval -> approved/rejected/exempt).
+   * @private
+   * @param {string} tableName
+   * @returns {string}
+   */
+  _getPendingStatus(tableName) {
+    return tableName === 'campaign_assignments' ? 'pending_approval' : 'pending';
   }
 }
 

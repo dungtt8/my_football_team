@@ -1,4 +1,5 @@
 const inngest = require('../config/inngest');
+const logger = require('../utils/logger');
 const monthlyReminderHandler = require('./handlers/monthlyReminder');
 const { autoCreateTeamFundHandler } = require('./handlers/monthlyReminder');
 const {
@@ -98,7 +99,9 @@ const createCampaignDeadlineCheckFunction = inngest.createFunction(
   { id: 'fund.campaign-deadline-check' },
   { cron: '0 23 * * *' }, // Daily at 23:00 UTC (06:00 UTC+7)
   async ({ event, step }) => {
+    logger.info('[cron] fund.campaign-deadline-check started');
     // Placeholder - implemented in next task
+    logger.info('[cron] fund.campaign-deadline-check completed', { status: 'scheduled' });
     return { status: 'scheduled' };
   }
 );
@@ -165,12 +168,14 @@ const autoCreateSessionsScheduledJob = inngest.createFunction(
   },
   { cron: '0 * * * *' }, // Hourly at top of each hour
   async ({ step }) => {
+    logger.info('[cron] attendance.auto-create-sessions started');
     const sessionSchedulingService = require('../services/sessionSchedulingService');
 
     const result = await step.run('process-auto-sessions', async () => {
       return await sessionSchedulingService.processAutoSessions();
     });
 
+    logger.info('[cron] attendance.auto-create-sessions completed', { result });
     return result;
   }
 );
@@ -187,13 +192,15 @@ const financeClosingCheckScheduledJob = inngest.createFunction(
   },
   { cron: '0 1 * * *' }, // Daily at 1 AM UTC
   async ({ step }) => {
+    logger.info('[cron] finance.payment-deadline-check started');
     const financeClosingService = require('../services/financeClosingService');
 
     // Check for payment deadline starting today and send notifications
-    await step.run('check-and-notify-payment-deadline', async () => {
+    const result = await step.run('check-and-notify-payment-deadline', async () => {
       return await financeClosingService.checkAndNotifyPaymentDeadline();
     });
 
+    logger.info('[cron] finance.payment-deadline-check completed', { result });
     return { status: 'completed' };
   }
 );
@@ -209,12 +216,14 @@ const checkInNotificationScheduledJob = inngest.createFunction(
   },
   { cron: '0 * * * *' }, // Hourly at top of each hour
   async ({ step }) => {
+    logger.info('[cron] attendance.checkin-notifications started');
     const checkinService = require('../services/checkinService');
 
     const result = await step.run('create-checkin-notifications', async () => {
       return await checkinService.checkAndCreateCheckInNotifications();
     });
 
+    logger.info('[cron] attendance.checkin-notifications completed', { result });
     return result;
   }
 );

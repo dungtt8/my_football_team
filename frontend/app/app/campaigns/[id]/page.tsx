@@ -84,9 +84,22 @@ export default function CampaignDetailPage() {
     const handleSelectBillFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
+        // Revoke any previously created object URL before creating a new one,
+        // so switching the selected file doesn't leak the old blob URL.
+        setBillPreview(prev => {
+            if (prev) URL.revokeObjectURL(prev)
+            return URL.createObjectURL(file)
+        })
         setBillFile(file)
-        setBillPreview(URL.createObjectURL(file))
     }
+
+    // Revoke the object URL on unmount (or whenever it changes) so it isn't
+    // leaked if the user navigates away without submitting/clearing the form.
+    useEffect(() => {
+        return () => {
+            if (billPreview) URL.revokeObjectURL(billPreview)
+        }
+    }, [billPreview])
 
     const handleConfirmWithBill = async () => {
         if (!billFile) { toast('Vui lòng chọn ảnh hoá đơn/chuyển khoản', 'error'); return }

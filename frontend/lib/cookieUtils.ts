@@ -13,9 +13,13 @@ export function setAuthCookie(token: string) {
 
         // Set cookie with options:
         // - path=/: Available to all routes
-        // - max-age: 7 days in seconds
+        // - max-age: matches the backend JWT expiry (24h, see backend/src/config/auth.js
+        //   `jwtExpiration`). IMPORTANT: keep this in sync with that value — if the
+        //   cookie outlives the JWT (or vice versa), the cookie-based middleware check
+        //   and the localStorage/AuthContext state can disagree about whether the
+        //   session is still valid, causing redirect loops or stale "logged in" UI.
         // - SameSite=Lax: Allow some cross-site cookie usage
-        const maxAge = 7 * 24 * 60 * 60 // 7 days in seconds
+        const maxAge = 24 * 60 * 60 // 24 hours in seconds — must match backend JWT expiresIn
 
         // Build cookie string - encode the token value
         let cookieString = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`

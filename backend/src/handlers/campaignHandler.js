@@ -36,55 +36,61 @@ const createCampaign = async (req, res) => {
       amount_per_member
     });
 
-    // Insert campaign
-    const [campaignId] = await db('campaigns').insert({
-      team_id: teamId,
-      created_by: userId,
-      name,
-      amount_per_member,
-      deadline: deadline ? new Date(deadline) : null,
-      description: description || null,
-      status: 'active',
-      created_at: new Date(),
-      updated_at: new Date()
-    });
-
-    // Fetch created campaign
-    const campaign = await db('campaigns')
-      .where('id', campaignId)
-      .first();
-
-    // Get all active team members
-    const activeMembers = await db('team_members')
-      .where('team_id', teamId)
-      .where('status', 'active')
-      .select('user_id');
-
-    logger.info('Found active team members for auto-assignment', {
-      campaign_id: campaignId,
-      team_id: teamId,
-      member_count: activeMembers.length
-    });
-
-    // Auto-assign campaign to all active members
-    if (activeMembers.length > 0) {
-      const assignments = activeMembers.map(member => ({
-        campaign_id: campaignId,
-        user_id: member.user_id,
-        status: 'pending_confirmation',
+    // Insert campaign + assignments atomically — a campaign should never exist
+    // without its member assignments (or vice versa).
+    const { campaignId, campaign, activeMembers } = await db.transaction(async (trx) => {
+      const [insertedCampaignId] = await trx('campaigns').insert({
+        team_id: teamId,
+        created_by: userId,
+        name,
+        amount_per_member,
+        deadline: deadline ? new Date(deadline) : null,
+        description: description || null,
+        status: 'active',
         created_at: new Date(),
         updated_at: new Date()
-      }));
-
-      await db('campaign_assignments').insert(assignments);
-
-      logger.info('Campaign auto-assigned to active members', {
-        campaign_id: campaignId,
-        assignment_count: assignments.length
       });
-    }
 
-    // Emit campaign.created event
+      // Fetch created campaign
+      const insertedCampaign = await trx('campaigns')
+        .where('id', insertedCampaignId)
+        .first();
+
+      // Get all active team members
+      const members = await trx('team_members')
+        .where('team_id', teamId)
+        .where('status', 'active')
+        .select('user_id');
+
+      logger.info('Found active team members for auto-assignment', {
+        campaign_id: insertedCampaignId,
+        team_id: teamId,
+        member_count: members.length
+      });
+
+      // Auto-assign campaign to all active members
+      if (members.length > 0) {
+        const assignments = members.map(member => ({
+          campaign_id: insertedCampaignId,
+          user_id: member.user_id,
+          status: 'pending_confirmation',
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
+
+        await trx('campaign_assignments').insert(assignments);
+
+        logger.info('Campaign auto-assigned to active members', {
+          campaign_id: insertedCampaignId,
+          assignment_count: assignments.length
+        });
+      }
+
+      return { campaignId: insertedCampaignId, campaign: insertedCampaign, activeMembers: members };
+    });
+
+    // Emit campaign.created event (outside the transaction — a notification
+    // failure must not roll back an already-committed campaign)
     await notificationService.emitEvent('campaign.created', {
       campaign_id: campaignId,
       team_id: teamId,
@@ -697,6 +703,13 @@ const closeCampaign = async (req, res) => {
       team_id: teamId
     });
 
+    // Emit campaign.closed event — onCampaignClosedHandler (campaignEvents.js)
+    // reads event.data.campaign_id and event.data.team_id
+    await notificationService.emitEvent('campaign.closed', {
+      campaign_id: id,
+      team_id: teamId
+    });
+
     // Return campaign with summary
     return res.json(updatedCampaign);
   } catch (error) {
@@ -748,7 +761,7 @@ const getReport = async (req, res) => {
     let totalApprovedAmount = 0;
 
     assignments.forEach(assignment => {
-      statusCounts[assignment.status]++;
+      statusCounts[assignment.status] = (statusCounts[assignment.status] || 0) + 1;
       if (assignment.status === 'approved') {
         totalApproved++;
         totalApprovedAmount += campaign.amount_per_member;

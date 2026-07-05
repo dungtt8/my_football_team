@@ -83,6 +83,13 @@ class GamificationService {
         })
         .where('up.team_id', teamId)
         .where('up.month', month)
+        // NOTE: leftJoin + where('u.status', 'active') together behave like an
+        // INNER join here — rows where the leftJoin found no matching user (or a
+        // non-active one) get filtered out by the where clause. This is intentional:
+        // the leaderboard should only ever show currently-active users, so points
+        // from users with no active user record are silently excluded rather than
+        // shown with null user info. Do not "fix" this to a true left join without
+        // also deciding what to render for a null user.
         .where('u.status', 'active')
         .groupBy('u.id', 'u.email', 'u.full_name', 'tm.role')
         .orderBy('total_points', 'desc')
@@ -137,6 +144,9 @@ class GamificationService {
       const userTotalPoints = userStats?.total_points || 0;
 
       // Calculate rank: count users with higher total points
+      // NOTE: leftJoin + where('u.status', 'active') intentionally behaves like an
+      // INNER join, filtering rank computation to active users only — see the
+      // matching comment in getLeaderboard() above for the rationale.
       const usersWithHigherPoints = await db('user_points as up')
         .select('up.user_id')
         .from('user_points as up')

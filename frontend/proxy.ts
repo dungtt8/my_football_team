@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// NOTE on client/server auth-state divergence: this proxy reads the
+// `auth_token` cookie, while AuthContext (contexts/AuthContext.tsx) reads
+// localStorage as the source of truth for React state. They are two separate
+// copies of the same token and can in principle drift (e.g. one cleared
+// without the other). The cookie's max-age is kept in sync with the backend
+// JWT's `expiresIn` (see lib/cookieUtils.ts and backend/src/config/auth.js)
+// to minimize skew, and this function's own exp check catches an expired-but
+// -still-present cookie. A fully unified auth-state source (e.g. deriving
+// everything from the cookie, or vice versa) would remove this risk entirely
+// but is a bigger refactor than is safe to do here.
+//
 // Decode JWT payload and check exp claim (no signature check here -
 // the backend already verifies the signature on every API call;
 // this is just so routing can redirect expired sessions to login)
@@ -15,7 +26,7 @@ function isTokenExpired(token: string): boolean {
     }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // Public routes - no authentication required

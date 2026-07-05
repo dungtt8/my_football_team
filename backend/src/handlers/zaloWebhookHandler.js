@@ -4,13 +4,29 @@ const logger = require('../utils/logger');
 const { handleError } = require('../services/errorService');
 
 const verifyZaloSignature = (body, signature) => {
-  const verifyToken = process.env.ZALO_OA_WEBHOOK_VERIFY_TOKEN || 'test-token';
+  const verifyToken = process.env.ZALO_OA_WEBHOOK_VERIFY_TOKEN;
+  if (!verifyToken) {
+    logger.error('ZALO_OA_WEBHOOK_VERIFY_TOKEN is not configured; rejecting webhook request');
+    return false;
+  }
+
+  if (!signature || typeof signature !== 'string') {
+    return false;
+  }
+
   const hash = crypto
     .createHmac('sha256', verifyToken)
     .update(JSON.stringify(body))
     .digest('hex');
 
-  return hash === signature;
+  const hashBuffer = Buffer.from(hash);
+  const signatureBuffer = Buffer.from(signature);
+
+  if (hashBuffer.length !== signatureBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
 };
 
 const zaloWebhookHandler = async (req, res) => {

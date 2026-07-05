@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+import { apiClient } from '@/lib/api'
 
 export interface ActiveCheckIn {
     id: number
@@ -16,28 +15,22 @@ interface UseCheckinReturn {
     respondToCheckIn: (checkInId: number, response: 'yes' | 'no') => Promise<{ success: boolean; check_in: { id: number; response: string; responded_at: string } }>
 }
 
+// Uses the shared apiClient (lib/api.ts) instead of raw fetch so auth headers
+// and 401 handling are consistent with the rest of the app.
 export const useCheckin = (): UseCheckinReturn => {
     const getActiveCheckIn = useCallback(async () => {
-        const token = localStorage.getItem('auth_token')
-        const res = await fetch(`${API_URL}/attendance/checkin/active`, {
-            headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) throw new Error('Failed to get active check-in')
-        return res.json()
+        const res = await apiClient.get<{ check_in: ActiveCheckIn | null }>('/attendance/checkin/active')
+        if (res.error || !res.data) throw new Error(res.error || 'Failed to get active check-in')
+        return res.data
     }, [])
 
     const respondToCheckIn = useCallback(async (checkInId: number, response: 'yes' | 'no') => {
-        const token = localStorage.getItem('auth_token')
-        const res = await fetch(`${API_URL}/attendance/checkin/${checkInId}/respond`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ response }),
-        })
-        if (!res.ok) throw new Error('Failed to respond to check-in')
-        return res.json()
+        const res = await apiClient.post<{ success: boolean; check_in: { id: number; response: string; responded_at: string } }>(
+            `/attendance/checkin/${checkInId}/respond`,
+            { response }
+        )
+        if (res.error || !res.data) throw new Error(res.error || 'Failed to respond to check-in')
+        return res.data
     }, [])
 
     return {

@@ -15,7 +15,7 @@ const G = {
 
 export default function AttendancePage() {
     const router = useRouter()
-    const { user, role, isLoading: authLoading } = useAuth()
+    const { user, team, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
     const { listSessions, getActiveCheckin, respondToCheckin, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
     const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
@@ -30,9 +30,22 @@ export default function AttendancePage() {
     const [isCheckingIn, setIsCheckingIn] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         if (authLoading || !user) return
+
+        // Reset local state so stale data from a previous team isn't shown
+        // while the new team's data is loading.
+        setStats(null)
+        setRecentRecords([])
+        setLeaderboard([])
+        setActiveSession(null)
+        setAllSessions([])
+        setActiveCheckinId(null)
+        setMyCheckedIn(false)
+        setError(null)
+
         const load = async () => {
             try {
                 const allRes = await listSessions({ limit: 20 })
@@ -64,10 +77,13 @@ export default function AttendancePage() {
 
                 const lb = await getLeaderboard()
                 setLeaderboard((lb || []).slice(0, 5))
-            } catch { toast('Không thể tải dữ liệu', 'error') }
+            } catch {
+                setError('Không thể tải dữ liệu. Vui lòng thử lại.')
+                toast('Không thể tải dữ liệu', 'error')
+            }
         }
         load()
-    }, [user, authLoading])
+    }, [user, authLoading, team?.id])
 
     const handleCheckIn = async () => {
         if (!activeCheckinId) { toast('Không tìm thấy phiếu điểm danh cho buổi này', 'error'); return }
@@ -112,6 +128,14 @@ export default function AttendancePage() {
                     }}>+ Tạo lịch</button>
                 )}
             </div>
+
+            {/* Error state */}
+            {error && (
+                <div style={{ background: 'rgba(255,107,107,0.10)', border: '1px solid rgba(255,107,107,0.25)', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#FF6B6B' }}>{error}</p>
+                    <button onClick={() => window.location.reload()} style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.12)', color: '#FF6B6B', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>Thử lại</button>
+                </div>
+            )}
 
             {/* Stats row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>

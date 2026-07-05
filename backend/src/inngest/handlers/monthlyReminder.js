@@ -4,6 +4,7 @@ const gamificationService = require('../../services/gamificationService');
 const notificationService = require('../../services/notificationService');
 const logger = require('../../utils/logger');
 const inngest = require('../../config/inngest');
+const { getTeamUsers } = require('../../utils/teamUsers');
 
 /**
  * Helper function to get previous month in YYYY-MM format
@@ -82,7 +83,7 @@ const monthlyReminderLogic = async ({ event, step }) => {
         logger.info('Leaderboard archived for team', {
           team_id: team.id,
           month: previousMonth,
-          top_3_count: archiveResult.top_3_users.length
+          top_3_count: archiveResult.top_3.length
         });
 
         // Get current month's leaderboard (top 3)
@@ -96,10 +97,10 @@ const monthlyReminderLogic = async ({ event, step }) => {
         });
 
         // Get all active members in the team to send notifications
-        const activeMembers = await db('users')
-          .where('team_id', team.id)
-          .where('status', 'active')
-          .select('id', 'zalo_user_id', 'full_name');
+        const activeMembers = await getTeamUsers(team.id, {
+          status: 'active',
+          columns: ['u.id', 'u.zalo_user_id', 'u.full_name'],
+        });
 
         logger.info(`Processing team ${team.id} with ${activeMembers.length} active members for leaderboard notification`);
 
@@ -221,35 +222,39 @@ const autoCreateTeamFundLogic = async ({ step }) => {
         return;
       }
 
-      // Create team_fund campaign
-      const [campaignId] = await db('campaigns').insert({
-        team_id: team.id,
-        created_by: null, // system-created
-        name: `Quỹ đội tháng ${currentMonth}`,
-        amount_per_member: team.team_fund_amount,
-        campaign_type: 'team_fund',
-        fund_month: currentMonth,
-        status: 'active',
-        created_at: new Date(),
-        updated_at: new Date()
-      });
-
-      // Auto-assign to all active members
-      const activeMembers = await db('team_members')
-        .where('team_id', team.id)
-        .where('status', 'active')
-        .select('user_id');
-
-      if (activeMembers.length > 0) {
-        const assignments = activeMembers.map(m => ({
-          campaign_id: campaignId,
-          user_id: m.user_id,
-          status: 'pending_confirmation',
+      // Create team_fund campaign + assignments atomically
+      const { campaignId, activeMembers } = await db.transaction(async (trx) => {
+        const [insertedCampaignId] = await trx('campaigns').insert({
+          team_id: team.id,
+          created_by: null, // system-created
+          name: `Quỹ đội tháng ${currentMonth}`,
+          amount_per_member: team.team_fund_amount,
+          campaign_type: 'team_fund',
+          fund_month: currentMonth,
+          status: 'active',
           created_at: new Date(),
           updated_at: new Date()
-        }));
-        await db('campaign_assignments').insert(assignments);
-      }
+        });
+
+        // Auto-assign to all active members
+        const members = await trx('team_members')
+          .where('team_id', team.id)
+          .where('status', 'active')
+          .select('user_id');
+
+        if (members.length > 0) {
+          const assignments = members.map(m => ({
+            campaign_id: insertedCampaignId,
+            user_id: m.user_id,
+            status: 'pending_confirmation',
+            created_at: new Date(),
+            updated_at: new Date()
+          }));
+          await trx('campaign_assignments').insert(assignments);
+        }
+
+        return { campaignId: insertedCampaignId, activeMembers: members };
+      });
 
       // Emit event for notifications — use emitEvent() (not inngest.send directly)
       // so a missing INNGEST_EVENT_KEY or Inngest outage can't fail this step

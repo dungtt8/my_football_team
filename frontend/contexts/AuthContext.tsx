@@ -192,29 +192,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             const data = await response.json()
 
-            // Update JWT
+            // Validate the response has everything needed before applying ANY
+            // state update. Committing a new token paired with a stale/missing
+            // team or role would leave the app in an inconsistent auth state
+            // (e.g. new token but old team's data still shown).
+            if (!data.token || !data.team || !data.role) {
+                throw new Error('Phản hồi máy chủ thiếu dữ liệu (token/team/role) — không thể chuyển đội')
+            }
+
+            // All required fields present — commit the update atomically.
             localStorage.setItem('auth_token', data.token)
             setAuthCookie(data.token)
 
-            // Update current team
-            if (data.team) {
-                localStorage.setItem('team', JSON.stringify(data.team))
-                setTeam(data.team)
-            }
+            localStorage.setItem('team', JSON.stringify(data.team))
+            setTeam(data.team)
 
-            // Update role
-            if (data.role) {
-                localStorage.setItem('role', data.role)
-                setRole(data.role as UserRole)
-            }
+            localStorage.setItem('role', data.role)
+            setRole(data.role as UserRole)
 
-            // Update all teams
+            // Update all teams (optional — doesn't affect current team/role validity)
             if (data.teams) {
                 localStorage.setItem('allTeams', JSON.stringify(data.teams))
                 setAllTeams(data.teams)
             }
         } catch (error) {
             console.error('Team switch error:', error)
+            // Do not partially update state — previous team context remains active.
             throw error
         } finally {
             setIsLoading(false)

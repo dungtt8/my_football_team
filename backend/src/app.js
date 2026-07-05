@@ -72,6 +72,13 @@ app.post('/api/auth/phone/login', phoneAuthHandler);
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');
 app.post('/api/zalo/webhook', zaloWebhookHandler);
 
+// Inngest webhook — must be mounted BEFORE authMiddleware/tenancyMiddleware.
+// Inngest Cloud calls this endpoint directly (sync + step invocation) without
+// this app's JWT/team headers, so it cannot pass authMiddleware/tenancyMiddleware.
+// Inngest's serve() handler verifies requests itself via the signing key.
+const inngestHandler = require('./handlers/inngestHandler');
+app.use('/api/inngest', inngestHandler);
+
 // Protected routes (require auth, but NOT yet tenancy)
 app.use(authMiddleware);
 
@@ -90,10 +97,6 @@ app.post('/api/teams/:teamId/switch', teamHandler.switchTeam);
 
 // All remaining routes require auth + team context
 app.use(tenancyMiddleware);
-
-// Inngest webhook
-const inngestHandler = require('./handlers/inngestHandler');
-app.use('/api/inngest', inngestHandler);
 
 // Finance routes
 const financeHandler = require('./handlers/financeHandler');
@@ -163,8 +166,8 @@ app.delete('/api/team/settings/qr-code', rbacMiddleware(['owner']), teamHandler.
 app.put('/api/team/members/:memberId/deactivate', rbacMiddleware(['owner', 'co_manager']), teamHandler.deactivateMember);
 app.put('/api/team/members/:memberId/kick', rbacMiddleware(['owner', 'co_manager']), teamHandler.kickMember);
 
-// Jersey number update (no tenancy, self-update)
-app.put('/api/members/jersey-number', authMiddleware, teamHandler.updateJerseyNumber);
+// Jersey number update (tenancy-scoped via the global tenancyMiddleware applied above, self-update)
+app.put('/api/members/jersey-number', teamHandler.updateJerseyNumber);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {

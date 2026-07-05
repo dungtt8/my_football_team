@@ -22,17 +22,29 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
   // Start camera
   useEffect(() => {
+    let isMounted = true
+
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
         })
+
+        // Component may have unmounted while getUserMedia was pending — if so,
+        // immediately stop the tracks instead of wiring the stream into state,
+        // otherwise the camera stays on and the stream is leaked.
+        if (!isMounted) {
+          stream.getTracks().forEach((track) => track.stop())
+          return
+        }
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           setCameraActive(true)
           scanQRCode()
         }
       } catch (error) {
+        if (!isMounted) return
         console.error('Camera error:', error)
         setCameraDenied(true)
         if (onError) {
@@ -44,6 +56,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
     startCamera()
 
     return () => {
+      isMounted = false
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }

@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react'
+import { apiClient } from '@/lib/api'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-
-async function teamFetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-    const res = await fetch(`${API_URL}${path}`, {
-        ...options,
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Request failed')
-    return data
+// Thin wrapper over the shared apiClient (lib/api.ts) so this hook gets
+// consistent auth header injection and 401 handling like the rest of the app.
+async function teamFetch<T>(path: string, method: 'GET' | 'PATCH' | 'PUT' = 'GET', body?: any): Promise<T> {
+    const res = method === 'GET'
+        ? await apiClient.get<T>(path)
+        : method === 'PATCH'
+            ? await apiClient.patch<T>(path, body)
+            : await apiClient.put<T>(path, body)
+    if (res.error) throw new Error(res.error || 'Request failed')
+    return res.data as T
 }
 
 export interface TeamMember {
@@ -38,22 +38,15 @@ export const useTeam = () => {
     }, [])
 
     const updateMemberRole = useCallback(async (userId: number, role: string): Promise<void> => {
-        await teamFetch(`/team/members/${userId}/role`, {
-            method: 'PATCH',
-            body: JSON.stringify({ role }),
-        })
+        await teamFetch(`/team/members/${userId}/role`, 'PATCH', { role })
     }, [])
 
     const deactivateMember = useCallback(async (memberId: number): Promise<void> => {
-        await teamFetch(`/team/members/${memberId}/deactivate`, {
-            method: 'PUT',
-        })
+        await teamFetch(`/team/members/${memberId}/deactivate`, 'PUT')
     }, [])
 
     const kickMember = useCallback(async (memberId: number): Promise<void> => {
-        await teamFetch(`/team/members/${memberId}/kick`, {
-            method: 'PUT',
-        })
+        await teamFetch(`/team/members/${memberId}/kick`, 'PUT')
     }, [])
 
     return { listMembers, updateMemberRole, deactivateMember, kickMember, loading }

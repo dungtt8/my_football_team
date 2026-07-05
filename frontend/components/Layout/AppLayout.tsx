@@ -28,7 +28,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Default closed on mobile
-    const [isDesktop, setIsDesktop] = useState(false) // Track if desktop
+    // Lazy-initialize from window.innerWidth on the client to avoid an initial
+    // layout flash (server always renders `false`, then client would otherwise
+    // flip to `true` a tick later on desktop). `typeof window` guard keeps this
+    // safe during SSR, where it falls back to `false` same as before.
+    const [isDesktop, setIsDesktop] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth >= 768 : false
+    )
 
     React.useEffect(() => {
         // Check if desktop on mount

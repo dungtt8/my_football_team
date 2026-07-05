@@ -93,30 +93,39 @@ async function respondToCheckin(checkinId, userId, response) {
         throw new Error('Response must be "yes" or "no"');
     }
 
-    // Verify ownership
-    const checkin = await db('attendance_checkins')
-        .where({ id: checkinId, user_id: userId })
-        .first();
+    // Wrap the read-check-write in a transaction and re-verify the parent
+    // session's status inside it, so a concurrent attendanceHandler.closeSession
+    // can't close the session in between our check and our update.
+    return db.transaction(async (trx) => {
+        // Verify ownership
+        const checkin = await trx('attendance_checkins')
+            .where({ id: checkinId, user_id: userId })
+            .first();
 
-    if (!checkin) throw new Error('Checkin not found');
+        if (!checkin) throw new Error('Checkin not found');
 
-    // Verify session is still active and deadline not passed
-    const session = await db('attendance_sessions')
-        .where({ id: checkin.session_id, status: 'active' })
-        .first();
+        // Verify session is still active and deadline not passed (re-checked
+        // inside the transaction to avoid racing with session close).
+        // forUpdate() locks the session row so a concurrent closeSession
+        // update blocks until this transaction commits/rolls back.
+        const session = await trx('attendance_sessions')
+            .where({ id: checkin.session_id, status: 'active' })
+            .forUpdate()
+            .first();
 
-    if (!session) throw new Error('Session is closed');
+        if (!session) throw new Error('Session already closed');
 
-    if (session.check_in_deadline && new Date() > new Date(session.check_in_deadline)) {
-        throw new Error('Response deadline has passed');
-    }
+        if (session.check_in_deadline && new Date() > new Date(session.check_in_deadline)) {
+            throw new Error('Response deadline has passed');
+        }
 
-    const now = new Date();
-    await db('attendance_checkins')
-        .where({ id: checkinId })
-        .update({ response, responded_at: now, updated_at: now });
+        const now = new Date();
+        await trx('attendance_checkins')
+            .where({ id: checkinId })
+            .update({ response, responded_at: now, updated_at: now });
 
-    return db('attendance_checkins').where({ id: checkinId }).first();
+        return trx('attendance_checkins').where({ id: checkinId }).first();
+    });
 }
 
 /**
@@ -186,10 +195,18 @@ async function awardPointsForSession(sessionId, teamId) {
 
 /**
  * Get checkin stats summary for a session.
+ * Verifies the session belongs to the given team before returning stats.
+ * Returns null if the session doesn't exist or doesn't belong to the team.
  */
-async function getSessionStats(sessionId) {
+async function getSessionStats(sessionId, teamId) {
+    const session = await db('attendance_sessions')
+        .where({ id: sessionId, team_id: teamId })
+        .first();
+
+    if (!session) return null;
+
     const checkins = await db('attendance_checkins')
-        .where({ session_id: sessionId })
+        .where({ session_id: sessionId, team_id: teamId })
         .select('response');
 
     const yes = checkins.filter(c => c.response === 'yes').length;

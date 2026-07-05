@@ -48,7 +48,9 @@ const getCheckInStats = async (req, res) => {
         const teamId = req.team?.id || req.user?.team_id;
         if (!teamId) return res.status(401).json({ error: 'Unauthorized' });
 
-        const stats = await checkinService.getSessionStats(sessionId);
+        const stats = await checkinService.getSessionStats(sessionId, teamId);
+        if (!stats) throw new NotFoundError('Session', sessionId);
+
         const checkins = await checkinService.getSessionCheckins(sessionId, teamId);
         return res.json({ session_id: sessionId, stats, checkins });
     } catch (error) {

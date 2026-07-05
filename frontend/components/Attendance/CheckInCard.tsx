@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { COLORS, TYPOGRAPHY, SPACING } from '@/lib/constants'
 
 interface CheckInCardProps {
@@ -22,7 +22,12 @@ export const CheckInCard: React.FC<CheckInCardProps> = ({
     isLoading = false,
     checkInDeadline,
 }) => {
-    const isPastDeadline = checkInDeadline ? new Date() > new Date(checkInDeadline) : false
+    // Compute "now" once on mount rather than inline during render, so the
+    // server-rendered markup and the client's first render agree (avoiding a
+    // hydration mismatch) instead of both calling `new Date()` at slightly
+    // different times / environments.
+    const [now] = useState(() => new Date())
+    const isPastDeadline = checkInDeadline ? now > new Date(checkInDeadline) : false
 
     const formatDeadline = (dt: string) =>
         new Date(dt).toLocaleString('vi-VN', {
@@ -86,7 +91,7 @@ export const CheckInCard: React.FC<CheckInCardProps> = ({
                             color: COLORS.gray,
                         }}
                     >
-                        {new Date().toLocaleDateString('vi-VN', { weekday: 'long', month: 'long', day: 'numeric' })}
+                        {now.toLocaleDateString('vi-VN', { weekday: 'long', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
                 <div
@@ -119,7 +124,7 @@ export const CheckInCard: React.FC<CheckInCardProps> = ({
                         color: COLORS.black,
                     }}
                 >
-                    {formatTime(new Date())}
+                    {formatTime(now)}
                 </p>
             </div>
 

@@ -16,6 +16,10 @@ interface ApiError extends Error {
     data?: any
 }
 
+// Module-level flag so we only ever trigger one forced logout/redirect,
+// even if several in-flight requests all receive a 401 around the same time.
+let hasRedirectedToLogin = false
+
 export class ApiClient {
     private baseUrl: string
 
@@ -23,8 +27,11 @@ export class ApiClient {
         this.baseUrl = baseUrl
     }
 
-    private getAuthHeader(): HeadersInit {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    private getCurrentToken(): string | null {
+        return typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+    }
+
+    private getAuthHeader(token: string | null): HeadersInit {
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
         }
@@ -41,8 +48,12 @@ export class ApiClient {
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {
         const url = `${this.baseUrl}${endpoint}`
+        // Capture the token used for *this* request so that if it 401s, we can
+        // later check whether the token has since been rotated (e.g. by a
+        // concurrent switchTeam refresh) before reacting to the 401.
+        const requestToken = this.getCurrentToken()
         const headers = {
-            ...this.getAuthHeader(),
+            ...this.getAuthHeader(requestToken),
             ...options.headers,
         }
 
@@ -56,7 +67,7 @@ export class ApiClient {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    this.handleUnauthorized()
+                    this.handleUnauthorized(requestToken)
                 }
 
                 const error = new Error(data.error || `API Error: ${response.status}`) as ApiError
@@ -80,9 +91,23 @@ export class ApiClient {
         }
     }
 
-    // Session expired or invalid token: clear stored auth and send user to login
-    private handleUnauthorized() {
+    // Session expired or invalid token: clear stored auth and send user to login.
+    // `requestToken` is whatever token was sent with the now-failed request. If the
+    // token currently in storage is different, it was rotated after this request was
+    // sent (e.g. by switchTeam finishing in the meantime) — that means this 401 is
+    // stale/racy and must NOT trigger a logout of an otherwise-valid new session.
+    private handleUnauthorized(requestToken: string | null) {
         if (typeof window === 'undefined') return
+
+        const currentToken = this.getCurrentToken()
+        if (requestToken !== currentToken) {
+            // Stale request racing a token refresh — ignore.
+            return
+        }
+
+        // Only ever act once, even if multiple in-flight requests 401 together.
+        if (hasRedirectedToLogin) return
+        hasRedirectedToLogin = true
 
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user')
@@ -92,7 +117,7 @@ export class ApiClient {
         document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax'
 
         // Avoid redirect loop if already on login page
-        if (!window.location.pathname.startsWith('/login')) {
+        if (window.location.pathname !== '/login' && !window.location.pathname.startsWith('/login/')) {
             const from = encodeURIComponent(window.location.pathname)
             window.location.href = `/login?from=${from}`
         }
