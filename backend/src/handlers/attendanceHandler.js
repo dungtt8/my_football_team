@@ -113,7 +113,7 @@ const getSession = async (req, res) => {
         if (!session) throw new NotFoundError('Session not found');
 
         const checkins = await checkinService.getSessionCheckins(id, teamId);
-        const stats = await checkinService.getSessionStats(id);
+        const stats = await checkinService.getSessionStats(id, teamId);
 
         return res.json({ session, records: checkins, stats, total_records: checkins.length });
     } catch (error) {

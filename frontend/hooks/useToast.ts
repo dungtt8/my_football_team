@@ -1,11 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useToast as useToastContext } from '@/contexts/ToastContext'
 
+// Thin wrapper so existing call sites (`const { toast } = useToast(); toast(msg, type)`)
+// don't need to change, while actually rendering a toast via ToastContext/ToastProvider
+// (mounted in app/layout.tsx) instead of the old stub that only did console.log.
 export function useToast() {
-  const toast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    console.log(`[${type.toUpperCase()}] ${message}`)
-    // In production, this would trigger the ToastContext
-    // For now, just log to console
-  }
-
-  return { toast }
+  const { addToast } = useToastContext()
+  return { toast: addToast }
 }
