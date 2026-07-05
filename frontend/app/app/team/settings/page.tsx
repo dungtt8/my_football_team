@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
-import { utcToGmt7, gmt7ToUtc } from '@/lib/timeZoneConverter'
 import { Gear, Clock, CurrencyDollar, CalendarPlus, Copy, CheckCircle, Calendar } from 'phosphor-react'
 
 const G = {
@@ -108,9 +107,13 @@ export default function TeamSettingsPage() {
                     session_time: data.scheduling?.session_time || '18:00',
                     session_type: data.scheduling?.session_type || 'training',
                     session_location: data.scheduling?.session_location || '',
-                    auto_session_creation_time: utcToGmt7(data.scheduling?.auto_session_creation_time || '03:00'),
+                    // NOTE: backend already converts UTC -> GMT+7 before sending this response
+                    // (see teamHandler.js getSettings). Do NOT convert again here — doing so
+                    // previously caused a double-conversion bug (e.g. 23:15 becoming 09:15 in
+                    // the DB after a round trip through both layers).
+                    auto_session_creation_time: data.scheduling?.auto_session_creation_time || '10:00',
                     checkin_creation_day: data.scheduling?.checkin_creation_day || 'mon',
-                    checkin_creation_time: utcToGmt7(data.scheduling?.checkin_creation_time || '20:00'),
+                    checkin_creation_time: data.scheduling?.checkin_creation_time || '20:00',
                     checkin_start_day: data.scheduling?.checkin_start_day || 'fri',
                     checkin_end_day: data.scheduling?.checkin_end_day || 'tue',
                 })
@@ -200,7 +203,9 @@ export default function TeamSettingsPage() {
                     session_type: settings.session_type,
                     session_location: settings.session_location,
                     checkin_creation_day: settings.checkin_creation_day,
-                    checkin_creation_time: gmt7ToUtc(settings.checkin_creation_time),
+                    // Sent as-is (GMT+7, what the user typed) — backend is the single
+                    // place that converts to UTC before storing. Do not convert here too.
+                    checkin_creation_time: settings.checkin_creation_time,
                     checkin_start_day: settings.checkin_start_day,
                     checkin_end_day: settings.checkin_end_day,
                 }
@@ -235,7 +240,9 @@ export default function TeamSettingsPage() {
                 setSettings((prev) => ({ ...prev, bank_account_number: data.fund.bank_account_number, bank_name: data.fund.bank_name, fund_qr_code_url: data.fund.qr_code_url }))
             }
             if (data.scheduling) {
-                setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location, auto_session_creation_time: utcToGmt7(data.scheduling.auto_session_creation_time), checkin_creation_day: data.scheduling.checkin_creation_day, checkin_creation_time: utcToGmt7(data.scheduling.checkin_creation_time), checkin_start_day: data.scheduling.checkin_start_day, checkin_end_day: data.scheduling.checkin_end_day }))
+                // Backend response is already in GMT+7 (see teamHandler.js updateSettings) —
+                // no conversion needed here (see NOTE above about the double-conversion bug).
+                setSettings((prev) => ({ ...prev, auto_create_sessions: data.scheduling.auto_create_sessions, session_frequency: data.scheduling.session_frequency, session_days: data.scheduling.session_days, session_time: data.scheduling.session_time, session_type: data.scheduling.session_type, session_location: data.scheduling.session_location, auto_session_creation_time: data.scheduling.auto_session_creation_time, checkin_creation_day: data.scheduling.checkin_creation_day, checkin_creation_time: data.scheduling.checkin_creation_time, checkin_start_day: data.scheduling.checkin_start_day, checkin_end_day: data.scheduling.checkin_end_day }))
             }
 
             toast('Cài đặt đã được lưu', 'success')

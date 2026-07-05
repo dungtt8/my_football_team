@@ -30,11 +30,53 @@ function isTimeWindowActive(configuredUtcTime) {
 }
 
 /**
- * Check if a session should be auto-created for a team today
+ * Smallest non-negative number of days to add to `fromIdx` (0=sun..6=sat)
+ * to land on `toIdx`. Returns 0 if they're the same day.
+ */
+function daysUntil(fromIdx, toIdx) {
+    return (toIdx - fromIdx + 7) % 7;
+}
+
+/**
+ * Build a UTC Date for `daysFromToday` days from now, at `hours:minutes`
+ * expressed in GMT+7 wall-clock time. Used for `session_time`, which is
+ * entered by the user as GMT+7 in the "Thông tin sự kiện" UI section.
+ */
+function gmt7DateAt(daysFromToday, hours, minutes) {
+    const now = new Date();
+    const gmt7Target = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysFromToday,
+        hours, minutes, 0, 0
+    ));
+    return new Date(gmt7Target.getTime() - 7 * 60 * 60 * 1000);
+}
+
+/**
+ * Build a UTC Date for `daysFromToday` days from now, at `hours:minutes`
+ * already expressed in UTC. Used for `checkin_creation_time`, which is
+ * stored in UTC (see migration 005_teams_checkin_schedule.js).
+ */
+function utcDateAt(daysFromToday, hours, minutes) {
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysFromToday));
+    d.setUTCHours(hours, minutes, 0, 0);
+    return d;
+}
+
+/**
+ * Check if a session should be auto-created for a team today.
+ *
+ * Creation is gated entirely by "Thông báo & Thời hạn điểm danh"
+ * (checkin_creation_day / checkin_creation_time) — NOT by "Thông tin sự kiện"
+ * (session_days). session_days/session_time only describe when the match or
+ * training itself happens; they don't control when the system should create
+ * the attendance request asking members to confirm.
+ *
  * Returns true if:
  * - auto_create_sessions is enabled
- * - frequency matches today (daily, or weekly on one of the configured session_days)
  * - current time is within the notification time window (checkin_creation_time)
+ * - for weekly frequency: today matches checkin_creation_day
+ * - for daily frequency: fires every day (still gated by the time window)
  * - session hasn't been created today yet
  */
 const shouldCreateSession = (team) => {
@@ -42,7 +84,7 @@ const shouldCreateSession = (team) => {
         return false;
     }
 
-    // Fire at the same time as the check-in notification ("Giờ gửi thông báo")
+    // Fire at the configured notification time ("Giờ gửi thông báo")
     if (!isTimeWindowActive(team.checkin_creation_time || '13:00')) {
         return false;
     }
@@ -59,17 +101,15 @@ const shouldCreateSession = (team) => {
         }
     }
 
-    const todayName = DAYS_OF_WEEK[new Date().getDay()];
-
-    // Check frequency
     if (team.session_frequency === 'daily') {
         return true;
     }
 
     if (team.session_frequency === 'weekly') {
-        // Today must be one of the days selected in "Các ngày diễn ra trong tuần"
-        const days = (team.session_days || '').split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
-        return days.includes(todayName);
+        // Today must be the configured notification day ("Ngày gửi thông báo"),
+        // not one of the event's session_days.
+        const todayName = DAYS_OF_WEEK[new Date().getUTCDay()];
+        return (team.checkin_creation_day || 'mon').toLowerCase() === todayName;
     }
 
     return false;
@@ -90,23 +130,36 @@ const createAutoSession = async (teamId) => {
             return null; // Don't create
         }
 
-        // session_date = today at configured session_time (session_time is GMT+7, convert to UTC).
-        // Build the intended GMT+7 wall-clock date/time first, then convert to UTC via
-        // millisecond arithmetic (subtracting the 7h offset). Using setUTCHours(hours - 7, ...)
-        // directly is wrong when hours < 7, since a negative hour value rolls the UTC date
-        // back a day instead of just adjusting the hour.
-        const [hours, minutes] = (team.session_time || '18:00').split(':').map(Number);
-        const now = new Date();
-        // "Today" in GMT+7 terms, expressed as a UTC instant at GMT+7's midnight,
-        // then add the configured hours/minutes as GMT+7 wall-clock time.
-        const gmt7Today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, minutes, 0, 0));
-        // Convert that GMT+7 wall-clock instant to the equivalent UTC instant.
-        const sessionDate = new Date(gmt7Today.getTime() - 7 * 60 * 60 * 1000);
+        const todayIdx = new Date().getUTCDay();
 
-        // check_in_deadline = checkin_creation_time (UTC), since that's when members are notified
+        // ---- Event date/time ("Thông tin sự kiện") ----
+        // The match/training can happen on a different day than today (the
+        // notification/creation day). Find the nearest upcoming occurrence of
+        // one of the configured session_days (or today, for daily frequency)
+        // and build its date at session_time (GMT+7 wall-clock, per the UI).
+        const [sessHours, sessMinutes] = (team.session_time || '18:00').split(':').map(Number);
+
+        let eventDayOffset = 0;
+        if (team.session_frequency === 'weekly') {
+            const eventDayIdxs = (team.session_days || '')
+                .split(',').map(d => d.trim().toLowerCase()).filter(Boolean)
+                .map(d => DAYS_OF_WEEK.indexOf(d))
+                .filter(idx => idx >= 0);
+
+            if (eventDayIdxs.length > 0) {
+                eventDayOffset = Math.min(...eventDayIdxs.map(idx => daysUntil(todayIdx, idx)));
+            }
+        }
+        const sessionDate = gmt7DateAt(eventDayOffset, sessHours, sessMinutes);
+
+        // ---- Check-in deadline ("Thời hạn điểm danh") ----
+        // The deadline day is checkin_end_day (from the same "Thông báo & Thời
+        // hạn điểm danh" section as the creation trigger) — not the event's day —
+        // at the configured notification time-of-day (checkin_creation_time, UTC).
         const [dlHour, dlMin] = (team.checkin_creation_time || '13:00').split(':').map(Number);
-        const checkInDeadline = new Date();
-        checkInDeadline.setUTCHours(dlHour, dlMin, 0, 0);
+        const endDayIdx = DAYS_OF_WEEK.indexOf((team.checkin_end_day || 'tue').toLowerCase());
+        const deadlineOffset = endDayIdx >= 0 ? daysUntil(todayIdx, endDayIdx) : 0;
+        const checkInDeadline = utcDateAt(deadlineOffset, dlHour, dlMin);
 
         // Create session
         const [session] = await db('attendance_sessions').insert({
