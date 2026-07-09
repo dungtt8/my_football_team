@@ -39,6 +39,27 @@ const respondToCheckIn = async (req, res) => {
 };
 
 /**
+ * PATCH /api/attendance/checkin/:checkInId/confirm
+ * Manager confirms/overrides a member's participation on their behalf.
+ * Body: { response: 'yes' | 'no' }
+ */
+const managerRespondToCheckIn = async (req, res) => {
+    try {
+        const { checkInId } = req.params;
+        const { response } = req.body;
+        const teamId = req.team?.id || req.user?.team_id;
+        if (!teamId) return res.status(401).json({ error: 'Unauthorized' });
+        if (!['yes', 'no'].includes(response))
+            throw new ValidationError('Response must be "yes" or "no"');
+
+        const result = await checkinService.respondToCheckinAsManager(checkInId, teamId, response);
+        return res.json({ success: true, check_in: result });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PATCH /api/attendance/checkin/:checkInId/confirm' });
+    }
+};
+
+/**
  * GET /api/attendance/sessions/:sessionId/checkin-stats
  * Manager view: response summary for a session.
  */
@@ -58,4 +79,4 @@ const getCheckInStats = async (req, res) => {
     }
 };
 
-module.exports = { getActiveCheckIn, respondToCheckIn, getCheckInStats };
+module.exports = { getActiveCheckIn, respondToCheckIn, managerRespondToCheckIn, getCheckInStats };

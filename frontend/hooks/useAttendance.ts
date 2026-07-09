@@ -175,6 +175,20 @@ export const useAttendance = () => {
         }
     }, [request])
 
+    // Manager confirms/overrides a member's participation on their behalf
+    // (e.g. someone who reported in person instead of tapping in the app).
+    const managerRespondToCheckin = useCallback(async (checkinId: string, response: 'yes' | 'no') => {
+        try {
+            setLocalError(null)
+            return await request<{ success: boolean; check_in: AttendanceCheckin }>(
+                `/attendance/checkin/${checkinId}/confirm`, 'PATCH', { response }
+            )
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to confirm')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
     // ── Leaderboard & stats ─────────────────────────────────────────────────
 
     const getLeaderboard = useCallback(async () => {
@@ -264,6 +278,7 @@ export const useAttendance = () => {
         closeSession,
         getActiveCheckin,
         respondToCheckin,
+        managerRespondToCheckin,
         getLeaderboard,
         getHistoricalLeaderboard,
         getUserStats,

@@ -29,7 +29,7 @@ export default function SessionDetailPage() {
     const { toast } = useToast()
     const id = params.id as string
 
-    const { getSession, respondToCheckin, closeSession } = useAttendance()
+    const { getSession, respondToCheckin, managerRespondToCheckin, closeSession } = useAttendance()
     const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
     const [session, setSession] = useState<AttendanceSession | null>(null)
@@ -142,8 +142,8 @@ export default function SessionDetailPage() {
                 )}
             </div>
 
-            {/* Stats (manager) */}
-            {isManager && stats && (
+            {/* Stats */}
+            {stats && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '28px' }}>
                     {[
                         { label: 'Tham gia', value: stats.yes, color: G.accent, bg: G.accentDim, border: 'rgba(0,214,143,0.2)' },
@@ -251,8 +251,8 @@ export default function SessionDetailPage() {
                 </div>
             )}
 
-            {/* Checkin list (manager) */}
-            {isManager && checkins.length > 0 && (
+            {/* Checkin list — visible to everyone; managers can also confirm on a member's behalf */}
+            {checkins.length > 0 && (
                 <div style={{ marginBottom: '28px' }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, color: G.t2, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px' }}>
                         Danh sách phản hồi
@@ -296,14 +296,29 @@ export default function SessionDetailPage() {
                                         )}
                                     </div>
                                 </div>
-                                <span style={{
-                                    fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px',
-                                    background: c.response === 'yes' ? G.accentDim : c.response === 'no' ? G.redDim : G.yellowDim,
-                                    color: c.response === 'yes' ? G.accent : c.response === 'no' ? G.red : G.yellow,
-                                    border: `1px solid ${c.response === 'yes' ? 'rgba(0,214,143,0.2)' : c.response === 'no' ? 'rgba(255,107,107,0.2)' : 'rgba(255,184,77,0.2)'}`,
-                                }}>
-                                    {c.response === 'yes' ? 'Tham gia' : c.response === 'no' ? 'Không' : 'Chưa TL'}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{
+                                        fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px',
+                                        background: c.response === 'yes' ? G.accentDim : c.response === 'no' ? G.redDim : G.yellowDim,
+                                        color: c.response === 'yes' ? G.accent : c.response === 'no' ? G.red : G.yellow,
+                                        border: `1px solid ${c.response === 'yes' ? 'rgba(0,214,143,0.2)' : c.response === 'no' ? 'rgba(255,107,107,0.2)' : 'rgba(255,184,77,0.2)'}`,
+                                    }}>
+                                        {c.response === 'yes' ? 'Tham gia' : c.response === 'no' ? 'Không' : 'Chưa TL'}
+                                    </span>
+                                    {isManager && isActive && c.response !== 'yes' && (
+                                        <button
+                                            disabled={!!isActing}
+                                            onClick={() => act(`confirm-${c.id}`, () => managerRespondToCheckin(c.id, 'yes').then(() => {}), `Đã xác nhận tham gia cho ${c.full_name || c.email}`)}
+                                            style={{
+                                                fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
+                                                background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`,
+                                                opacity: isActing ? 0.6 : 1,
+                                            }}
+                                        >
+                                            {isActing === `confirm-${c.id}` ? '...' : 'Xác nhận'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                         {filteredCheckins.length === 0 && (

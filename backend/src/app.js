@@ -150,7 +150,9 @@ app.get('/api/attendance/history', rbacMiddleware(['member', 'co_manager', 'owne
 const checkinHandler = require('./handlers/checkinHandler');
 app.get('/api/attendance/checkin/active', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.getActiveCheckIn);
 app.post('/api/attendance/checkin/:checkInId/respond', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.respondToCheckIn);
-app.get('/api/attendance/sessions/:sessionId/checkin-stats', rbacMiddleware(['co_manager', 'owner']), checkinHandler.getCheckInStats);
+// Manager confirms/overrides a member's participation on their behalf.
+app.patch('/api/attendance/checkin/:checkInId/confirm', rbacMiddleware(['co_manager', 'owner']), checkinHandler.managerRespondToCheckIn);
+app.get('/api/attendance/sessions/:sessionId/checkin-stats', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.getCheckInStats);
 
 // Team management routes (tenancy-scoped)
 app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.listMembers);

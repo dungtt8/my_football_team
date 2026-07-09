@@ -187,6 +187,50 @@ async function respondToCheckin(checkinId, userId, response) {
 }
 
 /**
+ * Manager confirms (or overrides) a member's participation on their behalf,
+ * e.g. someone who reported in person / over the phone instead of tapping
+ * Yes/No in the app themselves.
+ *
+ * Scoped by team_id (not user_id, since the manager is acting on someone
+ * else's checkin) and, unlike respondToCheckin, does not enforce the
+ * check_in_deadline — a manager should still be able to confirm attendance
+ * after the response deadline has passed. The session must still be active
+ * (can't edit checkins for an already-closed/points-awarded session).
+ */
+async function respondToCheckinAsManager(checkinId, teamId, response) {
+    if (!['yes', 'no'].includes(response)) {
+        throw new Error('Response must be "yes" or "no"');
+    }
+
+    return db.transaction(async (trx) => {
+        const checkin = await trx('attendance_checkins')
+            .where({ id: checkinId, team_id: teamId })
+            .first();
+
+        if (!checkin) throw new Error('Checkin not found');
+
+        // Lock the session row so this can't race a concurrent closeSession.
+        const session = await trx('attendance_sessions')
+            .where({ id: checkin.session_id, team_id: teamId, status: 'active' })
+            .forUpdate()
+            .first();
+
+        if (!session) throw new Error('Session already closed');
+
+        const now = new Date();
+        await trx('attendance_checkins')
+            .where({ id: checkinId })
+            .update({ response, responded_at: now, updated_at: now });
+
+        return trx('attendance_checkins as ac')
+            .join('users as u', 'u.id', 'ac.user_id')
+            .where('ac.id', checkinId)
+            .select('ac.*', 'u.full_name', 'u.email')
+            .first();
+    });
+}
+
+/**
  * Get all checkins for a session (manager view).
  * Includes user info.
  */
@@ -341,6 +385,7 @@ module.exports = {
     getCheckinForUser,
     getActiveCheckinForUser,
     respondToCheckin,
+    respondToCheckinAsManager,
     getSessionCheckins,
     awardPointsForSession,
     getSessionStats,
