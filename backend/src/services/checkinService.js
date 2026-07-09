@@ -81,7 +81,65 @@ async function getActiveCheckinForUser(teamId, userId) {
         )
         .first();
 
-    return row || null;
+    if (row) return row;
+
+    // Self-heal: a checkin row is only auto-created for members who were
+    // already active when the session was created (see
+    // attendanceHandler.createSession -> createCheckinsForSession). A member
+    // who joined the team afterwards has no row, so the join above finds
+    // nothing even though there IS an active session they should be able to
+    // respond to — that's what produced the "Không tìm thấy phiếu điểm danh
+    // cho buổi này" error on click. If there's an active session and the
+    // user is a current active member, create their missing checkin row now
+    // instead of leaving them permanently unable to check in.
+    const session = await db('attendance_sessions')
+        .where({ team_id: teamId, status: 'active' })
+        .orderBy('session_date', 'desc')
+        .first();
+
+    if (!session) return null;
+
+    const membership = await db('team_members')
+        .where({ team_id: teamId, user_id: userId, status: 'active' })
+        .first();
+
+    if (!membership) return null;
+
+    const now = new Date();
+    const [created] = await db('attendance_checkins')
+        .insert({
+            session_id: session.id,
+            user_id: userId,
+            team_id: teamId,
+            response: null,
+            responded_at: null,
+            created_at: now,
+            updated_at: now,
+        })
+        // Guard against a race with another request/creation doing the same thing.
+        .onConflict(['session_id', 'user_id'])
+        .ignore()
+        .returning('*');
+
+    const finalCheckin = created || await db('attendance_checkins')
+        .where({ session_id: session.id, user_id: userId })
+        .first();
+
+    if (!finalCheckin) return null;
+
+    return {
+        id: finalCheckin.id,
+        session_id: finalCheckin.session_id,
+        user_id: finalCheckin.user_id,
+        response: finalCheckin.response,
+        responded_at: finalCheckin.responded_at,
+        session_date: session.session_date,
+        check_in_deadline: session.check_in_deadline,
+        location: session.location,
+        session_type: session.session_type,
+        description: session.description,
+        session_status: session.status,
+    };
 }
 
 /**

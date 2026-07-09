@@ -176,7 +176,7 @@ export default function AttendancePage() {
                             {isDeadlinePassed ? '⛔ Hết hạn điểm danh' : `⏰ Hạn: ${new Date(activeSession.check_in_deadline).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
                         </p>
                     )}
-                    {!isManager && !myCheckedIn && !isDeadlinePassed && (
+                    {!isManager && !myCheckedIn && !isDeadlinePassed && activeCheckinId && (
                         <button disabled={isCheckingIn} onClick={handleCheckIn} style={{
                             width: '100%', padding: '14px', borderRadius: '14px', border: 'none', cursor: 'pointer',
                             background: `linear-gradient(135deg, ${G.accent}, #00A36C)`,
@@ -189,6 +189,9 @@ export default function AttendancePage() {
                     )}
                     {!isManager && myCheckedIn && (
                         <p style={{ textAlign: 'center', color: G.accent, fontWeight: 600, fontSize: '14px' }}>Đã điểm danh hôm nay 🎉</p>
+                    )}
+                    {!isManager && !myCheckedIn && !isDeadlinePassed && !activeCheckinId && (
+                        <p style={{ textAlign: 'center', color: G.t3, fontSize: '13px' }}>Đang tải phiếu điểm danh...</p>
                     )}
                     {isManager && (
                         <button onClick={() => router.push(`/app/attendance/sessions/${activeSession.id}`)} style={{

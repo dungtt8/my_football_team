@@ -1,0 +1,297 @@
+// Prisma schema reconstructed from the knex migrations in
+// backend/src/database/migrations/001..010.
+//
+// Field names are kept snake_case (matching the physical DB columns) so that
+// Prisma result objects serialize to the exact same JSON shape the frontend
+// already expects from the Express backend. Table names are mapped via @@map.
+//
+// NOTE: a few columns are referenced by the original handler code but were not
+// present in any migration file (they must exist on the live Supabase DB, since
+// the production app uses them). They are added here as nullable so the port
+// keeps working against the same database:
+//   - users.password_hash   (teamHandler.changePassword)
+//   - users.updated_at       (teamHandler.updateProfile / changePassword)
+//   - teams.attendance_cooldown_minutes (teamHandler.getSettings / updateSettings)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id             BigInt    @id @default(autoincrement())
+  email          String    @unique @db.VarChar(255)
+  full_name      String?   @db.VarChar(255)
+  zalo_user_id   String?   @db.VarChar(255)
+  phone          String?   @db.VarChar(20)
+  status         String?   @default("active") @db.VarChar(50)
+  deactivated_at DateTime?
+  last_login_at  DateTime?
+  created_at     DateTime? @default(now())
+  deleted_at     DateTime?
+
+  // Columns referenced by code but absent from migrations (see note above)
+  password_hash  String?   @db.VarChar(255)
+  updated_at     DateTime?
+
+  @@map("users")
+}
+
+model teams {
+  id          BigInt  @id @default(autoincrement())
+  name        String  @db.VarChar(255)
+  description String?
+  owner_id    BigInt
+  invite_code String? @unique @db.VarChar(10)
+
+  // Banking / payments
+  bank_account_number String? @db.VarChar(50)
+  bank_name           String? @db.VarChar(100)
+  fund_qr_code_url    String? @db.VarChar(500)
+
+  // Finance settings
+  finance_closing_day            Int?    @default(1)
+  finance_closing_time           String? @default("23:59") @db.VarChar(5)
+  finance_payment_start_day      Int?
+  finance_payment_end_day        Int?
+  finance_payment_notified_month String? @db.VarChar(7)
+
+  // Attendance
+  attendance_enabled          Boolean? @default(true)
+  attendance_cooldown_minutes Int? // referenced by code, absent from migrations
+
+  // Auto-session scheduling
+  auto_create_sessions        Boolean?  @default(false)
+  session_frequency           String?   @default("disabled") @db.VarChar(255)
+  session_days                String?   @default("") @db.VarChar(255)
+  session_time                String?   @default("18:00") @db.VarChar(5)
+  session_type                String?   @default("training") @db.VarChar(255)
+  session_location            String?   @db.VarChar(255)
+  auto_session_creation_time  String?   @default("03:00") @db.VarChar(5)
+  last_auto_session_created_at DateTime?
+
+  // Check-in schedule (migration 005 + 010)
+  checkin_creation_day  String? @default("mon") @db.VarChar(10)
+  checkin_creation_time String? @default("13:00") @db.VarChar(5)
+  checkin_start_day     String? @default("fri") @db.VarChar(10)
+  checkin_end_day       String? @default("tue") @db.VarChar(10)
+  checkin_deadline_time String? @default("13:00") @db.VarChar(5)
+
+  // Team fund (migration 008)
+  team_fund_amount Decimal? @db.Decimal(12, 2)
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now())
+  deleted_at DateTime?
+
+  @@map("teams")
+}
+
+model team_members {
+  id             BigInt    @id @default(autoincrement())
+  team_id        BigInt
+  user_id        BigInt
+  role           String    @db.VarChar(255)
+  status         String?   @default("active") @db.VarChar(50)
+  jersey_number  Int?
+  deactivated_at DateTime?
+  created_at     DateTime? @default(now())
+  deleted_at     DateTime?
+
+  @@unique([team_id, user_id])
+  @@index([team_id, status])
+  @@index([team_id, role])
+  @@index([user_id, status])
+  @@map("team_members")
+}
+
+model inngest_logs {
+  id            BigInt    @id @default(autoincrement())
+  team_id       BigInt?
+  event_name    String    @db.VarChar(255)
+  event_data    Json?
+  status        String?   @db.VarChar(50)
+  error_message String?
+  attempt_count Int?      @default(1)
+  created_at    DateTime? @default(now())
+
+  @@map("inngest_logs")
+}
+
+model notifications {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  team_id    BigInt
+  message    String    @db.VarChar(1000)
+  metadata   Json?     @default("{}")
+  is_read    Boolean?  @default(false)
+  read_at    DateTime?
+  created_at DateTime? @default(now())
+
+  @@index([user_id, is_read])
+  @@index([team_id, created_at])
+  @@map("notifications")
+}
+
+model fund_transactions {
+  id               BigInt    @id @default(autoincrement())
+  team_id          BigInt
+  submitted_by     BigInt
+  amount           Decimal   @db.Decimal(12, 2)
+  status           String?   @default("pending") @db.VarChar(50)
+  description      String?
+  rejection_reason String?
+  approval_notes   String?
+  bill_image_url   String?   @db.VarChar(255)
+  transaction_date DateTime
+  approved_by      BigInt?
+  approved_at      DateTime?
+  rejected_by      BigInt?
+  rejected_at      DateTime?
+  created_at       DateTime? @default(now())
+  updated_at       DateTime? @default(now())
+  campaign_id      BigInt? // migration 006
+  transaction_type String    @default("expense") @db.VarChar(20) // migration 009
+
+  @@index([team_id, status])
+  @@index([campaign_id])
+  @@index([team_id, transaction_type, status])
+  @@map("fund_transactions")
+}
+
+model fund_balance_logs {
+  id               BigInt    @id @default(autoincrement())
+  team_id          BigInt
+  transaction_id   BigInt
+  previous_balance Decimal   @db.Decimal(12, 2)
+  new_balance      Decimal   @db.Decimal(12, 2)
+  change_amount    Decimal   @db.Decimal(12, 2)
+  description      String?
+  created_at       DateTime? @default(now())
+
+  @@index([team_id, created_at])
+  @@map("fund_balance_logs")
+}
+
+model approvals {
+  id           BigInt    @id @default(autoincrement())
+  team_id      BigInt
+  entity_type  String    @db.VarChar(50)
+  entity_id    BigInt
+  submitted_by BigInt
+  status       String?   @default("pending") @db.VarChar(50)
+  created_at   DateTime? @default(now())
+
+  @@index([team_id, entity_type, status])
+  @@map("approvals")
+}
+
+model campaigns {
+  id               BigInt    @id @default(autoincrement())
+  team_id          BigInt
+  created_by       BigInt?
+  name             String    @db.VarChar(255)
+  amount_per_member Decimal  @db.Decimal(12, 2)
+  deadline         DateTime?
+  description      String?
+  status           String    @default("active") @db.VarChar(50)
+  closed_at        DateTime?
+  created_at       DateTime? @default(now())
+  updated_at       DateTime? @default(now())
+  campaign_type    String    @default("ad_hoc") @db.VarChar(50) // migration 008
+  fund_month       String?   @db.VarChar(7) // migration 008
+
+  @@index([team_id, status])
+  @@index([team_id, campaign_type, fund_month])
+  @@map("campaigns")
+}
+
+model campaign_assignments {
+  id              BigInt    @id @default(autoincrement())
+  campaign_id     BigInt
+  user_id         BigInt
+  status          String    @default("pending_confirmation") @db.VarChar(50)
+  confirmed_at    DateTime?
+  confirmed_by    BigInt?
+  rejected_at     DateTime?
+  rejected_reason String?
+  approved_at     DateTime?
+  approved_by     BigInt?
+  approval_notes  String?
+  exempt_at       DateTime?
+  exempt_reason   String?
+  transaction_id  BigInt?
+  created_at      DateTime? @default(now())
+  updated_at      DateTime? @default(now())
+  bill_image_url  String?   @db.VarChar(500) // migration 007
+
+  @@unique([campaign_id, user_id])
+  @@index([campaign_id, status])
+  @@index([user_id, status])
+  @@map("campaign_assignments")
+}
+
+model attendance_sessions {
+  id                BigInt    @id @default(autoincrement())
+  team_id           BigInt
+  created_by        BigInt?
+  session_date      DateTime
+  check_in_deadline DateTime?
+  location          String?   @db.VarChar(255)
+  session_type      String    @default("training") @db.VarChar(255)
+  description       String?
+  status            String?   @default("active") @db.VarChar(255)
+  closed_at         DateTime?
+  created_at        DateTime? @default(now())
+  updated_at        DateTime? @default(now())
+
+  @@index([team_id, session_date])
+  @@index([team_id, status])
+  @@map("attendance_sessions")
+}
+
+model attendance_checkins {
+  id           BigInt    @id @default(autoincrement())
+  session_id   BigInt
+  user_id      BigInt
+  team_id      BigInt
+  response     String?
+  responded_at DateTime?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now())
+
+  @@unique([session_id, user_id])
+  @@index([team_id, session_id])
+  @@index([user_id, team_id])
+  @@map("attendance_checkins")
+}
+
+model user_points {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  team_id    BigInt
+  points     Int
+  reason     String    @db.VarChar(255)
+  month      String    @db.VarChar(7)
+  session_id BigInt?
+  created_at DateTime? @default(now())
+
+  @@index([team_id, month])
+  @@index([user_id, team_id, month])
+  @@map("user_points")
+}
+
+model leaderboard_archives {
+  id         BigInt    @id @default(autoincrement())
+  team_id    BigInt
+  month      String    @db.VarChar(7)
+  top_3      Json?     @default("[]")
+  created_at DateTime? @default(now())
+
+  @@unique([team_id, month])
+  @@map("leaderboard_archives")
+}
