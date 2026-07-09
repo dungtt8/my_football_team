@@ -15,6 +15,9 @@ const withPWAConfig = withPWA({
       // Never cache API calls (auth/login, data fetches) — always hit network.
       urlPattern: /^https:\/\/api\.myteam\.revonexus\.net\/.*/i,
       handler: 'NetworkOnly',
+      options: {
+        cacheName: 'apiNoCache',
+      },
     },
     {
       urlPattern: /^https:\/\/.*/i,
