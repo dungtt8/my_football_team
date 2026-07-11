@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAttendance, AttendanceSession, LeaderboardEntry, UserStats } from '@/hooks/useAttendance'
 import { useCheckin, ActiveCheckIn } from '@/hooks/useCheckin'
 import { useCampaign, Campaign, CampaignAssignment } from '@/hooks/useCampaign'
+import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/useToast'
 
 const greeting = () => {
@@ -28,6 +29,7 @@ export default function HomePage() {
     const { listSessions, getUserStats, getLeaderboard } = useAttendance()
     const { getActiveCheckIn, respondToCheckIn } = useCheckin()
     const { listCampaigns, uploadBillImage, memberConfirm, memberReject } = useCampaign()
+    const { request } = useApi()
 
     const [stats, setStats] = useState<UserStats | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -43,6 +45,9 @@ export default function HomePage() {
     const [duePayments, setDuePayments] = useState<{ campaign: Campaign; assignment: CampaignAssignment }[]>([])
     const [billState, setBillState] = useState<Record<string, { file: File | null; preview: string | null }>>({})
     const [payActingId, setPayActingId] = useState<string | null>(null)
+    // Team's payment QR code, shown on each due-payment card so members can
+    // scan-and-pay without leaving the home screen.
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
 
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const initials = String(displayName).trim().split(/\s+/).map((w: string) => w[0]).slice(-2).join('').toUpperCase()
@@ -88,6 +93,11 @@ export default function HomePage() {
 
             try { setStats(await getUserStats(user.id)) } catch { }
             try { setLeaderboard(((await getLeaderboard()) || []).slice(0, 5)) } catch { }
+
+            try {
+                const settings = await request<any>('/team/settings', 'GET')
+                setQrCodeUrl(settings?.fund?.qr_code_url || null)
+            } catch { /* non-fatal — QR code is optional */ }
 
             await loadDuePayments()
         }
@@ -169,7 +179,7 @@ export default function HomePage() {
                 <div className="hero-row">
                     <div>
                         <div className="sub">{greeting()} 👋</div>
-                        <h2>{displayName}</h2>
+                        <h2 style={{ color: '#f1800f' }}>{displayName}</h2>
                     </div>
                     <div className="avatar">{initials || '?'}</div>
                 </div>
@@ -183,7 +193,7 @@ export default function HomePage() {
             {/* Desktop: page title + 3 stat cards (hidden on mobile, matches mockup Desktop D.home) */}
             <div className="hidden md:block">
                 <div className="page-h">
-                    <h1>{greeting()}, {displayName} 👋</h1>
+                    <h1>{greeting()}, <span style={{ color: '#f1800f' }}>{displayName}</span> 👋</h1>
                     <p>Đây là tổng quan hoạt động của bạn tại {team?.name || 'đội bóng'}.</p>
                 </div>
                 <div className="dgrid-3" style={{ marginBottom: 20 }}>
@@ -221,6 +231,18 @@ export default function HomePage() {
                                 </div>
                                 <div className="match-title" style={{ fontSize: 15 }}>{campaign.name}</div>
                                 {campaign.deadline && <div className="meta">⏰&nbsp;Hạn đóng: {new Date(campaign.deadline).toLocaleDateString('vi-VN')}</div>}
+                                {qrCodeUrl && (
+                                    <div style={{ textAlign: 'center', margin: '12px 0' }}>
+                                        <img
+                                            src={qrCodeUrl}
+                                            alt="Mã QR chuyển khoản"
+                                            style={{
+                                                maxWidth: 180, maxHeight: 180, border: '1px solid var(--line)',
+                                                borderRadius: 12, padding: 8, background: 'var(--surface)', display: 'inline-block',
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
                                 <label
                                     htmlFor={`bill-${campaign.id}`}

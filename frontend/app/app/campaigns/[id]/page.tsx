@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCampaign, Campaign, CampaignReport } from '@/hooks/useCampaign'
+import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/useToast'
 import { ArrowLeft } from 'phosphor-react'
 
@@ -25,6 +26,7 @@ export default function CampaignDetailPage() {
         closeCampaign,
         getReport,
     } = useCampaign()
+    const { request } = useApi()
 
     const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
@@ -35,6 +37,9 @@ export default function CampaignDetailPage() {
     const [billFile, setBillFile] = useState<File | null>(null)
     const [billPreview, setBillPreview] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    // Team's payment QR code, shown next to the payment request so members
+    // can scan-and-pay without leaving the confirmation card.
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
     // Per-member editable amount shown next to "Duyệt" — lets a manager charge
     // a different amount than the campaign default (teams don't always
     // collect the same amount from every member).
@@ -58,6 +63,11 @@ export default function CampaignDetailPage() {
             toast('Không thể tải khoản thu', 'error')
             router.push('/app/campaigns')
         } finally { setIsLoading(false) }
+
+        try {
+            const settings = await request<any>('/team/settings', 'GET')
+            setQrCodeUrl(settings?.fund?.qr_code_url || null)
+        } catch { /* non-fatal — QR code is optional */ }
     }
 
     const myAssignment = campaign?.assignments?.find((a) => a.user_id === user?.id)
@@ -157,7 +167,10 @@ export default function CampaignDetailPage() {
 
     const fmtDate = (d: string) =>
         new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const fmtMoney = (n?: number) => (n || 0).toLocaleString('vi-VN') + 'đ'
+    const fmtMoney = (n?: number | string) => {
+        const num = Number(n) || 0;
+        return num.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    };
 
     if (isLoading) return (
         <div className="screen-body" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
@@ -249,6 +262,18 @@ export default function CampaignDetailPage() {
                     <p className="match-title" style={{ fontSize: 15 }}>
                         Yêu cầu đóng quỹ tháng {campaignMonthLabel(campaign)}
                     </p>
+                    {qrCodeUrl && (
+                        <div style={{ textAlign: 'center', margin: '12px 0' }}>
+                            <img
+                                src={qrCodeUrl}
+                                alt="Mã QR chuyển khoản"
+                                style={{
+                                    maxWidth: 200, maxHeight: 200, border: '1px solid var(--line)',
+                                    borderRadius: 12, padding: 8, background: 'var(--surface)', display: 'inline-block',
+                                }}
+                            />
+                        </div>
+                    )}
                     <p className="meta" style={{ marginBottom: 14 }}>{fmtMoney(campaign.amount_per_member)} cần đóng góp</p>
 
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 8 }}>

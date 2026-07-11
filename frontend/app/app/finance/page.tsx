@@ -120,7 +120,7 @@ export default function FinancePage() {
         <div className="hero" style={{ background: 'linear-gradient(135deg,#0C2A20,#0F3D2C 55%,#12B76A 140%)' }}>
             <div className="pitch-lines" />
             <div className="sub" style={{ position: 'relative', zIndex: 2 }}>Số dư quỹ hiện tại</div>
-            <h2 style={{ fontSize: 32, position: 'relative', zIndex: 2 }}>
+            <h2 style={{ fontSize: 32, position: 'relative', zIndex: 2, color: '#ffb923' }}>
                 {balance?.totalBalance != null ? fmtMoney(balance.totalBalance) : '—'}
             </h2>
             <div className="hero-stats">
@@ -140,7 +140,7 @@ export default function FinancePage() {
         <div className="dgrid-3">
             <div className="hero" style={{ background: 'linear-gradient(135deg,#0C2A20,#0F3D2C 55%,#12B76A 140%)', padding: 20 }}>
                 <div className="sub" style={{ position: 'relative', zIndex: 2 }}>Số dư quỹ</div>
-                <h2 style={{ fontSize: 28, position: 'relative', zIndex: 2, marginTop: 2 }}>{balance?.totalBalance != null ? fmtMoney(balance.totalBalance) : '—'}</h2>
+                <h2 style={{ fontSize: 28, position: 'relative', zIndex: 2, marginTop: 2, color: '#ffb923' }}>{balance?.totalBalance != null ? fmtMoney(balance.totalBalance) : '—'}</h2>
             </div>
             <div className="card pad">
                 <div className="l" style={{ color: 'var(--ink-3)', fontWeight: 600 }}>Thu tháng này</div>
