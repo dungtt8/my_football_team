@@ -99,10 +99,10 @@ export default function CampaignsPage() {
             ) : (
                 activeCampaigns.map(c => {
                     const r = reports[c.id]
-                    const collected = r?.collected_amount ?? 0
-                    const expected = r?.expected_amount ?? (c.amount_per_member * (r?.total_members ?? c.assignments?.length ?? 0))
+                    const collected = r?.approved_total ?? 0
+                    const expected = r?.expected_total ?? (c.amount_per_member * (r?.total_members ?? c.assignments?.length ?? 0))
                     const total = r?.total_members ?? c.assignments?.length ?? 0
-                    const approved = r?.approved ?? c.assignments?.filter(a => a.status === 'approved').length ?? 0
+                    const approved = r?.status_breakdown?.approved ?? c.assignments?.filter(a => a.status === 'approved').length ?? 0
                     const percent = expected > 0 ? Math.round((collected / expected) * 100) : 0
                     const unpaid = needsToPay(c)
 
@@ -192,12 +192,25 @@ export default function CampaignsPage() {
 
             {/* Create modal */}
             {showForm && (
-                <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 'var(--content-left-offset, 0px)', background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
+                <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 'var(--content-left-offset, 0px)', background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
                     onClick={() => setShowForm(false)}>
-                    <div style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 600, margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)', width: '100%', maxWidth: 460, maxHeight: '90vh', overflow: 'hidden', boxShadow: 'var(--sh-3)', display: 'flex', flexDirection: 'column' }}
                         onClick={e => e.stopPropagation()}>
-                        <h2 style={{ margin: '0 0 20px', fontSize: 20, fontWeight: 600 }}>Tạo khoản thu mới</h2>
-                        <CampaignForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '20px 24px', borderBottom: '1px solid var(--line)' }}>
+                            <div className="crest" style={{ fontSize: 18 }}>💰</div>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ margin: 0, fontSize: 18 }}>Tạo khoản thu mới</h2>
+                                <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--ink-3)' }}>Thu quỹ đội theo chiến dịch</p>
+                            </div>
+                            <button
+                                onClick={() => setShowForm(false)}
+                                aria-label="Đóng"
+                                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surface-2)', color: 'var(--ink-3)', display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}
+                            >×</button>
+                        </div>
+                        <div style={{ padding: 24, overflowY: 'auto' }}>
+                            <CampaignForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
+                        </div>
                     </div>
                 </div>
             )}

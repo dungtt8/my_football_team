@@ -28,6 +28,8 @@ interface TeamSettings {
     fund_closing_time?: string // HH:mm
     fund_payment_start_day?: number // day of month (1-31) for payment deadline
     fund_payment_end_day?: number // day of month (1-31) for payment deadline
+    team_fund_amount?: number // recurring monthly amount per member — when set (> 0), the
+    // system auto-creates a "team_fund" campaign every month for this amount
     bank_account_number?: string
     bank_name?: string
     fund_qr_code_url?: string
@@ -65,6 +67,7 @@ export default function TeamSettingsPage() {
         fund_closing_time: '23:59',
         fund_payment_start_day: undefined,
         fund_payment_end_day: undefined,
+        team_fund_amount: undefined,
         bank_account_number: '',
         bank_name: '',
         fund_qr_code_url: '',
@@ -100,6 +103,7 @@ export default function TeamSettingsPage() {
                     fund_closing_time: data.finance?.closing_time || '23:59',
                     fund_payment_start_day: data.finance?.payment_start_day,
                     fund_payment_end_day: data.finance?.payment_end_day,
+                    team_fund_amount: data.fund?.team_fund_amount || undefined,
                     bank_account_number: data.fund?.bank_account_number || '',
                     bank_name: data.fund?.bank_name || '',
                     fund_qr_code_url: data.fund?.qr_code_url || '',
@@ -193,6 +197,7 @@ export default function TeamSettingsPage() {
                     payment_end_day: settings.fund_payment_end_day || null,
                 }
                 payload.fund = {
+                    team_fund_amount: settings.team_fund_amount || null,
                     bank_account_number: settings.bank_account_number || null,
                     bank_name: settings.bank_name || null,
                     qr_code_url: settings.fund_qr_code_url || null,
@@ -427,6 +432,41 @@ export default function TeamSettingsPage() {
                             />
                             <p style={{ fontSize: '12px', color: G.t3, margin: 0 }}>
                                 ℹ️ Tất cả giao dịch phải được duyệt trước ngày này
+                            </p>
+                        </div>
+
+                        <div style={{
+                            background: G.glass,
+                            border: `1.5px solid ${G.accent}`,
+                            borderRadius: '16px',
+                            padding: '20px',
+                            backdropFilter: 'blur(12px)', boxSizing: 'border-box',
+                        }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: G.t3 }}>
+                                Quỹ định kỳ / thành viên / tháng (₫)
+                            </label>
+                            <input
+                                type="number"
+                                value={settings.team_fund_amount || ''}
+                                onChange={(e) => setSettings({ ...settings, team_fund_amount: parseInt(e.target.value) || undefined })}
+                                placeholder="VD: 150000"
+                                disabled={!isOwner}
+                                min="0"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 14px',
+                                    borderRadius: '12px',
+                                    background: '#F8FAFC',
+                                    border: `1px solid ${G.glassBorder}`,
+                                    color: G.t1,
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
+                                    opacity: isOwner ? 1 : 0.6,
+                                }}
+                            />
+                            <p style={{ fontSize: '12px', color: G.t3, margin: '8px 0 0 0' }}>
+                                💡 Khi để trống hoặc = 0, hệ thống sẽ không tự tạo khoản thu. Khi có giá trị, vào ngày 1 hàng tháng hệ thống tự động tạo một khoản thu "Quỹ đội" với số tiền này và gán cho toàn bộ thành viên đang hoạt động.
                             </p>
                         </div>
 

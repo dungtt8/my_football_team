@@ -35,6 +35,13 @@ const getCurrentMonth = () => {
 };
 
 /**
+ * Helper function to get the current day of month (1-31).
+ * Uses server time, same as getCurrentMonth() above (job runs on a UTC cron).
+ * @returns {number} Day of month
+ */
+const getCurrentDay = () => new Date().getDate();
+
+/**
  * Format leaderboard for Zalo message
  * @param {Array} topUsers - Array of top 3 users with their points
  * @returns {string} Formatted leaderboard message
@@ -180,15 +187,23 @@ const monthlyReminderHandler = inngest.createFunction(
 );
 
 // ============================================================================
-// Auto-create team fund campaigns monthly
-// Triggered: 1st of each month at 01:30 UTC (after monthlyReminder)
-// Action: For each active team with team_fund_amount set, create a team_fund campaign
-//         and auto-assign to all active members
+// Auto-create team fund campaigns
+// Triggered: every day at 01:30 UTC.
+// Action: For each active team with team_fund_amount set, if a team_fund
+//         campaign hasn't been created yet for the current month AND today
+//         falls within the team's configured payment window
+//         (finance_payment_start_day..finance_payment_end_day, when set),
+//         create the campaign and auto-assign it to all active members.
+//         Running daily (instead of only on the 1st) makes this self-healing:
+//         if a run is skipped/fails on day 1, it catches up on a later day
+//         that's still inside the window, and the `fund_month` guard below
+//         prevents duplicate creation once it succeeds.
 // ============================================================================
 const autoCreateTeamFundLogic = async ({ step }) => {
   const currentMonth = getCurrentMonth();
+  const currentDay = getCurrentDay();
 
-  logger.info('Auto-create team fund job started', { month: currentMonth });
+  logger.info('Auto-create team fund job started', { month: currentMonth, day: currentDay });
 
   // Fetch all active teams that have team_fund_amount configured
   const teams = await step.run('fetch-eligible-teams', async () => {
@@ -196,7 +211,7 @@ const autoCreateTeamFundLogic = async ({ step }) => {
       .whereNull('deleted_at')
       .whereNotNull('team_fund_amount')
       .where('team_fund_amount', '>', 0)
-      .select('id', 'name', 'team_fund_amount');
+      .select('id', 'name', 'team_fund_amount', 'finance_payment_start_day', 'finance_payment_end_day');
   });
 
   logger.info('Teams eligible for team fund', { count: teams.length });
@@ -206,6 +221,19 @@ const autoCreateTeamFundLogic = async ({ step }) => {
 
   for (const team of teams) {
     await step.run(`create-team-fund-${team.id}`, async () => {
+      // Only run within the team's configured payment window (when one is
+      // configured). Teams without a window keep the old "always eligible"
+      // behavior so this doesn't regress teams that haven't set one up.
+      const { finance_payment_start_day: startDay, finance_payment_end_day: endDay } = team;
+      if (startDay && endDay && (currentDay < startDay || currentDay > endDay)) {
+        logger.info('Outside configured payment window, skipping for now', {
+          team_id: team.id,
+          day: currentDay,
+          window: [startDay, endDay]
+        });
+        return;
+      }
+
       // Check if already created for this month
       const existing = await db('campaigns')
         .where('team_id', team.id)
@@ -224,7 +252,7 @@ const autoCreateTeamFundLogic = async ({ step }) => {
 
       // Create team_fund campaign + assignments atomically
       const { campaignId, activeMembers } = await db.transaction(async (trx) => {
-        const [insertedCampaignId] = await trx('campaigns').insert({
+        const [insertedCampaign] = await trx('campaigns').insert({
           team_id: team.id,
           created_by: null, // system-created
           name: `Quỹ đội tháng ${currentMonth}`,
@@ -234,7 +262,8 @@ const autoCreateTeamFundLogic = async ({ step }) => {
           status: 'active',
           created_at: new Date(),
           updated_at: new Date()
-        });
+        }).returning('id');
+        const insertedCampaignId = insertedCampaign.id;
 
         // Auto-assign to all active members
         const members = await trx('team_members')
@@ -293,7 +322,7 @@ const autoCreateTeamFundHandler = inngest.createFunction(
     id: 'fund.auto-create-team-fund',
     retryOptions: { maxRetries: 3, initialDelayMs: 60000 }
   },
-  { cron: '30 1 1 * *' }, // 1st of month at 01:30 UTC
+  { cron: '00 17 * * *' }, // every day at 17:00 UTC — see autoCreateTeamFundLogic for the guard logic
   autoCreateTeamFundLogic
 );
 

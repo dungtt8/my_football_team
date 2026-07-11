@@ -59,77 +59,105 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
         })
     }
 
+    const inputStyle: React.CSSProperties = {
+        width: '100%',
+        padding: '12px 14px',
+        border: '1.5px solid var(--line)',
+        borderRadius: 'var(--r)',
+        fontSize: 14,
+        background: 'var(--surface-2)',
+        color: 'var(--ink)',
+        outline: 'none',
+        transition: 'border-color .15s ease, box-shadow .15s ease',
+    }
+    const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--ink)' }
+    const focusRing = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        e.target.style.borderColor = 'var(--brand-600)'
+        e.target.style.boxShadow = '0 0 0 3px var(--brand-050)'
+    }
+    const blurRing = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        e.target.style.borderColor = 'var(--line)'
+        e.target.style.boxShadow = 'none'
+    }
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {/* Name */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
-                    Tên khoản thu <span className="text-red-500">*</span>
+                <label style={labelStyle}>
+                    Tên khoản thu <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
+                    onFocus={focusRing}
+                    onBlur={blurRing}
                     placeholder="VD: Quỹ giải đấu tháng 7"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                    style={{ ...inputStyle, borderColor: errors.name ? 'var(--danger)' : 'var(--line)' }}
                 />
-                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                {errors.name && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{errors.name}</p>}
             </div>
 
             {/* Amount per member */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
-                    Số tiền / thành viên (₫) <span className="text-red-500">*</span>
+                <label style={labelStyle}>
+                    Số tiền / thành viên <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
-                <input
-                    type="number"
-                    name="amount_per_member"
-                    value={formData.amount_per_member}
-                    onChange={handleChange}
-                    placeholder="100000"
-                    min="0"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
-                />
-                {errors.amount_per_member && <p className="text-xs text-red-500 mt-1">{errors.amount_per_member}</p>}
+                <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', fontSize: 14, fontWeight: 600, pointerEvents: 'none' }}>₫</span>
+                    <input
+                        type="number"
+                        name="amount_per_member"
+                        value={formData.amount_per_member}
+                        onChange={handleChange}
+                        onFocus={focusRing}
+                        onBlur={blurRing}
+                        placeholder="100.000"
+                        min="0"
+                        style={{ ...inputStyle, paddingLeft: 30, borderColor: errors.amount_per_member ? 'var(--danger)' : 'var(--line)' }}
+                    />
+                </div>
+                {errors.amount_per_member && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{errors.amount_per_member}</p>}
             </div>
 
             {/* Deadline */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
-                    Hạn chót (tuỳ chọn)
-                </label>
+                <label style={labelStyle}>Hạn chót (tuỳ chọn)</label>
                 <input
                     type="date"
                     name="deadline"
                     value={formData.deadline}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                    onFocus={focusRing}
+                    onBlur={blurRing}
+                    style={inputStyle}
                 />
             </div>
 
             {/* Description */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
-                    Mô tả (tuỳ chọn)
-                </label>
+                <label style={labelStyle}>Mô tả (tuỳ chọn)</label>
                 <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
+                    onFocus={focusRing}
+                    onBlur={blurRing}
                     placeholder="Thông tin thêm về khoản thu..."
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black resize-none"
+                    style={{ ...inputStyle, resize: 'none' }}
                 />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 {onCancel && (
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="flex-1 py-3 rounded-xl text-sm font-medium border"
-                        style={{ borderColor: '#E7ECF3', color: '#7A8699' }}
+                        className="btn btn-ghost"
+                        style={{ flex: 1, padding: '13px 0', fontWeight: 600 }}
                     >
                         Huỷ
                     </button>
@@ -137,8 +165,8 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                    style={{ background: '#0B1220', color: '#FFFFFF' }}
+                    className="btn btn-primary"
+                    style={{ flex: 1, padding: '13px 0', fontWeight: 700, opacity: isLoading ? 0.6 : 1 }}
                 >
                     {isLoading ? 'Đang tạo...' : 'Tạo chiến dịch'}
                 </button>

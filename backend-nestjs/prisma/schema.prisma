@@ -228,6 +228,7 @@ model campaign_assignments {
   created_at      DateTime? @default(now())
   updated_at      DateTime? @default(now())
   bill_image_url  String?   @db.VarChar(500) // migration 007
+  approved_amount Decimal?  @db.Decimal(12, 2) // migration 011 — manager override at approval time
 
   @@unique([campaign_id, user_id])
   @@index([campaign_id, status])

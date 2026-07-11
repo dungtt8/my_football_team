@@ -158,12 +158,29 @@ export class CampaignController {
     if (status) where.status = status;
 
     const total = await this.prisma.campaigns.count({ where });
-    const campaigns = await this.prisma.campaigns.findMany({
+    const campaigns: any[] = await this.prisma.campaigns.findMany({
       where,
       orderBy: { created_at: 'desc' },
       take: parsedLimit,
       skip: parsedOffset,
     });
+
+    // Attach assignments so the client can tell whether the current user
+    // still owes a payment without an extra round-trip per campaign.
+    if (campaigns.length > 0) {
+      const assignments = await this.prisma.campaign_assignments.findMany({
+        where: { campaign_id: { in: campaigns.map((c) => c.id) } },
+      });
+      const byCampaign = new Map<string, any[]>();
+      for (const a of assignments) {
+        const key = String(a.campaign_id);
+        if (!byCampaign.has(key)) byCampaign.set(key, []);
+        byCampaign.get(key)!.push(a);
+      }
+      for (const c of campaigns) {
+        c.assignments = byCampaign.get(String(c.id)) || [];
+      }
+    }
 
     return {
       data: campaigns,
@@ -350,7 +367,7 @@ export class CampaignController {
     @CurrentUser() user: any,
     @CurrentTeam() team: any,
   ) {
-    const { approval_notes } = body;
+    const { approval_notes, amount } = body;
     const managerId = user.id;
     const teamId = team.id;
 
@@ -369,13 +386,23 @@ export class CampaignController {
       );
     }
 
+    // Manager can override the collected amount (e.g. teams whose members
+    // don't all owe the same amount). Falls back to the campaign's default.
+    let approvedAmount = campaign.amount_per_member;
+    if (amount !== undefined) {
+      if (typeof amount !== 'number' || amount <= 0) {
+        throw new ValidationError('Amount must be a positive number');
+      }
+      approvedAmount = amount;
+    }
+
     // Auto-approved income transaction (member đóng tiền vào quỹ)
     const transaction = await this.prisma.fund_transactions.create({
       data: {
         team_id: bi(teamId),
         campaign_id: bi(id),
         submitted_by: bi(userId),
-        amount: campaign.amount_per_member,
+        amount: approvedAmount,
         description: `Đóng quỹ: ${campaign.name}`,
         transaction_type: 'income',
         status: 'approved',
@@ -392,7 +419,7 @@ export class CampaignController {
       transaction_id: transaction.id,
       campaign_id: id,
       user_id: userId,
-      amount: campaign.amount_per_member,
+      amount: approvedAmount,
     });
 
     await this.prisma.campaign_assignments.update({
@@ -402,6 +429,7 @@ export class CampaignController {
         approved_by: bi(managerId),
         approved_at: new Date(),
         approval_notes: approval_notes || null,
+        approved_amount: approvedAmount,
         transaction_id: transaction.id,
         updated_at: new Date(),
       },
@@ -580,7 +608,10 @@ export class CampaignController {
       statusCounts[a.status] = (statusCounts[a.status] || 0) + 1;
       if (a.status === 'approved') {
         totalApproved++;
-        totalApprovedAmount += amountPerMember;
+        // Manager may have overridden the amount at approval time.
+        totalApprovedAmount += a.approved_amount != null
+          ? toNum(a.approved_amount)
+          : amountPerMember;
       }
     }
 

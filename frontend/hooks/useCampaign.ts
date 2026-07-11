@@ -34,18 +34,29 @@ export interface CampaignAssignment {
     full_name?: string
     phone?: string
     avatar_url?: string
+    // Set when a manager overrides the default amount_per_member at approval time
+    // (teams don't always collect the same amount from every member).
+    approved_amount?: number | null
 }
 
 export interface CampaignReport {
     campaign_id: string
+    campaign_name: string
     total_members: number
-    confirmed: number
-    rejected: number
-    approved: number
-    exempted: number
-    pending: number
-    collected_amount: number
-    expected_amount: number
+    amount_per_member: number
+    expected_total: number
+    approved_total: number
+    status_breakdown: {
+        pending_confirmation: number
+        pending_approval: number
+        approved: number
+        rejected: number
+        exempt: number
+    }
+    approval_rate: string
+    campaign_status: string
+    deadline?: string | null
+    closed_at?: string | null
 }
 
 export interface UseCampaignReturn {
@@ -55,7 +66,7 @@ export interface UseCampaignReturn {
     uploadBillImage: (file: File) => Promise<string>
     memberConfirm: (campaignId: string, userId: string, billImageUrl: string) => Promise<CampaignAssignment>
     memberReject: (campaignId: string, userId: string) => Promise<CampaignAssignment>
-    coManagerApprove: (campaignId: string, userId: string) => Promise<CampaignAssignment>
+    coManagerApprove: (campaignId: string, userId: string, amount?: number) => Promise<CampaignAssignment>
     coManagerReject: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     coManagerExempt: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     closeCampaign: (id: string) => Promise<Campaign>
@@ -76,8 +87,9 @@ export const useCampaign = (): UseCampaignReturn => {
                     ? Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)] as [string, string])
                     : []
                 const queryString = entries.length ? `?${new URLSearchParams(entries).toString()}` : ''
-                const data = await request<Campaign[]>(`/campaigns${queryString}`, 'GET')
-                return data || []
+                // Backend returns { data: Campaign[], pagination }, not a bare array.
+                const res = await request<any>(`/campaigns${queryString}`, 'GET')
+                return (res?.data ?? res ?? []) as Campaign[]
             } catch (err) {
                 const error = err instanceof Error ? err : new Error('Failed to fetch campaigns')
                 setLocalError(error)
@@ -178,10 +190,14 @@ export const useCampaign = (): UseCampaignReturn => {
     )
 
     const coManagerApprove = useCallback(
-        async (campaignId: string, userId: string) => {
+        async (campaignId: string, userId: string, amount?: number) => {
             try {
                 setLocalError(null)
-                return await request<CampaignAssignment>(`/campaigns/${campaignId}/assignments/${userId}/approve`, 'PATCH')
+                return await request<CampaignAssignment>(
+                    `/campaigns/${campaignId}/assignments/${userId}/approve`,
+                    'PATCH',
+                    amount !== undefined ? { amount } : undefined
+                )
             } catch (err) {
                 const error = err instanceof Error ? err : new Error('Failed to approve assignment')
                 setLocalError(error)

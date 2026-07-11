@@ -336,6 +336,7 @@ const getSettings = async (req, res) => {
                 is_payment_deadline_active: isPaymentDeadlineActive(team.finance_payment_start_day, team.finance_payment_end_day),
             },
             fund: {
+                team_fund_amount: team.team_fund_amount != null ? Number(team.team_fund_amount) : null,
                 bank_account_number: team.bank_account_number,
                 bank_name: team.bank_name,
                 qr_code_url: team.fund_qr_code_url,
@@ -610,6 +611,17 @@ const updateSettings = async (req, res) => {
         // Update fund settings
         if (req.body.fund) {
             const fund = req.body.fund;
+            if (fund.team_fund_amount !== undefined) {
+                if (fund.team_fund_amount === null || fund.team_fund_amount === '') {
+                    updates.team_fund_amount = null;
+                } else {
+                    const amount = Number(fund.team_fund_amount);
+                    if (isNaN(amount) || amount < 0) {
+                        throw new ValidationError('Team fund amount must be a non-negative number');
+                    }
+                    updates.team_fund_amount = amount;
+                }
+            }
             if (fund.bank_account_number !== undefined) {
                 if (fund.bank_account_number && typeof fund.bank_account_number === 'string') {
                     const accountNumber = fund.bank_account_number.trim();
@@ -672,6 +684,7 @@ const updateSettings = async (req, res) => {
                 payment_end_day: updatedTeam.finance_payment_end_day,
             },
             fund: {
+                team_fund_amount: updatedTeam.team_fund_amount != null ? Number(updatedTeam.team_fund_amount) : null,
                 bank_account_number: updatedTeam.bank_account_number,
                 bank_name: updatedTeam.bank_name,
                 qr_code_url: updatedTeam.fund_qr_code_url,

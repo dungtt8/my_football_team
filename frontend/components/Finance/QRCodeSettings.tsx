@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { Bank, QrCode, UploadSimple, Trash, CheckCircle } from 'phosphor-react'
 import { useApi } from '@/hooks/useApi'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
@@ -16,12 +17,21 @@ interface QRCodeSettingsProps {
     readOnly?: boolean
 }
 
-const inputClass = 'w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none'
+const inputClass = 'w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none transition-colors'
+
+const fieldStyle = (editable: boolean): React.CSSProperties => ({
+    borderColor: 'var(--line)',
+    background: 'var(--surface-2)',
+    color: 'var(--ink)',
+    opacity: editable ? 1 : 0.7,
+    cursor: editable ? 'text' : 'default',
+})
 
 export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnly = false }) => {
     const { request } = useApi()
     const { isLoading: authLoading } = useAuth()
     const { toast } = useToast()
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [settings, setSettings] = useState<PaymentSettings>({})
     const [loading, setLoading] = useState(false)
@@ -136,6 +146,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             if (response?.message) {
                 setSettings(prev => ({ ...prev, qr_code_url: undefined }))
                 setPreviewUrl(null)
+                setSelectedFile(null)
                 toast('Đã xóa mã QR', 'success')
             }
         } catch (error) {
@@ -175,98 +186,132 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     }
 
     const editable = isOwner && !readOnly
+    const isConfigured = !!(settings.bank_account_number && settings.bank_name && settings.qr_code_url)
 
     return (
         <div className="card pad">
-            <div className="sec-title" style={{ marginBottom: 16 }}>💳 Cài đặt thanh toán</div>
-
-            {/* Bank Information */}
-            <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-3)' }}>
-                    Tên ngân hàng
-                </label>
-                <input
-                    type="text"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="VD: Vietcombank, Techcombank..."
-                    disabled={!editable}
-                    className={inputClass}
-                    style={{ borderColor: 'var(--line)', background: editable ? 'var(--surface-2)' : 'var(--surface-2)', color: 'var(--ink)', opacity: editable ? 1 : 0.7, cursor: editable ? 'text' : 'default' }}
-                />
-            </div>
-
-            <div style={{ marginBottom: editable ? 14 : 20 }}>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-3)' }}>
-                    Số tài khoản
-                </label>
-                <input
-                    type="text"
-                    value={bankAccount}
-                    onChange={(e) => setBankAccount(e.target.value)}
-                    placeholder="VD: 1234567890"
-                    disabled={!editable}
-                    className={inputClass}
-                    style={{ borderColor: 'var(--line)', background: 'var(--surface-2)', color: 'var(--ink)', opacity: editable ? 1 : 0.7, cursor: editable ? 'text' : 'default' }}
-                />
-            </div>
-
-            {editable && (
-                <button className="btn btn-primary btn-sm" onClick={handleSaveBankInfo} disabled={loading} style={{ marginBottom: 20, opacity: loading ? 0.6 : 1 }}>
-                    {loading ? 'Đang lưu...' : 'Lưu thông tin'}
-                </button>
-            )}
-
-            {/* QR Code Upload */}
-            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Mã QR thanh toán</div>
-
-                {/* QR Code Preview */}
-                {previewUrl && (
-                    <div style={{ marginBottom: 12, textAlign: 'center' }}>
-                        <img
-                            src={previewUrl}
-                            alt="QR Code"
-                            style={{
-                                maxWidth: 200,
-                                maxHeight: 200,
-                                border: '1px solid var(--line)',
-                                borderRadius: 12,
-                                padding: 8,
-                                background: 'var(--surface-2)'
-                            }}
-                        />
-                        {editable && (
-                            <div style={{ marginTop: 10 }}>
-                                <button className="btn btn-ghost btn-sm" onClick={handleDeleteQR} disabled={loading} style={{ color: 'var(--danger)', opacity: loading ? 0.6 : 1 }}>
-                                    {loading ? 'Đang xóa...' : 'Xóa'}
-                                </button>
-                            </div>
-                        )}
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--brand-050)', color: 'var(--brand-600)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        <Bank size={19} weight="bold" />
                     </div>
-                )}
+                    <div className="sec-title" style={{ fontSize: 16 }}>Cài đặt thanh toán</div>
+                </div>
+                <span className={`chip ${isConfigured ? 'ok' : 'soft'}`} style={isConfigured ? { background: 'var(--brand-050)', color: 'var(--brand-700)' } : undefined}>
+                    {isConfigured ? <><CheckCircle size={13} weight="bold" style={{ marginRight: 4, verticalAlign: -1 }} />Đã cấu hình</> : 'Chưa cấu hình'}
+                </span>
+            </div>
 
-                {/* File Upload Input */}
-                {editable && (
-                    <div>
+            <div className="dgrid" style={{ gap: 24 }}>
+                {/* Bank information */}
+                <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+                        Thông tin ngân hàng
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                        <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
+                            Tên ngân hàng
+                        </label>
                         <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileSelect}
-                            disabled={uploading}
-                            style={{ display: 'block', marginBottom: 10, fontSize: 13, color: 'var(--ink-2)' }}
+                            type="text"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            placeholder="VD: Vietcombank, Techcombank..."
+                            disabled={!editable}
+                            className={inputClass}
+                            style={fieldStyle(editable)}
                         />
-                        {selectedFile && (
-                            <button className="btn btn-primary btn-sm" onClick={handleUploadQR} disabled={uploading} style={{ opacity: uploading ? 0.6 : 1 }}>
-                                {uploading ? 'Đang tải lên...' : 'Tải lên'}
-                            </button>
-                        )}
                     </div>
-                )}
 
-                {!previewUrl && !editable && (
-                    <p style={{ color: 'var(--ink-4)', fontSize: 12, margin: 0 }}>Chưa có mã QR thanh toán</p>
-                )}
+                    <div style={{ marginBottom: editable ? 16 : 0 }}>
+                        <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>
+                            Số tài khoản
+                        </label>
+                        <input
+                            type="text"
+                            value={bankAccount}
+                            onChange={(e) => setBankAccount(e.target.value)}
+                            placeholder="VD: 1234567890"
+                            disabled={!editable}
+                            className={inputClass}
+                            style={fieldStyle(editable)}
+                        />
+                    </div>
+
+                    {editable && (
+                        <button className="btn btn-primary btn-sm" onClick={handleSaveBankInfo} disabled={loading} style={{ opacity: loading ? 0.6 : 1 }}>
+                            {loading ? 'Đang lưu...' : 'Lưu thông tin'}
+                        </button>
+                    )}
+                </div>
+
+                {/* QR code */}
+                <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+                        Mã QR thanh toán
+                    </div>
+
+                    {previewUrl ? (
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'inline-block', border: '1px solid var(--line)', borderRadius: 16, padding: 10, background: 'var(--surface-2)' }}>
+                                <img
+                                    src={previewUrl}
+                                    alt="QR Code"
+                                    style={{ maxWidth: 168, maxHeight: 168, display: 'block', borderRadius: 8 }}
+                                />
+                            </div>
+                            {editable && (
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+                                    <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                                        <UploadSimple size={14} weight="bold" style={{ marginRight: 6, verticalAlign: -2 }} />Đổi ảnh
+                                    </button>
+                                    <button className="btn btn-ghost btn-sm" onClick={handleDeleteQR} disabled={loading} style={{ color: 'var(--danger)' }}>
+                                        <Trash size={14} weight="bold" style={{ marginRight: 6, verticalAlign: -2 }} />Xóa
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        editable && (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{
+                                    border: '1.5px dashed var(--line)', borderRadius: 16, padding: '28px 16px',
+                                    textAlign: 'center', cursor: 'pointer', background: 'var(--surface-2)',
+                                }}
+                            >
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', margin: '0 auto 10px', color: 'var(--ink-3)' }}>
+                                    <QrCode size={20} />
+                                </div>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>Chạm để tải ảnh QR lên</p>
+                                <p style={{ margin: '4px 0 0', fontSize: 11.5, color: 'var(--ink-3)' }}>PNG, JPG · tối đa 2MB</p>
+                            </div>
+                        )
+                    )}
+
+                    {!editable && !previewUrl && (
+                        <div className="empty" style={{ padding: '20px 12px' }}>
+                            <div className="e-ic"><QrCode size={22} /></div>
+                            Chưa có mã QR thanh toán
+                        </div>
+                    )}
+
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        disabled={uploading}
+                        className="hidden"
+                    />
+
+                    {selectedFile && (
+                        <button className="btn btn-primary btn-block btn-sm" onClick={handleUploadQR} disabled={uploading} style={{ marginTop: 12, opacity: uploading ? 0.6 : 1 }}>
+                            {uploading ? 'Đang tải lên...' : `Tải lên: ${selectedFile.name}`}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

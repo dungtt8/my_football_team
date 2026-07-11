@@ -45,7 +45,7 @@ const submitTransaction = async (req, res) => {
     });
 
     // Insert transaction with pending status
-    const [transactionId] = await db('fund_transactions').insert({
+    const [transaction] = await db('fund_transactions').insert({
       team_id: teamId,
       submitted_by: userId,
       amount,
@@ -56,12 +56,8 @@ const submitTransaction = async (req, res) => {
       transaction_date: transaction_date ? new Date(transaction_date) : new Date(),
       created_at: new Date(),
       updated_at: new Date()
-    });
-
-    // Fetch the created transaction
-    const transaction = await db('fund_transactions')
-      .where('id', transactionId)
-      .first();
+    }).returning('*');
+    const transactionId = transaction.id;
 
     // Submit for approval
     await approvalService.submitForApproval(transaction, userId, 'transaction');

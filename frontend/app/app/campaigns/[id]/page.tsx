@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCampaign, Campaign, CampaignReport } from '@/hooks/useCampaign'
-import { Button } from '@/components/Common/Button'
-import { Badge } from '@/components/Common/Badge'
 import { useToast } from '@/hooks/useToast'
 import { ArrowLeft } from 'phosphor-react'
 
@@ -37,10 +35,15 @@ export default function CampaignDetailPage() {
     const [billFile, setBillFile] = useState<File | null>(null)
     const [billPreview, setBillPreview] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    // Per-member editable amount shown next to "Duyệt" — lets a manager charge
+    // a different amount than the campaign default (teams don't always
+    // collect the same amount from every member).
+    const [approveAmounts, setApproveAmounts] = useState<Record<string, string>>({})
 
     useEffect(() => {
         if (authLoading) return
         loadData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, authLoading])
 
     const loadData = async () => {
@@ -80,6 +83,19 @@ export default function CampaignDetailPage() {
         finally { setIsActing(false) }
     }
 
+    const getApproveAmount = (userId: string) =>
+        approveAmounts[userId] ?? String(campaign?.amount_per_member ?? '')
+
+    const handleApprove = (userId: string) => {
+        const raw = getApproveAmount(userId)
+        const amount = parseFloat(raw)
+        if (isNaN(amount) || amount <= 0) {
+            toast('Số tiền phải lớn hơn 0', 'error')
+            return
+        }
+        act(() => coManagerApprove(id, userId, amount), 'Đã duyệt')
+    }
+
     const assignmentLabel = (s: string) => ({
         pending_confirmation: 'Chờ xác nhận',
         pending_approval: 'Chờ duyệt',
@@ -88,12 +104,16 @@ export default function CampaignDetailPage() {
         exempt: 'Miễn',
     }[s] || s)
 
-    const assignmentVariant = (s: string): 'approved' | 'pending' | 'rejected' | 'info' => {
-        if (s === 'approved') return 'approved'
-        if (s === 'rejected') return 'rejected'
-        if (s === 'exempt') return 'info'
-        return 'pending' // pending_confirmation, pending_approval
-    }
+    const assignmentBadgeClass = (s: string) => ({
+        approved: 'badge ok',
+        rejected: 'badge',
+        exempt: 'badge closed',
+        pending_confirmation: 'badge pend',
+        pending_approval: 'badge pend',
+    }[s] || 'badge pend')
+
+    const initials = (name?: string) =>
+        (name || '?').trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
     const handleSelectBillFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -137,54 +157,82 @@ export default function CampaignDetailPage() {
 
     const fmtDate = (d: string) =>
         new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const fmtMoney = (n?: number) => (n || 0).toLocaleString('vi-VN') + 'đ'
 
     if (isLoading) return (
-        <div className="min-h-screen p-6 flex items-center justify-center">
-            <div className="animate-pulse space-y-4 w-full max-w-lg">
-                <div className="h-8 bg-gray-100 rounded w-1/2" />
-                <div className="h-4 bg-gray-100 rounded w-full" />
+        <div className="screen-body" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
+            <div className="card pad" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ height: 20, width: '40%', background: 'var(--surface-2)', borderRadius: 8 }} />
+                <div style={{ height: 14, width: '70%', background: 'var(--surface-2)', borderRadius: 8 }} />
+                <div style={{ height: 14, width: '100%', background: 'var(--surface-2)', borderRadius: 8 }} />
             </div>
         </div>
     )
 
     if (!campaign) return null
 
+    const expected = report?.expected_total ?? (campaign.amount_per_member * (campaign.assignments?.length ?? 0))
+    const collected = report?.approved_total ?? 0
+    const percent = expected > 0 ? Math.round((collected / expected) * 100) : 0
+    const breakdown = report?.status_breakdown
+
     return (
-        <div className="min-h-screen px-6 pt-8 pb-20 md:px-12 space-y-8" style={{ color: '#0B1220' }}>
-            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium" style={{ color: '#7A8699' }}>
-                <ArrowLeft size={18} />Quay lại
+        <div className="screen-body" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
+
+            <button onClick={() => router.back()} className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', gap: 8 }}>
+                <ArrowLeft size={16} weight="bold" />Quay lại
             </button>
 
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold mb-2" style={{ fontFamily: 'var(--font-head)', letterSpacing: '-0.02em' }}>{campaign.name}</h1>
-                    <p className="text-sm" style={{ color: '#7A8699' }}>
-                        {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ / thành viên
-                        {campaign.deadline && ` · Hạn: ${fmtDate(campaign.deadline)}`}
-                    </p>
+            {/* Hero */}
+            <div className="card pad">
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="crest">💰</div>
+                        <div>
+                            <div className="eyebrow">Khoản thu</div>
+                            <h1 style={{ fontSize: 21, marginTop: 2 }}>{campaign.name}</h1>
+                        </div>
+                    </div>
+                    <span className={campaign.status === 'active' ? 'chip live' : 'chip soft'}>
+                        {campaign.status === 'active' && <i className="live-dot" />}
+                        {campaign.status === 'active' ? 'Đang hoạt động' : 'Đã đóng'}
+                    </span>
                 </div>
-                <Badge variant={campaign.status === 'active' ? 'approved' : 'rejected'}>
-                    {campaign.status === 'active' ? 'Đang hoạt động' : 'Đã đóng'}
-                </Badge>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+                    <span className="chip gold">{fmtMoney(campaign.amount_per_member)} / thành viên</span>
+                    {campaign.deadline && <span className="chip blue">⏰ Hạn: {fmtDate(campaign.deadline)}</span>}
+                </div>
+
+                {campaign.description && (
+                    <p style={{ marginTop: 14, color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.6 }}>{campaign.description}</p>
+                )}
+
+                {isManager && report && (
+                    <div style={{ marginTop: 20 }}>
+                        <div className="prog-head">
+                            <span className="big">{fmtMoney(collected)}</span>
+                            <small style={{ color: 'var(--ink-3)' }}>Mục tiêu {fmtMoney(expected)}</small>
+                        </div>
+                        <div className="bar"><i style={{ width: `${percent}%` }} /></div>
+                    </div>
+                )}
             </div>
 
-            {campaign.description && (
-                <p className="text-sm leading-relaxed" style={{ color: '#7A8699' }}>{campaign.description}</p>
-            )}
-
-            {isManager && report && (
-                <div className="grid grid-cols-3 gap-4">
+            {/* Stats */}
+            {isManager && breakdown && (
+                <div className="tiles">
                     {[
-                        { label: 'Đã xác nhận', value: report.confirmed },
-                        { label: 'Đã duyệt', value: report.approved },
-                        { label: 'Từ chối', value: report.rejected },
-                        { label: 'Miễn', value: report.exempted },
-                        { label: 'Chờ', value: report.pending },
-                        { label: 'Thu được', value: `${report.collected_amount?.toLocaleString('vi-VN')}₫` },
+                        { label: 'Đã duyệt', value: breakdown.approved, bg: 'var(--brand-050)', color: 'var(--brand-700)' },
+                        { label: 'Chờ duyệt', value: breakdown.pending_approval, bg: 'var(--accent-050)', color: 'var(--accent)' },
+                        { label: 'Chờ xác nhận', value: breakdown.pending_confirmation, bg: 'var(--surface-2)', color: 'var(--ink-3)' },
+                        { label: 'Từ chối', value: breakdown.rejected, bg: 'var(--danger-050)', color: 'var(--danger)' },
+                        { label: 'Miễn', value: breakdown.exempt, bg: 'var(--blue-050)', color: 'var(--blue)' },
+                        { label: 'Tỷ lệ duyệt', value: report?.approval_rate, bg: 'var(--surface-2)', color: 'var(--ink)' },
                     ].map((s) => (
-                        <div key={s.label} className="rounded-xl p-4" style={{ background: '#F4F7FB' }}>
-                            <p className="text-xs font-medium mb-1" style={{ color: '#7A8699' }}>{s.label}</p>
-                            <p className="text-xl font-semibold">{s.value}</p>
+                        <div key={s.label} className="tile">
+                            <div className="n" style={{ color: s.color }}>{s.value}</div>
+                            <div className="l">{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -196,24 +244,28 @@ export default function CampaignDetailPage() {
                 like anyone else. This is independent of the manager-only admin
                 panel below (a manager sees both). */}
             {myAssignment?.status === 'pending_confirmation' && (
-                <div className="rounded-2xl p-5 border" style={{ borderColor: '#E7ECF3' }}>
-                    <p className="font-semibold mb-1">Bạn có 1 yêu cầu đóng quỹ tháng {campaignMonthLabel(campaign)}</p>
-                    <p className="text-sm mb-4" style={{ color: '#7A8699' }}>
-                        {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ cần đóng góp
+                <div className="checkin">
+                    <span className="chip warn">CẦN ĐÓNG</span>
+                    <p className="match-title" style={{ fontSize: 15 }}>
+                        Yêu cầu đóng quỹ tháng {campaignMonthLabel(campaign)}
                     </p>
+                    <p className="meta" style={{ marginBottom: 14 }}>{fmtMoney(campaign.amount_per_member)} cần đóng góp</p>
 
-                    <label className="block text-xs font-medium mb-2" style={{ color: '#7A8699' }}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 8 }}>
                         Ảnh hoá đơn / minh chứng chuyển khoản
                     </label>
                     <label
                         htmlFor="bill-image-input"
-                        className="flex flex-col items-center justify-center rounded-xl border border-dashed cursor-pointer mb-4 overflow-hidden"
-                        style={{ borderColor: '#E7ECF3', minHeight: '120px', background: '#F4F7FB' }}
+                        style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: 'var(--r)', border: '1.5px dashed var(--brand-100)', cursor: 'pointer',
+                            marginBottom: 14, overflow: 'hidden', minHeight: 120, background: 'var(--surface)',
+                        }}
                     >
                         {billPreview ? (
-                            <img src={billPreview} alt="Xem trước hoá đơn" className="w-full max-h-56 object-contain" />
+                            <img src={billPreview} alt="Xem trước hoá đơn" style={{ width: '100%', maxHeight: 220, objectFit: 'contain' }} />
                         ) : (
-                            <span className="text-sm py-8" style={{ color: '#7A8699' }}>Chạm để chọn ảnh từ máy</span>
+                            <span style={{ fontSize: 13, color: 'var(--ink-3)', padding: '32px 0' }}>📎 Chạm để chọn ảnh từ máy</span>
                         )}
                     </label>
                     <input
@@ -224,13 +276,13 @@ export default function CampaignDetailPage() {
                         className="hidden"
                     />
 
-                    <div className="flex gap-3">
+                    <div style={{ display: 'flex', gap: 10 }}>
                         <button disabled={isActing || !billFile} onClick={handleConfirmWithBill}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50" style={{ background: '#027A48', color: '#fff' }}>
+                            className="btn btn-primary" style={{ flex: 1, padding: '12px 0', opacity: (isActing || !billFile) ? 0.6 : 1 }}>
                             {isUploading ? 'Đang tải ảnh lên...' : isActing ? 'Đang xác nhận...' : 'Xác nhận đã đóng quỹ'}
                         </button>
                         <button disabled={isActing} onClick={() => act(() => memberReject(id, user!.id), 'Đã từ chối')}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E7ECF3', color: '#F04438' }}>
+                            className="btn btn-ghost" style={{ padding: '12px 18px', color: 'var(--danger)' }}>
                             Từ chối
                         </button>
                     </div>
@@ -238,40 +290,63 @@ export default function CampaignDetailPage() {
             )}
 
             {myAssignment && myAssignment.status !== 'pending_confirmation' && (
-                <div className="rounded-2xl p-4" style={{ background: '#F4F7FB' }}>
-                    <p className="text-sm font-medium">Trạng thái: <span className="font-semibold">{assignmentLabel(myAssignment.status)}</span></p>
+                <div className="card pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>Trạng thái của bạn</span>
+                    <span className={assignmentBadgeClass(myAssignment.status)}>{assignmentLabel(myAssignment.status)}</span>
                 </div>
             )}
 
+            {/* Assignments list — manager only */}
             {isManager && campaign.assignments && campaign.assignments.length > 0 && (
                 <div>
-                    <h2 className="text-lg font-semibold mb-4">Danh sách phân công</h2>
-                    <div className="space-y-3">
+                    <div className="sec-title" style={{ marginBottom: 12 }}>Danh sách phân công</div>
+                    <div className="card">
                         {campaign.assignments.map((a) => (
-                            <div key={a.user_id} className="flex items-center justify-between rounded-xl p-4" style={{ background: '#F4F7FB' }}>
-                                <div>
-                                    <p className="font-medium text-sm">{a.full_name || a.user_id}</p>
-                                    <Badge variant={assignmentVariant(a.status)}>{assignmentLabel(a.status)}</Badge>
+                            <div key={a.user_id} className="row">
+                                <div className="lead" style={{ background: 'var(--brand-050)', color: 'var(--brand-700)', fontSize: 14, fontWeight: 700 }}>
+                                    {initials(a.full_name)}
                                 </div>
-                                {a.bill_image_url && (
-                                    <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
-                                        className="text-xs font-medium underline mr-2" style={{ color: '#027A48' }}>
-                                        Xem hoá đơn
-                                    </a>
-                                )}
+                                <div className="rc">
+                                    <b>{a.full_name || a.user_id}</b>
+                                    <small>
+                                        <span className={assignmentBadgeClass(a.status)}>{assignmentLabel(a.status)}</span>
+                                        {a.status === 'approved' && a.approved_amount != null && (
+                                            <span style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 700 }}>
+                                                {fmtMoney(a.approved_amount)}
+                                            </span>
+                                        )}
+                                        {a.bill_image_url && (
+                                            <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
+                                                style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 600 }}>
+                                                Xem hoá đơn
+                                            </a>
+                                        )}
+                                    </small>
+                                </div>
                                 {a.status === 'pending_approval' && (
-                                    <div className="flex gap-2">
-                                        <button disabled={isActing} onClick={() => act(() => coManagerApprove(id, a.user_id), 'Đã duyệt')}
-                                            className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#027A48', color: '#fff' }}>Duyệt</button>
+                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={getApproveAmount(a.user_id)}
+                                            onChange={(e) => setApproveAmounts(prev => ({ ...prev, [a.user_id]: e.target.value }))}
+                                            title="Số tiền duyệt cho thành viên này"
+                                            style={{
+                                                width: 92, padding: '7px 8px', fontSize: 12.5, fontWeight: 600,
+                                                border: '1.5px solid var(--line)', borderRadius: 10, background: 'var(--surface-2)', color: 'var(--ink)',
+                                            }}
+                                        />
+                                        <button disabled={isActing} onClick={() => handleApprove(a.user_id)}
+                                            className="btn btn-primary btn-sm">Duyệt</button>
                                         <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E7ECF3', color: '#3A4658' }}>Miễn</button>
+                                            className="btn btn-ghost btn-sm">Miễn</button>
                                         <button disabled={isActing} onClick={() => act(() => coManagerReject(id, a.user_id), 'Đã từ chối')}
-                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEECEB', color: '#F04438' }}>Từ chối</button>
+                                            className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}>Từ chối</button>
                                     </div>
                                 )}
                                 {a.status === 'pending_confirmation' && (
                                     <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                        className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E7ECF3', color: '#3A4658' }}>Miễn</button>
+                                        className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>Miễn</button>
                                 )}
                             </div>
                         ))}
@@ -281,7 +356,7 @@ export default function CampaignDetailPage() {
 
             {isManager && campaign.status === 'active' && (
                 <button disabled={isActing} onClick={() => act(closeCampaign.bind(null, id), 'Đã đóng khoản thu')}
-                    className="w-full py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: '#F04438', color: '#F04438' }}>
+                    className="btn btn-ghost btn-block" style={{ color: 'var(--danger)', borderColor: 'var(--danger-050)' }}>
                     Đóng khoản thu
                 </button>
             )}

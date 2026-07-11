@@ -98,7 +98,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         paddingTop: 0,
                         paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
                         marginLeft: isDesktop && isSidebarOpen ? '256px' : '0',
-                        marginTop: '64px',
+                        marginTop: 'calc(64px + env(safe-area-inset-top, 0px))',
                         width: isDesktop && isSidebarOpen ? 'calc(100% - 256px)' : '100%',
                         boxSizing: 'border-box'
                     }}>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAttendance, AttendanceSession, LeaderboardEntry, UserStats } from '@/hooks/useAttendance'
 import { useCheckin, ActiveCheckIn } from '@/hooks/useCheckin'
-import { useCampaign, Campaign } from '@/hooks/useCampaign'
+import { useCampaign, Campaign, CampaignAssignment } from '@/hooks/useCampaign'
 import { useToast } from '@/hooks/useToast'
 
 const greeting = () => {
@@ -16,6 +16,8 @@ const greeting = () => {
     return 'Chào buổi tối'
 }
 
+const fmtMoney = (n?: number) => (n || 0).toLocaleString('vi-VN') + 'đ'
+
 const fmtSession = (d?: string) =>
     d ? new Date(d).toLocaleString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
 
@@ -25,7 +27,7 @@ export default function HomePage() {
     const { toast } = useToast()
     const { listSessions, getUserStats, getLeaderboard } = useAttendance()
     const { getActiveCheckIn, respondToCheckIn } = useCheckin()
-    const { listCampaigns } = useCampaign()
+    const { listCampaigns, uploadBillImage, memberConfirm, memberReject } = useCampaign()
 
     const [stats, setStats] = useState<UserStats | null>(null)
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
@@ -36,8 +38,30 @@ export default function HomePage() {
     const [weekCount, setWeekCount] = useState<number>(0)
     const [checkingIn, setCheckingIn] = useState(false)
 
+    // Campaigns where I still need to confirm payment — rendered as quick-confirm
+    // cards on the home screen so members don't have to open the campaign page.
+    const [duePayments, setDuePayments] = useState<{ campaign: Campaign; assignment: CampaignAssignment }[]>([])
+    const [billState, setBillState] = useState<Record<string, { file: File | null; preview: string | null }>>({})
+    const [payActingId, setPayActingId] = useState<string | null>(null)
+
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const initials = String(displayName).trim().split(/\s+/).map((w: string) => w[0]).slice(-2).join('').toUpperCase()
+
+    const loadDuePayments = async () => {
+        if (!user) return
+        try {
+            const camps: Campaign[] = await listCampaigns({ status: 'active' })
+            let count = 0
+            const due: { campaign: Campaign; assignment: CampaignAssignment }[] = []
+            camps.forEach(c => {
+                const mine = c.assignments?.find(a => String(a.user_id) === String(user.id))
+                if (mine && (mine.status === 'pending_confirmation' || mine.status === 'rejected')) count++
+                if (mine && mine.status === 'pending_confirmation') due.push({ campaign: c, assignment: mine })
+            })
+            setUnpaid(count)
+            setDuePayments(due)
+        } catch { }
+    }
 
     useEffect(() => {
         if (authLoading || !user) return
@@ -65,18 +89,60 @@ export default function HomePage() {
             try { setStats(await getUserStats(user.id)) } catch { }
             try { setLeaderboard(((await getLeaderboard()) || []).slice(0, 5)) } catch { }
 
-            try {
-                const camps: Campaign[] = await listCampaigns({ status: 'active' })
-                let count = 0
-                camps.forEach(c => {
-                    const mine = c.assignments?.find(a => String(a.user_id) === String(user.id))
-                    if (mine && (mine.status === 'pending_confirmation' || mine.status === 'rejected')) count++
-                })
-                setUnpaid(count)
-            } catch { }
+            await loadDuePayments()
         }
         load()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, authLoading, team?.id])
+
+    // Revoke any selected-bill object URLs on unmount so they aren't leaked.
+    useEffect(() => {
+        return () => {
+            Object.values(billState).forEach(b => { if (b.preview) URL.revokeObjectURL(b.preview) })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const handleSelectBillFile = (campaignId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setBillState(prev => {
+            const existing = prev[campaignId]
+            if (existing?.preview) URL.revokeObjectURL(existing.preview)
+            return { ...prev, [campaignId]: { file, preview: URL.createObjectURL(file) } }
+        })
+    }
+
+    const handleQuickConfirm = async (campaignId: string, userId: string) => {
+        const bill = billState[campaignId]
+        if (!bill?.file) { toast('Vui lòng chọn ảnh hoá đơn/chuyển khoản', 'error'); return }
+        setPayActingId(campaignId)
+        try {
+            const url = await uploadBillImage(bill.file)
+            await memberConfirm(campaignId, userId, url)
+            toast('Đã xác nhận đóng quỹ', 'success')
+            if (bill.preview) URL.revokeObjectURL(bill.preview)
+            setBillState(prev => { const next = { ...prev }; delete next[campaignId]; return next })
+            await loadDuePayments()
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi xác nhận', 'error')
+        } finally {
+            setPayActingId(null)
+        }
+    }
+
+    const handleQuickReject = async (campaignId: string, userId: string) => {
+        setPayActingId(campaignId)
+        try {
+            await memberReject(campaignId, userId)
+            toast('Đã từ chối', 'success')
+            await loadDuePayments()
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi', 'error')
+        } finally {
+            setPayActingId(null)
+        }
+    }
 
     const attendancePct = stats && stats.total ? Math.round(((stats.attended || 0) / stats.total) * 100) : null
     const myEntry = leaderboard.find(e => String(e.user_id || e.userId) === String(user?.id))
@@ -142,6 +208,56 @@ export default function HomePage() {
             {/* Desktop: two-column split (matches redesign-mockup.html .dgrid) — checkin + upcoming left, leaderboard right. Stacks to one column on mobile via CSS. */}
             <div className="dgrid">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {/* Quick-confirm cards — one per campaign where I still need to
+                        confirm payment, so members can settle up without leaving home. */}
+                    {duePayments.map(({ campaign, assignment }) => {
+                        const bill = billState[campaign.id]
+                        const acting = payActingId === campaign.id
+                        return (
+                            <div key={campaign.id} className="card pad" style={{ border: '1.5px solid var(--danger)', background: 'linear-gradient(180deg,var(--danger-050),#fff)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span className="chip" style={{ background: 'var(--danger)', color: '#fff' }}>CẦN ĐÓNG</span>
+                                    <b className="amt-neg" style={{ fontSize: 18 }}>{fmtMoney(campaign.amount_per_member)}</b>
+                                </div>
+                                <div className="match-title" style={{ fontSize: 15 }}>{campaign.name}</div>
+                                {campaign.deadline && <div className="meta">⏰&nbsp;Hạn đóng: {new Date(campaign.deadline).toLocaleDateString('vi-VN')}</div>}
+
+                                <label
+                                    htmlFor={`bill-${campaign.id}`}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        borderRadius: 'var(--r)', border: '1.5px dashed var(--danger)', cursor: 'pointer',
+                                        margin: '13px 0', overflow: 'hidden', minHeight: 96, background: 'var(--surface)',
+                                    }}
+                                >
+                                    {bill?.preview ? (
+                                        <img src={bill.preview} alt="Xem trước hoá đơn" style={{ width: '100%', maxHeight: 180, objectFit: 'contain' }} />
+                                    ) : (
+                                        <span style={{ fontSize: 13, color: 'var(--ink-3)', padding: '24px 0' }}>📎 Chạm để chọn ảnh hoá đơn/chuyển khoản</span>
+                                    )}
+                                </label>
+                                <input
+                                    id={`bill-${campaign.id}`}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
+                                    onChange={(e) => handleSelectBillFile(campaign.id, e)}
+                                    className="hidden"
+                                />
+
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button className="btn btn-primary" style={{ flex: 1, padding: 13, opacity: (acting || !bill?.file) ? 0.6 : 1 }}
+                                        disabled={acting || !bill?.file} onClick={() => handleQuickConfirm(campaign.id, assignment.user_id)}>
+                                        {acting ? 'Đang xử lý...' : 'Xác nhận đã đóng'}
+                                    </button>
+                                    <button className="btn btn-ghost" style={{ padding: '13px 16px', color: 'var(--danger)' }}
+                                        disabled={acting} onClick={() => handleQuickReject(campaign.id, assignment.user_id)}>
+                                        Từ chối
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    })}
+
                     {/* Check-in card */}
                     {activeSession && (
                         <div className="checkin">

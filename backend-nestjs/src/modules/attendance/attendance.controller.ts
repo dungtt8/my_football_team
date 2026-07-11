@@ -61,6 +61,19 @@ export class AttendanceController {
       }
     }
 
+    const duplicate = await this.prisma.attendance_sessions.findFirst({
+      where: {
+        team_id: bi(teamId),
+        session_date: sessionDate,
+        status: { not: 'cancelled' },
+      },
+    });
+    if (duplicate) {
+      throw new ValidationError(
+        'A session already exists at this date and time',
+      );
+    }
+
     const session = await this.prisma.attendance_sessions.create({
       data: {
         team_id: bi(teamId),

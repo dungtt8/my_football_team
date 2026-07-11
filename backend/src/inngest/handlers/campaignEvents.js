@@ -275,7 +275,7 @@ const onCampaignChargedLogic = async ({ event, step }) => {
 
   // Step 4: Create fund_balance_logs entry
   const logId = await step.run('create-balance-log', async () => {
-    const id = await db('fund_balance_logs')
+    const rows = await db('fund_balance_logs')
       .insert({
         team_id,
         transaction_id,
@@ -285,7 +285,7 @@ const onCampaignChargedLogic = async ({ event, step }) => {
         description: `Campaign charge from ${member_name} for "${campaign.name}"`
       })
       .returning('id');
-    return id[0];
+    return rows[0].id;
   });
 
   logger.info('Fund balance log created', {

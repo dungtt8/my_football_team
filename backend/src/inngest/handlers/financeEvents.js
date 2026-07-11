@@ -208,7 +208,7 @@ const onApprovalApprovedLogic = async ({ event, step }) => {
 
   // Step 4: Insert fund_balance_logs entry
   const logId = await step.run('insert-balance-log', async () => {
-    const [id] = await db('fund_balance_logs').insert({
+    const [row] = await db('fund_balance_logs').insert({
       team_id,
       transaction_id: entity_id,
       previous_balance: balances.previousBalance,
@@ -216,8 +216,8 @@ const onApprovalApprovedLogic = async ({ event, step }) => {
       change_amount: balances.changeAmount,
       description: `Transaction #${entity_id} approved by ${approver.full_name}`,
       created_at: new Date()
-    });
-    return id;
+    }).returning('id');
+    return row.id;
   });
 
   logger.info('Fund balance log created', {

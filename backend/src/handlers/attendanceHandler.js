@@ -30,6 +30,12 @@ const createSession = async (req, res) => {
             if (isNaN(deadlineDate.getTime())) throw new ValidationError('Invalid check_in_deadline format');
         }
 
+        const duplicate = await db('attendance_sessions')
+            .where({ team_id: teamId, session_date: sessionDate })
+            .whereNot('status', 'cancelled')
+            .first();
+        if (duplicate) throw new ValidationError('A session already exists at this date and time');
+
         const [session] = await db('attendance_sessions').insert({
             team_id: teamId,
             created_by: userId,

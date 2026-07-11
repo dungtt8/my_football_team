@@ -39,7 +39,7 @@ const createCampaign = async (req, res) => {
     // Insert campaign + assignments atomically — a campaign should never exist
     // without its member assignments (or vice versa).
     const { campaignId, campaign, activeMembers } = await db.transaction(async (trx) => {
-      const [insertedCampaignId] = await trx('campaigns').insert({
+      const [insertedCampaign] = await trx('campaigns').insert({
         team_id: teamId,
         created_by: userId,
         name,
@@ -49,12 +49,8 @@ const createCampaign = async (req, res) => {
         status: 'active',
         created_at: new Date(),
         updated_at: new Date()
-      });
-
-      // Fetch created campaign
-      const insertedCampaign = await trx('campaigns')
-        .where('id', insertedCampaignId)
-        .first();
+      }).returning('*');
+      const insertedCampaignId = insertedCampaign.id;
 
       // Get all active team members
       const members = await trx('team_members')
@@ -154,6 +150,18 @@ const listCampaigns = async (req, res) => {
       .limit(parsedLimit)
       .offset(parsedOffset);
 
+    // Attach assignments so the client can tell whether the current user
+    // still owes a payment without an extra round-trip per campaign.
+    if (campaigns.length > 0) {
+      const assignments = await db('campaign_assignments')
+        .whereIn('campaign_id', campaigns.map(c => c.id));
+      const byCampaign = {};
+      assignments.forEach(a => {
+        (byCampaign[a.campaign_id] ||= []).push(a);
+      });
+      campaigns.forEach(c => { c.assignments = byCampaign[c.id] || []; });
+    }
+
     return res.json({
       data: campaigns,
       pagination: {
@@ -200,7 +208,7 @@ const getCampaign = async (req, res) => {
       .join('users', 'campaign_assignments.user_id', 'users.id')
       .select(
         'campaign_assignments.*',
-        'users.display_name',
+        'users.full_name',
         'users.zalo_user_id'
       );
 
@@ -417,7 +425,7 @@ const memberReject = async (req, res) => {
 const coManagerApprove = async (req, res) => {
   try {
     const { id, userId } = req.params;
-    const { approval_notes } = req.body;
+    const { approval_notes, amount } = req.body;
     const managerId = req.user.id;
     const teamId = req.team.id;
 
@@ -454,12 +462,22 @@ const coManagerApprove = async (req, res) => {
       );
     }
 
+    // Manager can override the collected amount (e.g. teams whose members
+    // don't all owe the same amount). Falls back to the campaign's default.
+    let approvedAmount = campaign.amount_per_member;
+    if (amount !== undefined) {
+      if (typeof amount !== 'number' || amount <= 0) {
+        throw new ValidationError('Amount must be a positive number');
+      }
+      approvedAmount = amount;
+    }
+
     // Create auto-approved fund_transaction (income — member đóng tiền vào quỹ)
-    const [transactionId] = await db('fund_transactions').insert({
+    const [insertedTransaction] = await db('fund_transactions').insert({
       team_id: teamId,
       campaign_id: id,
       submitted_by: userId,
-      amount: campaign.amount_per_member,
+      amount: approvedAmount,
       description: `Đóng quỹ: ${campaign.name}`,
       transaction_type: 'income',
       status: 'approved',
@@ -469,13 +487,14 @@ const coManagerApprove = async (req, res) => {
       transaction_date: new Date(),
       created_at: new Date(),
       updated_at: new Date()
-    });
+    }).returning('id');
+    const transactionId = insertedTransaction.id;
 
     logger.info('Auto-created fund transaction', {
       transaction_id: transactionId,
       campaign_id: id,
       user_id: userId,
-      amount: campaign.amount_per_member
+      amount: approvedAmount
     });
 
     // Update assignment status and link transaction
@@ -486,6 +505,7 @@ const coManagerApprove = async (req, res) => {
         approved_by: managerId,
         approved_at: new Date(),
         approval_notes: approval_notes || null,
+        approved_amount: approvedAmount,
         transaction_id: transactionId,
         updated_at: new Date()
       });
@@ -764,7 +784,10 @@ const getReport = async (req, res) => {
       statusCounts[assignment.status] = (statusCounts[assignment.status] || 0) + 1;
       if (assignment.status === 'approved') {
         totalApproved++;
-        totalApprovedAmount += campaign.amount_per_member;
+        // Manager may have overridden the amount at approval time.
+        totalApprovedAmount += assignment.approved_amount != null
+          ? Number(assignment.approved_amount)
+          : campaign.amount_per_member;
       }
     });
 
