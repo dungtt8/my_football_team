@@ -10,15 +10,15 @@ import { PasswordChangeModal } from '@/components/Common/PasswordChangeModal'
 import { ArrowLeft } from 'phosphor-react'
 
 const G = {
-    bg: '#070B14',
-    glass: 'rgba(255,255,255,0.07)',
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
-    accentDim: 'rgba(0,214,143,0.12)',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
+    bg: '#FFFFFF',
+    glass: '#FFFFFF',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
+    accentDim: 'rgba(18,183,106,0.12)',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438',
 }
 
 export default function SettingsPage() {
@@ -171,7 +171,7 @@ export default function SettingsPage() {
                                 disabled={savingField === 'fullName'}
                                 style={{
                                     padding: '10px 16px',
-                                    background: 'rgba(0,214,143,0.20)',
+                                    background: 'rgba(18,183,106,0.20)',
                                     border: `1px solid ${G.accent}`,
                                     borderRadius: '8px',
                                     color: G.accent,
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                                 disabled={savingField === 'phone'}
                                 style={{
                                     padding: '10px 16px',
-                                    background: 'rgba(0,214,143,0.20)',
+                                    background: 'rgba(18,183,106,0.20)',
                                     border: `1px solid ${G.accent}`,
                                     borderRadius: '8px',
                                     color: G.accent,
@@ -308,7 +308,7 @@ export default function SettingsPage() {
                                     disabled={savingField === 'jersey'}
                                     style={{
                                         padding: '10px 16px',
-                                        background: 'rgba(0,214,143,0.20)',
+                                        background: 'rgba(18,183,106,0.20)',
                                         border: `1px solid ${G.accent}`,
                                         borderRadius: '8px',
                                         color: G.accent,
@@ -340,7 +340,7 @@ export default function SettingsPage() {
                     style={{
                         width: '100%',
                         padding: '12px',
-                        background: 'rgba(0,214,143,0.12)',
+                        background: 'rgba(18,183,106,0.12)',
                         border: `1px solid ${G.glassBorder}`,
                         borderRadius: '10px',
                         color: G.accent,

@@ -48,7 +48,7 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
         return (
             <div>
                 <div className="flex items-center gap-md mb-lg">
-                    <h3 className="text-base font-semibold" style={{ color: '#0F0E0C' }}>Chờ duyệt</h3>
+                    <h3 className="text-base font-semibold" style={{ color: '#0B1220' }}>Chờ duyệt</h3>
                     <span className="inline-block px-md py-sm bg-pale-yellow rounded-pill text-caption font-medium">
                         {approvals.length} Chờ duyệt
                     </span>
@@ -61,7 +61,7 @@ export const ApprovalQueue: React.FC<ApprovalQueueProps> = ({
     return (
         <div>
             <div className="flex items-center gap-md mb-lg">
-                <h3 className="text-base font-semibold" style={{ color: '#0F0E0C' }}>Chờ duyệt</h3>
+                <h3 className="text-base font-semibold" style={{ color: '#0B1220' }}>Chờ duyệt</h3>
                 {approvals.length > 0 && (
                     <span className="inline-block px-md py-sm bg-pale-yellow rounded-pill text-caption font-medium">
                         {approvals.length} Chờ duyệt

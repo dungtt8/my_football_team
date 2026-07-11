@@ -138,7 +138,7 @@ export const PointsCard: React.FC<PointsCardProps> = ({
                 <span
                   style={{
                     fontWeight: TYPOGRAPHY.weights.medium,
-                    color: activity.points > 0 ? '#4CAF50' : '#F44336',
+                    color: activity.points > 0 ? '#12B76A' : '#F04438',
                   }}
                 >
                   {activity.points > 0 ? '+' : ''}{activity.points} pts

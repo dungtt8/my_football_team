@@ -150,15 +150,15 @@ export default function CampaignDetailPage() {
     if (!campaign) return null
 
     return (
-        <div className="min-h-screen px-6 pt-8 pb-20 md:px-12 space-y-8" style={{ color: '#0F0E0C' }}>
-            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium" style={{ color: '#6B6660' }}>
+        <div className="min-h-screen px-6 pt-8 pb-20 md:px-12 space-y-8" style={{ color: '#0B1220' }}>
+            <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-medium" style={{ color: '#7A8699' }}>
                 <ArrowLeft size={18} />Quay lại
             </button>
 
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif font-light mb-2">{campaign.name}</h1>
-                    <p className="text-sm" style={{ color: '#9F9A93' }}>
+                    <h1 className="text-3xl font-extrabold mb-2" style={{ fontFamily: 'var(--font-head)', letterSpacing: '-0.02em' }}>{campaign.name}</h1>
+                    <p className="text-sm" style={{ color: '#7A8699' }}>
                         {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ / thành viên
                         {campaign.deadline && ` · Hạn: ${fmtDate(campaign.deadline)}`}
                     </p>
@@ -169,7 +169,7 @@ export default function CampaignDetailPage() {
             </div>
 
             {campaign.description && (
-                <p className="text-sm leading-relaxed" style={{ color: '#6B6660' }}>{campaign.description}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#7A8699' }}>{campaign.description}</p>
             )}
 
             {isManager && report && (
@@ -182,8 +182,8 @@ export default function CampaignDetailPage() {
                         { label: 'Chờ', value: report.pending },
                         { label: 'Thu được', value: `${report.collected_amount?.toLocaleString('vi-VN')}₫` },
                     ].map((s) => (
-                        <div key={s.label} className="rounded-xl p-4" style={{ background: '#F5F3F0' }}>
-                            <p className="text-xs font-medium mb-1" style={{ color: '#9F9A93' }}>{s.label}</p>
+                        <div key={s.label} className="rounded-xl p-4" style={{ background: '#F4F7FB' }}>
+                            <p className="text-xs font-medium mb-1" style={{ color: '#7A8699' }}>{s.label}</p>
                             <p className="text-xl font-semibold">{s.value}</p>
                         </div>
                     ))}
@@ -196,24 +196,24 @@ export default function CampaignDetailPage() {
                 like anyone else. This is independent of the manager-only admin
                 panel below (a manager sees both). */}
             {myAssignment?.status === 'pending_confirmation' && (
-                <div className="rounded-2xl p-5 border" style={{ borderColor: '#E5E5E5' }}>
+                <div className="rounded-2xl p-5 border" style={{ borderColor: '#E7ECF3' }}>
                     <p className="font-semibold mb-1">Bạn có 1 yêu cầu đóng quỹ tháng {campaignMonthLabel(campaign)}</p>
-                    <p className="text-sm mb-4" style={{ color: '#6B6660' }}>
+                    <p className="text-sm mb-4" style={{ color: '#7A8699' }}>
                         {campaign.amount_per_member?.toLocaleString('vi-VN')}₫ cần đóng góp
                     </p>
 
-                    <label className="block text-xs font-medium mb-2" style={{ color: '#6B6660' }}>
+                    <label className="block text-xs font-medium mb-2" style={{ color: '#7A8699' }}>
                         Ảnh hoá đơn / minh chứng chuyển khoản
                     </label>
                     <label
                         htmlFor="bill-image-input"
                         className="flex flex-col items-center justify-center rounded-xl border border-dashed cursor-pointer mb-4 overflow-hidden"
-                        style={{ borderColor: '#E5E5E5', minHeight: '120px', background: '#F5F3F0' }}
+                        style={{ borderColor: '#E7ECF3', minHeight: '120px', background: '#F4F7FB' }}
                     >
                         {billPreview ? (
                             <img src={billPreview} alt="Xem trước hoá đơn" className="w-full max-h-56 object-contain" />
                         ) : (
-                            <span className="text-sm py-8" style={{ color: '#9F9A93' }}>Chạm để chọn ảnh từ máy</span>
+                            <span className="text-sm py-8" style={{ color: '#7A8699' }}>Chạm để chọn ảnh từ máy</span>
                         )}
                     </label>
                     <input
@@ -226,11 +226,11 @@ export default function CampaignDetailPage() {
 
                     <div className="flex gap-3">
                         <button disabled={isActing || !billFile} onClick={handleConfirmWithBill}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50" style={{ background: '#3D5A50', color: '#fff' }}>
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50" style={{ background: '#027A48', color: '#fff' }}>
                             {isUploading ? 'Đang tải ảnh lên...' : isActing ? 'Đang xác nhận...' : 'Xác nhận đã đóng quỹ'}
                         </button>
                         <button disabled={isActing} onClick={() => act(() => memberReject(id, user!.id), 'Đã từ chối')}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E5E5E5', color: '#E53E3E' }}>
+                            className="flex-1 py-2.5 rounded-xl text-sm font-medium border" style={{ borderColor: '#E7ECF3', color: '#F04438' }}>
                             Từ chối
                         </button>
                     </div>
@@ -238,7 +238,7 @@ export default function CampaignDetailPage() {
             )}
 
             {myAssignment && myAssignment.status !== 'pending_confirmation' && (
-                <div className="rounded-2xl p-4" style={{ background: '#F5F3F0' }}>
+                <div className="rounded-2xl p-4" style={{ background: '#F4F7FB' }}>
                     <p className="text-sm font-medium">Trạng thái: <span className="font-semibold">{assignmentLabel(myAssignment.status)}</span></p>
                 </div>
             )}
@@ -248,30 +248,30 @@ export default function CampaignDetailPage() {
                     <h2 className="text-lg font-semibold mb-4">Danh sách phân công</h2>
                     <div className="space-y-3">
                         {campaign.assignments.map((a) => (
-                            <div key={a.user_id} className="flex items-center justify-between rounded-xl p-4" style={{ background: '#F5F3F0' }}>
+                            <div key={a.user_id} className="flex items-center justify-between rounded-xl p-4" style={{ background: '#F4F7FB' }}>
                                 <div>
                                     <p className="font-medium text-sm">{a.full_name || a.user_id}</p>
                                     <Badge variant={assignmentVariant(a.status)}>{assignmentLabel(a.status)}</Badge>
                                 </div>
                                 {a.bill_image_url && (
                                     <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
-                                        className="text-xs font-medium underline mr-2" style={{ color: '#3D5A50' }}>
+                                        className="text-xs font-medium underline mr-2" style={{ color: '#027A48' }}>
                                         Xem hoá đơn
                                     </a>
                                 )}
                                 {a.status === 'pending_approval' && (
                                     <div className="flex gap-2">
                                         <button disabled={isActing} onClick={() => act(() => coManagerApprove(id, a.user_id), 'Đã duyệt')}
-                                            className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#3D5A50', color: '#fff' }}>Duyệt</button>
+                                            className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: '#027A48', color: '#fff' }}>Duyệt</button>
                                         <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E5E5E5', color: '#4A4540' }}>Miễn</button>
+                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E7ECF3', color: '#3A4658' }}>Miễn</button>
                                         <button disabled={isActing} onClick={() => act(() => coManagerReject(id, a.user_id), 'Đã từ chối')}
-                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEE2E2', color: '#E53E3E' }}>Từ chối</button>
+                                            className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#FEECEB', color: '#F04438' }}>Từ chối</button>
                                     </div>
                                 )}
                                 {a.status === 'pending_confirmation' && (
                                     <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                        className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E5E5E5', color: '#4A4540' }}>Miễn</button>
+                                        className="px-3 py-1.5 rounded-lg text-xs" style={{ background: '#E7ECF3', color: '#3A4658' }}>Miễn</button>
                                 )}
                             </div>
                         ))}
@@ -281,7 +281,7 @@ export default function CampaignDetailPage() {
 
             {isManager && campaign.status === 'active' && (
                 <button disabled={isActing} onClick={() => act(closeCampaign.bind(null, id), 'Đã đóng khoản thu')}
-                    className="w-full py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: '#E53E3E', color: '#E53E3E' }}>
+                    className="w-full py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: '#F04438', color: '#F04438' }}>
                     Đóng khoản thu
                 </button>
             )}

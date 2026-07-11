@@ -22,21 +22,21 @@ const STAT_CONFIG = [
     {
         id: 'total',
         title: 'Tổng số dư',
-        accent: '#3D5A50',
+        accent: '#027A48',
         accentBg: 'rgba(61, 90, 80, 0.06)',
         icon: '💰',
     },
     {
         id: 'spent',
         title: 'Chi tiêu tháng này',
-        accent: '#D64545',
+        accent: '#F04438',
         accentBg: 'rgba(214, 69, 69, 0.06)',
         icon: '📉',
     },
     {
         id: 'pending',
         title: 'Chờ duyệt',
-        accent: '#E8B34B',
+        accent: '#F5A623',
         accentBg: 'rgba(232, 179, 75, 0.06)',
         icon: '⏳',
     },
@@ -92,10 +92,10 @@ export const StatsBar: React.FC<StatsBarProps> = ({
 
                     <div className="flex items-start justify-between">
                         <div>
-                            <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#9F9A93' }}>
+                            <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: '#7A8699' }}>
                                 {stat.title}
                             </p>
-                            <p className="text-2xl font-serif font-light" style={{ color: '#0F0E0C' }}>
+                            <p className="text-2xl font-serif font-light" style={{ color: '#0B1220' }}>
                                 {values[i]}
                             </p>
                         </div>

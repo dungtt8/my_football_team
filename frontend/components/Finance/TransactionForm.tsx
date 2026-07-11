@@ -16,14 +16,14 @@ interface TransactionFormProps {
 }
 
 const G = {
-    glass: 'rgba(255,255,255,0.07)',
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
+    glass: '#FFFFFF',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
     orange: '#F5A623',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438',
 }
 
 const CATEGORIES = [
@@ -103,7 +103,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
         width: '100%',
         padding: '12px 14px',
         borderRadius: '12px',
-        background: 'rgba(255,255,255,0.05)',
+        background: '#F8FAFC',
         border: `1px solid ${G.glassBorder}`,
         color: G.t1,
         fontSize: '15px',
@@ -147,7 +147,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
                             onClick={() => setFormData({ ...formData, category: formData.category === cat.key ? '' : cat.key })}
                             style={{
                                 padding: '7px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-                                background: formData.category === cat.key ? 'rgba(245,166,35,0.15)' : 'rgba(255,255,255,0.05)',
+                                background: formData.category === cat.key ? 'rgba(245,166,35,0.15)' : '#F8FAFC',
                                 border: `1px solid ${formData.category === cat.key ? 'rgba(245,166,35,0.4)' : G.glassBorder}`,
                                 color: formData.category === cat.key ? G.orange : G.t2,
                             }}>
@@ -215,7 +215,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onSubmit, isLo
                     </button>
                 )}
                 <button type="submit" disabled={busy}
-                    style={{ flex: 2, padding: '13px', borderRadius: '12px', border: 'none', background: busy ? 'rgba(245,166,35,0.4)' : G.orange, color: '#070B14', fontWeight: 700, fontSize: '14px', cursor: busy ? 'default' : 'pointer', transition: 'all 0.2s' }}>
+                    style={{ flex: 2, padding: '13px', borderRadius: '12px', border: 'none', background: busy ? 'rgba(245,166,35,0.4)' : G.orange, color: '#FFFFFF', fontWeight: 700, fontSize: '14px', cursor: busy ? 'default' : 'pointer', transition: 'all 0.2s' }}>
                     {busy ? 'Đang gửi...' : '📤 Gửi báo cáo chi'}
                 </button>
             </div>

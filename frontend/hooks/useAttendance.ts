@@ -141,6 +141,16 @@ export const useAttendance = () => {
         }
     }, [request])
 
+    const updateSession = useCallback(async (id: string, data: Partial<SessionFormData>) => {
+        try {
+            setLocalError(null)
+            return await request<AttendanceSession>(`/attendance/sessions/${id}`, 'PATCH', data)
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to update session')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
     const closeSession = useCallback(async (id: string) => {
         try {
             setLocalError(null)
@@ -275,6 +285,7 @@ export const useAttendance = () => {
         createManualSession,
         listSessions,
         getSession,
+        updateSession,
         closeSession,
         getActiveCheckin,
         respondToCheckin,

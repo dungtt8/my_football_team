@@ -10,23 +10,23 @@ export interface TeamSwitcherProps {
 }
 
 const G = {
-    glass: 'rgba(255,255,255,0.07)',
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
-    accentDim: 'rgba(0,214,143,0.12)',
-    blue: '#4A7CFF',
-    blueDim: 'rgba(74,124,255,0.12)',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
-    redDim: 'rgba(255,107,107,0.12)',
+    glass: '#FFFFFF',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
+    accentDim: 'rgba(18,183,106,0.12)',
+    blue: '#2E7CF6',
+    blueDim: 'rgba(46,124,246,0.12)',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438',
+    redDim: 'rgba(240,68,56,0.12)',
 }
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-    owner:      { label: 'Chủ đội',     color: '#F6AD55', bg: 'rgba(246,173,85,0.12)' },
+    owner:      { label: 'Chủ đội',     color: '#F5A623', bg: 'rgba(246,173,85,0.12)' },
     co_manager: { label: 'Phó quản lý', color: G.blue,    bg: G.blueDim },
-    member:     { label: 'Thành viên',  color: G.t3,      bg: 'rgba(255,255,255,0.05)' },
+    member:     { label: 'Thành viên',  color: G.t3,      bg: '#F8FAFC' },
 }
 
 export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) => {
@@ -56,14 +56,14 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
     return (
         <>
             {/* Overlay */}
-            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40, backdropFilter: 'blur(4px)' }}
+            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 'var(--content-left-offset, 0px)', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40, backdropFilter: 'blur(4px)' }}
                 onClick={onClose} />
 
             {/* Sheet */}
             <div style={{
-                position: 'fixed', insetInline: 0, bottom: 0, zIndex: 50,
-                backgroundColor: '#0A0F1E',
-                borderTop: '1px solid rgba(255,255,255,0.10)',
+                position: 'fixed', left: 'var(--content-left-offset, 0px)', right: 0, bottom: 0, zIndex: 50,
+                backgroundColor: '#F4F7FB',
+                borderTop: '1px solid #E7ECF3',
                 borderRadius: '24px 24px 0 0',
                 boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
                 maxHeight: '80vh', display: 'flex', flexDirection: 'column',
@@ -71,21 +71,21 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
             }}>
                 {/* Handle bar */}
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-                    <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.15)' }} />
+                    <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#DDE3EC' }} />
                 </div>
 
                 {/* Header */}
                 <div style={{ padding: '8px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                         <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent }}>Đội bóng</p>
-                        <h2 style={{ margin: '2px 0 0', fontSize: '20px', fontWeight: 300, fontFamily: 'serif', color: G.t1 }}>Chuyển đội</h2>
+                        <h2 style={{ margin: '2px 0 0', fontSize: '20px', fontWeight: 800, fontFamily: 'var(--font-head)', color: G.t1 }}>Chuyển đội</h2>
                     </div>
                     <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', border: `1px solid ${G.glassBorder}`, background: G.glass, color: G.t2, cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                 </div>
 
                 {/* Error */}
                 {error && (
-                    <div style={{ margin: '0 20px 12px', padding: '10px 14px', background: G.redDim, border: `1px solid rgba(255,107,107,0.2)`, borderRadius: '10px', fontSize: '13px', color: G.red }}>
+                    <div style={{ margin: '0 20px 12px', padding: '10px 14px', background: G.redDim, border: `1px solid rgba(240,68,56,0.2)`, borderRadius: '10px', fontSize: '13px', color: G.red }}>
                         {error}
                     </div>
                 )}
@@ -110,7 +110,7 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
                                             width: '100%', padding: '12px 14px', borderRadius: '14px',
                                             textAlign: 'left', cursor: isActive ? 'default' : switchingId ? 'wait' : 'pointer',
                                             border: `1px solid ${isActive ? G.accent : G.glassBorder}`,
-                                            background: isActive ? 'rgba(0,214,143,0.08)' : G.glass,
+                                            background: isActive ? 'rgba(18,183,106,0.08)' : G.glass,
                                             opacity: switchingId && !isSwitching ? 0.5 : 1,
                                             transition: 'all 0.15s',
                                             display: 'flex', alignItems: 'center', gap: '12px',
@@ -118,8 +118,8 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
                                         {/* Avatar */}
                                         <div style={{
                                             width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0,
-                                            background: isActive ? 'rgba(0,214,143,0.15)' : 'rgba(255,255,255,0.06)',
-                                            border: `1px solid ${isActive ? 'rgba(0,214,143,0.3)' : G.glassBorder}`,
+                                            background: isActive ? 'rgba(18,183,106,0.15)' : '#F3F6FA',
+                                            border: `1px solid ${isActive ? 'rgba(18,183,106,0.3)' : G.glassBorder}`,
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             fontSize: '16px', fontWeight: 700,
                                             color: isActive ? G.accent : G.t2,
@@ -164,7 +164,7 @@ export const TeamSwitcher: React.FC<TeamSwitcherProps> = ({ isOpen, onClose }) =
                         🔗 Tham gia đội
                     </button>
                     <button onClick={() => { onClose(); router.push('/onboarding/create') }}
-                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: G.accent, color: '#070B14', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
+                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: G.accent, color: '#FFFFFF', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}>
                         ⚽ Tạo đội mới
                     </button>
                 </div>

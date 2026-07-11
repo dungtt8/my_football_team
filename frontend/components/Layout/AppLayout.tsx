@@ -44,6 +44,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         return () => window.removeEventListener('resize', checkDesktop)
     }, [])
 
+    // Expose the sidebar's width as a CSS variable so full-screen modals
+    // (position: fixed, rendered from anywhere in the app) can center
+    // themselves in the content area instead of the whole viewport.
+    React.useEffect(() => {
+        document.documentElement.style.setProperty(
+            '--content-left-offset',
+            isDesktop && isSidebarOpen ? '256px' : '0px'
+        )
+    }, [isDesktop, isSidebarOpen])
+
     const router = useRouter()
     const { logout } = useAuth()
 
@@ -57,34 +67,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     }
 
     return (
-        <div className="flex h-screen overflow-hidden" style={{ background: '#070B14' }}>
+        <div className="flex h-screen overflow-hidden" style={{ background: 'transparent' }}>
             {/* Desktop Sidebar */}
             <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             {/* Main content area */}
             <div className="flex flex-col flex-1">
-                {/* Ambient gradient blobs */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-                    <div style={{
-                        position: 'absolute', top: '-120px', right: '-80px',
-                        width: '420px', height: '420px',
-                        background: 'radial-gradient(circle, rgba(0,214,143,0.12) 0%, transparent 70%)',
-                        borderRadius: '50%',
-                    }} />
-                    <div style={{
-                        position: 'absolute', bottom: '80px', left: '-100px',
-                        width: '380px', height: '380px',
-                        background: 'radial-gradient(circle, rgba(74,124,255,0.10) 0%, transparent 70%)',
-                        borderRadius: '50%',
-                    }} />
-                    <div style={{
-                        position: 'absolute', top: '45%', right: '20%',
-                        width: '250px', height: '250px',
-                        background: 'radial-gradient(circle, rgba(0,214,143,0.05) 0%, transparent 70%)',
-                        borderRadius: '50%',
-                    }} />
-                </div>
-
                 {/* Content container */}
                 <div className="relative z-10 flex flex-col h-full overflow-hidden">
                     <AppHeader
@@ -111,7 +99,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
                         marginLeft: isDesktop && isSidebarOpen ? '256px' : '0',
                         marginTop: '64px',
-                        width: '100%',
+                        width: isDesktop && isSidebarOpen ? 'calc(100% - 256px)' : '100%',
                         boxSizing: 'border-box'
                     }}>
                         <div className="w-full h-full">

@@ -63,7 +63,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
                     Tên khoản thu <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -79,7 +79,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
 
             {/* Amount per member */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
                     Số tiền / thành viên (₫) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -96,7 +96,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
 
             {/* Deadline */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
                     Hạn chót (tuỳ chọn)
                 </label>
                 <input
@@ -110,7 +110,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
 
             {/* Description */}
             <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: '#4A4540' }}>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: '#3A4658' }}>
                     Mô tả (tuỳ chọn)
                 </label>
                 <textarea
@@ -129,7 +129,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
                         type="button"
                         onClick={onCancel}
                         className="flex-1 py-3 rounded-xl text-sm font-medium border"
-                        style={{ borderColor: '#E5E5E5', color: '#6B6660' }}
+                        style={{ borderColor: '#E7ECF3', color: '#7A8699' }}
                     >
                         Huỷ
                     </button>
@@ -138,7 +138,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
                     type="submit"
                     disabled={isLoading}
                     className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
-                    style={{ background: '#0F0E0C', color: '#FFFCF9' }}
+                    style={{ background: '#0B1220', color: '#FFFFFF' }}
                 >
                     {isLoading ? 'Đang tạo...' : 'Tạo chiến dịch'}
                 </button>

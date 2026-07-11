@@ -45,9 +45,9 @@ const getStatusVariant = (
 }
 
 const STATUS_DOT: Record<string, string> = {
-    approved: '#44A366',
-    rejected: '#D64545',
-    pending: '#E8B34B',
+    approved: '#12B76A',
+    rejected: '#F04438',
+    pending: '#F5A623',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -64,7 +64,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
     onReject,
 }) => {
     const statusVariant = getStatusVariant(transaction.status)
-    const dotColor = STATUS_DOT[transaction.status] || '#9F9A93'
+    const dotColor = STATUS_DOT[transaction.status] || '#7A8699'
 
     return (
         <div
@@ -83,11 +83,11 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
 
             {/* Description + date */}
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: '#0F0E0C' }}>
+                <p className="text-sm font-medium truncate" style={{ color: '#0B1220' }}>
                     {transaction.description}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs" style={{ color: '#9F9A93' }}>
+                    <p className="text-xs" style={{ color: '#7A8699' }}>
                         {formatDate(transaction.transaction_date || transaction.created_at || '')}
                     </p>
                     {transaction.transaction_type && (
@@ -99,7 +99,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
             {/* Amount + status */}
             <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
-                    <p className="text-sm font-semibold" style={{ color: '#0F0E0C' }}>
+                    <p className="text-sm font-semibold" style={{ color: '#0B1220' }}>
                         {formatCurrency(transaction.amount)}
                     </p>
                     <p className="text-[11px] font-medium mt-0.5" style={{ color: dotColor }}>
@@ -112,7 +112,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                         <button
                             onClick={(e) => { e.stopPropagation(); onApprove?.(transaction.id) }}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all active:scale-95"
-                            style={{ background: '#D8E8DC', color: '#44A366' }}
+                            style={{ background: '#D1F0E0', color: '#12B76A' }}
                             title="Approve"
                         >
                             ✓
@@ -120,7 +120,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
                         <button
                             onClick={(e) => { e.stopPropagation(); onReject?.(transaction.id) }}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all active:scale-95"
-                            style={{ background: '#F5DEDE', color: '#D64545' }}
+                            style={{ background: '#FEECEB', color: '#F04438' }}
                             title="Reject"
                         >
                             ✗

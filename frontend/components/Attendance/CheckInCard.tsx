@@ -40,13 +40,13 @@ export const CheckInCard: React.FC<CheckInCardProps> = ({
     const statusColors = {
         not_checked_in: COLORS.paleRed,
         checked_in: COLORS.paleGreen,
-        checked_out: '#F0F0F0',
+        checked_out: '#F4F7FB',
     }
 
     const statusIndicatorColors = {
-        not_checked_in: '#F44336',
-        checked_in: '#4CAF50',
-        checked_out: '#999999',
+        not_checked_in: '#F04438',
+        checked_in: '#12B76A',
+        checked_out: '#7A8699',
     }
 
     const formatTime = (date?: Date) => {
@@ -194,7 +194,7 @@ export const CheckInCard: React.FC<CheckInCardProps> = ({
                         margin: '0 0 16px 0',
                         textAlign: 'center',
                         fontSize: TYPOGRAPHY.sizes.caption,
-                        color: isPastDeadline ? '#E53E3E' : COLORS.gray,
+                        color: isPastDeadline ? '#F04438' : COLORS.gray,
                     }}
                 >
                     {isPastDeadline ? '⛔ Hết hạn: ' : '⏰ Hạn chót: '}

@@ -3,30 +3,23 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useAttendance, AttendanceRecord, AttendanceSession, LeaderboardEntry, UserStats } from '@/hooks/useAttendance'
+import { useAttendance, AttendanceRecord, AttendanceSession, UserStats } from '@/hooks/useAttendance'
 import { useToast } from '@/hooks/useToast'
 import { SessionForm, SessionFormData } from '@/components/Attendance/SessionForm'
-
-const G = {
-    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', blue: '#4A7CFF',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
-}
 
 export default function AttendancePage() {
     const router = useRouter()
     const { user, team, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
-    const { listSessions, getActiveCheckin, respondToCheckin, createSession, createManualSession, getUserStats, getLeaderboard, getAttendanceHistory, loading } = useAttendance()
+    const { listSessions, getActiveCheckin, respondToCheckin, createManualSession, getUserStats, getAttendanceHistory, loading } = useAttendance()
     const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [stats, setStats] = useState<UserStats | null>(null)
     const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([])
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
     const [activeSession, setActiveSession] = useState<AttendanceSession | null>(null)
     const [allSessions, setAllSessions] = useState<AttendanceSession[]>([])
     const [activeCheckinId, setActiveCheckinId] = useState<string | null>(null)
-    const [myCheckedIn, setMyCheckedIn] = useState(false)
+    const [myResponse, setMyResponse] = useState<'yes' | 'no' | null>(null)
     const [isCheckingIn, setIsCheckingIn] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
@@ -39,11 +32,10 @@ export default function AttendancePage() {
         // while the new team's data is loading.
         setStats(null)
         setRecentRecords([])
-        setLeaderboard([])
         setActiveSession(null)
         setAllSessions([])
         setActiveCheckinId(null)
-        setMyCheckedIn(false)
+        setMyResponse(null)
         setError(null)
 
         const load = async () => {
@@ -66,7 +58,7 @@ export default function AttendancePage() {
                     const active = await getActiveCheckin()
                     if (active?.check_in) {
                         setActiveCheckinId(active.check_in.id)
-                        setMyCheckedIn(active.check_in.response === 'yes')
+                        setMyResponse(active.check_in.response ?? null)
                     }
                 } catch { }
 
@@ -74,9 +66,6 @@ export default function AttendancePage() {
                     const s = await getUserStats(user.id)
                     setStats(s)
                 } catch { }
-
-                const lb = await getLeaderboard()
-                setLeaderboard((lb || []).slice(0, 5))
             } catch {
                 setError('Không thể tải dữ liệu. Vui lòng thử lại.')
                 toast('Không thể tải dữ liệu', 'error')
@@ -85,13 +74,13 @@ export default function AttendancePage() {
         load()
     }, [user, authLoading, team?.id])
 
-    const handleCheckIn = async () => {
+    const handleRespond = async (value: 'yes' | 'no') => {
         if (!activeCheckinId) { toast('Không tìm thấy phiếu điểm danh cho buổi này', 'error'); return }
         setIsCheckingIn(true)
         try {
-            await respondToCheckin(activeCheckinId, 'yes')
-            setMyCheckedIn(true)
-            toast('✅ Điểm danh thành công! +10 điểm', 'success')
+            await respondToCheckin(activeCheckinId, value)
+            setMyResponse(value)
+            toast(value === 'yes' ? '✅ Điểm danh thành công! +10 điểm' : '📋 Đã báo vắng buổi này', 'success')
         } catch (e: any) { toast(e?.message || 'Lỗi điểm danh', 'error') }
         finally { setIsCheckingIn(false) }
     }
@@ -111,218 +100,191 @@ export default function AttendancePage() {
     const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     const isDeadlinePassed = activeSession?.check_in_deadline ? new Date() > new Date(activeSession.check_in_deadline) : false
 
-    return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px 24px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
+    // ---- Reusable pieces (rendered once, placed in different order/columns for mobile vs desktop) ----
 
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
-                <div>
-                    <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '6px' }}>Điểm danh</p>
-                    <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Buổi tập & Thi đấu</h1>
-                </div>
-                {isManager && (
-                    <button onClick={() => setShowForm(true)} style={{
-                        padding: '10px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                        background: G.accent, color: '#070B14', border: 'none',
-                        boxShadow: '0 0 20px rgba(0,214,143,0.3)',
-                    }}>+ Tạo lịch</button>
-                )}
+    const errorEl = error && (
+        <div className="card pad" style={{ borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--danger)' }}>{error}</p>
+            <button className="btn btn-ghost btn-sm" onClick={() => window.location.reload()} style={{ flexShrink: 0 }}>Thử lại</button>
+        </div>
+    )
+
+    const tilesEl = (
+        <div className="tiles">
+            <div className="tile"><div className="n" style={{ color: 'var(--brand-600)' }}>{stats?.total_points ?? '—'}</div><div className="l">Điểm tháng</div></div>
+            <div className="tile"><div className="n">{stats?.attended ?? '—'}</div><div className="l">Đã dự</div></div>
+            <div className="tile" style={{ cursor: 'pointer' }} onClick={() => router.push('/app/attendance/leaderboard')}>
+                <div className="n" style={{ color: 'var(--accent)' }}>{stats?.rank ? `#${stats.rank}` : '—'}</div><div className="l">Hạng</div>
             </div>
+        </div>
+    )
 
-            {/* Error state */}
-            {error && (
-                <div style={{ background: 'rgba(255,107,107,0.10)', border: '1px solid rgba(255,107,107,0.25)', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#FF6B6B' }}>{error}</p>
-                    <button onClick={() => window.location.reload()} style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.12)', color: '#FF6B6B', fontWeight: 600, fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>Thử lại</button>
+    const checkinEl = activeSession ? (
+        <div className="checkin">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="chip live"><span className="live-dot" />BUỔI ĐANG MỞ</span>
+                <span style={{ fontSize: 26 }}>{activeSession.session_type === 'match' ? '⚽' : '🏃'}</span>
+            </div>
+            <div className="match-title">{activeSession.session_type === 'match' ? 'Trận đấu' : 'Buổi tập'}</div>
+            <div className="meta">📍&nbsp;{activeSession.location || 'Chưa có địa điểm'} · {fmtDate(activeSession.session_date)}</div>
+            {activeSession.check_in_deadline && (
+                <div className="deadline" style={isDeadlinePassed ? { color: 'var(--danger)' } : undefined}>
+                    {isDeadlinePassed
+                        ? '⛔ Hết hạn điểm danh'
+                        : `⏰ Hạn: ${new Date(activeSession.check_in_deadline).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
                 </div>
             )}
-
-            {/* Stats row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>
-                {[
-                    { label: 'Điểm tháng', value: stats?.total_points ?? '—' },
-                    { label: 'Đã dự', value: stats?.attended ?? '—' },
-                    { label: 'Hạng', value: stats?.rank ? `#${stats.rank}` : '—' },
-                ].map(s => (
-                    <div key={s.label} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', padding: '16px 12px', backdropFilter: 'blur(12px)' }}>
-                        <p style={{ fontSize: '11px', color: G.t3, margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</p>
-                        <p style={{ fontSize: '24px', fontWeight: 700, color: G.accent, margin: 0 }}>{s.value}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Active session / Check-in card */}
-            {activeSession ? (
-                <div style={{
-                    background: myCheckedIn ? 'rgba(0,214,143,0.08)' : G.glass,
-                    border: `1px solid ${myCheckedIn ? 'rgba(0,214,143,0.30)' : G.glassBorder}`,
-                    borderRadius: '20px', padding: '20px', marginBottom: '28px',
-                    backdropFilter: 'blur(16px)',
-                    boxShadow: myCheckedIn ? '0 0 30px rgba(0,214,143,0.12)' : 'none',
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <div>
-                            <p style={{ fontSize: '11px', color: G.t3, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Buổi đang mở</p>
-                            <p style={{ fontSize: '17px', fontWeight: 600, color: G.t1, margin: 0 }}>
-                                {activeSession.session_type === 'match' ? '⚽ Trận đấu' : '🏃 Buổi tập'}
-                                {activeSession.location ? ` · ${activeSession.location}` : ''}
-                            </p>
-                            <p style={{ fontSize: '12px', color: G.t2, marginTop: '4px' }}>{fmtDate(activeSession.session_date)}</p>
-                        </div>
-                        {myCheckedIn && <span style={{ fontSize: '28px' }}>✅</span>}
-                    </div>
-                    {activeSession.check_in_deadline && (
-                        <p style={{ fontSize: '12px', color: isDeadlinePassed ? '#FF6B6B' : G.t3, marginBottom: '16px' }}>
-                            {isDeadlinePassed ? '⛔ Hết hạn điểm danh' : `⏰ Hạn: ${new Date(activeSession.check_in_deadline).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
-                        </p>
-                    )}
-                    {!isManager && !myCheckedIn && !isDeadlinePassed && activeCheckinId && (
-                        <button disabled={isCheckingIn} onClick={handleCheckIn} style={{
-                            width: '100%', padding: '14px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-                            background: `linear-gradient(135deg, ${G.accent}, #00A36C)`,
-                            color: '#070B14', fontWeight: 700, fontSize: '15px',
-                            boxShadow: '0 4px 24px rgba(0,214,143,0.35)',
-                            transition: 'all 0.2s ease', opacity: isCheckingIn ? 0.6 : 1,
-                        }}>
-                            {isCheckingIn ? 'Đang xử lý...' : '✓ Điểm danh ngay'}
+            {!isManager && myResponse === null && !isDeadlinePassed && activeCheckinId && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+                    <button className="btn btn-primary" style={{ flex: 1, padding: 15, opacity: isCheckingIn ? 0.6 : 1 }} disabled={isCheckingIn} onClick={() => handleRespond('yes')}>
+                        {isCheckingIn ? 'Đang xử lý...' : '✓ Điểm danh ngay'}
+                    </button>
+                    <button className="btn btn-ghost" style={{ padding: '15px 18px', opacity: isCheckingIn ? 0.6 : 1 }} disabled={isCheckingIn} onClick={() => handleRespond('no')}>
+                        Vắng mặt
+                    </button>
+                </div>
+            )}
+            {!isManager && myResponse === 'yes' && (
+                <>
+                    <p style={{ textAlign: 'center', color: 'var(--brand-600)', fontWeight: 600, fontSize: 14, marginTop: 14 }}>Đã điểm danh hôm nay 🎉</p>
+                    {!isDeadlinePassed && (
+                        <button className="btn btn-ghost btn-block" style={{ marginTop: 8, opacity: isCheckingIn ? 0.6 : 1 }} disabled={isCheckingIn} onClick={() => handleRespond('no')}>
+                            Đổi thành vắng mặt
                         </button>
                     )}
-                    {!isManager && myCheckedIn && (
-                        <p style={{ textAlign: 'center', color: G.accent, fontWeight: 600, fontSize: '14px' }}>Đã điểm danh hôm nay 🎉</p>
+                </>
+            )}
+            {!isManager && myResponse === 'no' && (
+                <>
+                    <p style={{ textAlign: 'center', color: 'var(--ink-3)', fontWeight: 600, fontSize: 14, marginTop: 14 }}>Bạn đã báo vắng buổi này</p>
+                    {!isDeadlinePassed && (
+                        <button className="btn btn-primary btn-block" style={{ marginTop: 8, opacity: isCheckingIn ? 0.6 : 1 }} disabled={isCheckingIn} onClick={() => handleRespond('yes')}>
+                            ✓ Đổi thành có mặt
+                        </button>
                     )}
-                    {!isManager && !myCheckedIn && !isDeadlinePassed && !activeCheckinId && (
-                        <p style={{ textAlign: 'center', color: G.t3, fontSize: '13px' }}>Đang tải phiếu điểm danh...</p>
-                    )}
-                    {isManager && (
-                        <button onClick={() => router.push(`/app/attendance/sessions/${activeSession.id}`)} style={{
-                            width: '100%', padding: '12px', borderRadius: '12px', border: `1px solid ${G.glassBorder}`,
-                            background: 'rgba(255,255,255,0.05)', color: G.t1, fontWeight: 600, fontSize: '13px', cursor: 'pointer',
-                        }}>Quản lý buổi này →</button>
-                    )}
-                </div>
-            ) : (
-                <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '20px', padding: '24px', marginBottom: '28px', textAlign: 'center' }}>
-                    <p style={{ color: G.t3, fontSize: '14px' }}>Không có buổi active hôm nay</p>
-                    {isManager && <button onClick={() => setShowForm(true)} style={{ marginTop: '12px', padding: '10px 20px', borderRadius: '10px', background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`, fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}>+ Tạo lịch mới</button>}
-                </div>
+                </>
             )}
+            {!isManager && myResponse === null && !isDeadlinePassed && !activeCheckinId && (
+                <p style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13, marginTop: 14 }}>Đang tải phiếu điểm danh...</p>
+            )}
+            {isManager && (
+                <button className="btn btn-ghost btn-block" style={{ marginTop: 14 }} onClick={() => router.push(`/app/attendance/sessions/${activeSession.id}`)}>Quản lý buổi này →</button>
+            )}
+        </div>
+    ) : (
+        <div className="card pad" style={{ textAlign: 'center' }}>
+            <p style={{ color: 'var(--ink-3)', fontSize: 14, margin: 0 }}>Không có buổi active hôm nay</p>
+        </div>
+    )
 
-            {/* Sessions list */}
-            {allSessions.length > 0 && (
-                <div style={{ marginBottom: '28px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: G.t2, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>Tất cả lịch</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {allSessions.map(s => {
-                            const isMatch = s.session_type === 'match'
-                            const isPast = s.status === 'closed'
-                            return (
-                                <button key={s.id} onClick={() => router.push(`/app/attendance/sessions/${s.id}`)} style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '14px 16px', background: G.glass, border: `1px solid ${G.glassBorder}`,
-                                    borderRadius: '14px', cursor: 'pointer', textAlign: 'left', width: '100%',
-                                    backdropFilter: 'blur(12px)', opacity: isPast ? 0.55 : 1,
-                                    transition: 'all 0.15s ease',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <span style={{ fontSize: '22px' }}>{isMatch ? '⚽' : '🏃'}</span>
-                                        <div>
-                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1 }}>
-                                                {isMatch ? 'Trận đấu' : 'Buổi tập'}{s.location ? ` · ${s.location}` : ''}
-                                            </p>
-                                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: G.t3 }}>{fmtDate(s.session_date)}</p>
-                                        </div>
-                                    </div>
-                                    <span style={{
-                                        fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px',
-                                        background: isPast ? 'rgba(255,255,255,0.06)' : G.accentDim,
-                                        color: isPast ? G.t3 : G.accent,
-                                        border: `1px solid ${isPast ? G.glassBorder : 'rgba(0,214,143,0.25)'}`,
-                                    }}>{isPast ? 'Đã đóng' : 'Đang mở'}</span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            )}
+    const pillsEl = (
+        <div className="pills">
+            <div className="pill on">Tất cả</div>
+            <div className="pill">Buổi tập</div>
+            <div className="pill">Trận đấu</div>
+            <div className="pill">Đang mở</div>
+        </div>
+    )
 
-            {/* Recent records */}
-            {recentRecords.length > 0 && (
-                <div style={{ marginBottom: '28px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: G.t2, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>Điểm danh gần đây</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {recentRecords.slice(0, 5).map((record, idx) => (
-                            <button key={record.id || idx} onClick={() => router.push(`/app/attendance/records/${record.id}`)} style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '12px 14px', background: G.glass, border: `1px solid ${G.glassBorder}`,
-                                borderRadius: '12px', cursor: 'pointer', textAlign: 'left', width: '100%',
-                                backdropFilter: 'blur(12px)', transition: 'all 0.15s ease',
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                                    <span style={{ fontSize: '20px' }}>
-                                        {record.response === 'yes' ? '✅' : record.response === 'no' ? '❌' : '⏳'}
-                                    </span>
-                                    <div>
-                                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: G.t1 }}>
-                                            {record.session_type === 'match' ? '⚽' : '🏃'} {record.session_date ? new Date(record.session_date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }) : 'N/A'}
-                                        </p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
-                                            {record.response === 'yes' ? 'Tham gia' : record.response === 'no' ? 'Vắng' : 'Chưa phản hồi'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
+    const sessionsListEl = allSessions.length > 0 && (
+        <div className="card">
+            {allSessions.map(s => {
+                const isMatch = s.session_type === 'match'
+                const isPast = s.status === 'closed'
+                return (
+                    <div key={s.id} className="row" onClick={() => router.push(`/app/attendance/sessions/${s.id}`)} style={{ cursor: 'pointer', ...(isPast ? { opacity: .6 } : {}) }}>
+                        <div className="lead" style={{ background: isPast ? 'var(--surface-2)' : isMatch ? 'var(--blue-050)' : 'var(--brand-050)' }}>{isMatch ? '⚽' : '🏃'}</div>
+                        <div className="rc">
+                            <b>{isMatch ? 'Trận đấu' : 'Buổi tập'}{s.location ? ` · ${s.location}` : ''}</b>
+                            <small>{fmtDate(s.session_date)}</small>
+                        </div>
+                        <span className={`badge ${isPast ? 'closed' : 'ok'}`}>{isPast ? 'Đã đóng' : 'Đang mở'}</span>
                     </div>
-                    <button onClick={() => router.push('/app/attendance/history')} style={{
-                        width: '100%', marginTop: '10px', padding: '11px', borderRadius: '12px',
-                        background: 'transparent', border: `1px solid ${G.glassBorder}`,
-                        color: G.t2, fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                    }}>Xem lịch sử đầy đủ →</button>
-                </div>
-            )}
+                )
+            })}
+        </div>
+    )
 
-            {/* Leaderboard */}
-            {leaderboard.length > 0 && (
-                <div>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: G.t2, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>Bảng xếp hạng</p>
-                    <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px', overflow: 'hidden', backdropFilter: 'blur(12px)' }}>
-                        {leaderboard.map((e, i) => {
-                            const isMe = (e.user_id || e.userId) === user?.id
-                            return (
-                                <div key={e.user_id || e.userId || i} style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '12px 16px', borderBottom: i < leaderboard.length - 1 ? `1px solid rgba(255,255,255,0.05)` : 'none',
-                                    background: isMe ? G.accentDim : 'transparent',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: 700, color: i < 3 ? G.accent : G.t3, width: '20px' }}>#{i + 1}</span>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: isMe ? 700 : 500, color: isMe ? G.accent : G.t1 }}>{e.full_name || e.userName || 'Thành viên'}</p>
-                                    </div>
-                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: G.accent }}>{e.total_points ?? e.points ?? 0}đ</p>
-                                </div>
-                            )
-                        })}
-                    </div>
-                    <button onClick={() => router.push('/app/attendance/leaderboard')} style={{
-                        width: '100%', marginTop: '10px', padding: '11px', borderRadius: '12px',
-                        background: 'transparent', border: `1px solid ${G.glassBorder}`,
-                        color: G.t2, fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                    }}>Xem bảng xếp hạng đầy đủ →</button>
+    const recentRecordsEl = recentRecords.length > 0 && (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Điểm danh gần đây<a onClick={() => router.push('/app/attendance/history')}>Xem tất cả</a></div>
+            <div className="card">
+                {recentRecords.slice(0, 5).map((record, idx) => {
+                    const yes = record.response === 'yes'
+                    return (
+                        <div key={record.id || idx} className="row" onClick={() => router.push(`/app/attendance/records/${record.id}`)} style={{ cursor: 'pointer' }}>
+                            <div className="lead" style={{ background: yes ? 'var(--brand-050)' : 'var(--danger-050)' }}>{yes ? '✅' : '✖️'}</div>
+                            <div className="rc">
+                                <b>{yes ? 'Có mặt' : record.response === 'no' ? 'Vắng' : 'Chưa phản hồi'} · {record.session_type === 'match' ? 'Trận đấu' : 'Buổi tập'}</b>
+                                <small>{record.session_date ? new Date(record.session_date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }) : 'N/A'}</small>
+                            </div>
+                            <span className={yes ? 'amt-pos' : 'amt-neg'}>{yes ? '+10' : '0'}</span>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+
+    const createButtonEl = isManager && (
+        <button className="btn btn-ghost btn-block" onClick={() => setShowForm(true)}>+ Tạo lịch mới</button>
+    )
+
+    return (
+        <div className="screen-body" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+
+            {/* Mobile header — matches mockup M.attend */}
+            <div className="md:hidden">
+                <div className="eyebrow">Điểm danh</div>
+                <h1 className="sec-title" style={{ fontSize: 22, marginTop: 4 }}>Buổi tập &amp; thi đấu</h1>
+            </div>
+
+            {/* Desktop header — matches mockup D.attend .page-h */}
+            <div className="hidden md:block page-h">
+                <h1>Điểm danh</h1>
+                <p>Buổi tập &amp; thi đấu của {team?.name || 'đội bóng'}.</p>
+            </div>
+
+            {errorEl}
+
+            {/* Mobile layout — matches mockup M.attend: tiles, checkin, pills, sessions, recent */}
+            <div className="md:hidden">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {tilesEl}
+                    {checkinEl}
+                    {pillsEl}
+                    {sessionsListEl}
+                    {recentRecordsEl}
+                    {createButtonEl}
                 </div>
-            )}
+            </div>
+
+            {/* Desktop layout — matches mockup D.attend, with "Buổi đang mở" and "Lịch sử các buổi tập" aligned on the same row */}
+            <div className="hidden md:block">
+                <div className="dgrid">
+                    {pillsEl}
+                    {tilesEl}
+                    {sessionsListEl}
+                    {checkinEl}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
+                    {recentRecordsEl}
+                    {createButtonEl}
+                </div>
+            </div>
 
             {/* Session Form Modal */}
             {showForm && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,11,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
+                <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 'var(--content-left-offset, 0px)', background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
                     onClick={() => setShowForm(false)}>
-                    <div style={{ background: '#0E1628', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
+                    <div style={{ background: '#F4F7FB', border: `1px solid var(--line)`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
                         onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                             <div>
-                                <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.accent }}>Điểm danh</p>
-                                <h2 style={{ margin: '2px 0 0', fontSize: '22px', fontWeight: 300, fontFamily: 'serif', color: G.t1 }}>Tạo lịch điểm danh</h2>
+                                <div className="eyebrow">Điểm danh</div>
+                                <h2 className="sec-title" style={{ fontSize: 22, marginTop: 2 }}>Tạo lịch điểm danh</h2>
                             </div>
-                            <button onClick={() => setShowForm(false)} style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${G.glassBorder}`, color: G.t2, borderRadius: '10px', padding: '6px 12px', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>✕</button>
+                            <button onClick={() => setShowForm(false)} style={{ background: '#FFFFFF', border: `1px solid var(--line)`, color: 'var(--ink-2)', borderRadius: '10px', padding: '6px 12px', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>✕</button>
                         </div>
                         <SessionForm onSubmit={handleCreate} isLoading={isCreating} onCancel={() => setShowForm(false)} />
                     </div>

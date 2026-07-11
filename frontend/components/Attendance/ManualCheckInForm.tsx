@@ -93,7 +93,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
         }}
       >
         {label}
-        {required && <span style={{ color: '#F44336' }}>*</span>}
+        {required && <span style={{ color: '#F04438' }}>*</span>}
       </label>
       {children || (
         <input
@@ -104,7 +104,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
           style={{
             width: '100%',
             padding: '10px 12px',
-            border: `1px solid ${error ? '#F44336' : COLORS.lightGray}`,
+            border: `1px solid ${error ? '#F04438' : COLORS.lightGray}`,
             borderRadius: '8px',
             fontSize: TYPOGRAPHY.sizes.small,
             fontFamily: 'inherit',
@@ -117,7 +117,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
           style={{
             margin: '4px 0 0 0',
             fontSize: TYPOGRAPHY.sizes.caption,
-            color: '#F44336',
+            color: '#F04438',
           }}
         >
           {error}
@@ -191,7 +191,7 @@ export const ManualCheckInForm: React.FC<ManualCheckInFormProps> = ({
             style={{
               width: '100%',
               padding: '10px 12px',
-              border: `1px solid ${errors.reason ? '#F44336' : COLORS.lightGray}`,
+              border: `1px solid ${errors.reason ? '#F04438' : COLORS.lightGray}`,
               borderRadius: '8px',
               fontSize: TYPOGRAPHY.sizes.small,
               fontFamily: 'inherit',

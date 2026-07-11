@@ -140,6 +140,7 @@ const attendanceHandler = require('./handlers/attendanceHandler');
 app.post('/api/attendance/sessions', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.createSession);
 app.get('/api/attendance/sessions', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.listSessions);
 app.get('/api/attendance/sessions/:id', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getSession);
+app.patch('/api/attendance/sessions/:id', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.updateSession);
 app.post('/api/attendance/sessions/:id/close', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.closeSession);
 app.get('/api/attendance/leaderboard', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getLeaderboard);
 app.get('/api/attendance/leaderboard/:month', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getHistoricalLeaderboard);

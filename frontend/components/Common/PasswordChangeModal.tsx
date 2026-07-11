@@ -3,13 +3,13 @@
 import React, { useState } from 'react'
 
 const G = {
-    glass: 'rgba(255,255,255,0.07)',
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
+    glass: '#FFFFFF',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438',
 }
 
 interface PasswordChangeModalProps {
@@ -80,7 +80,10 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
                 onClick={onClose}
                 style={{
                     position: 'fixed',
-                    inset: 0,
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 'var(--content-left-offset, 0px)',
                     background: 'rgba(0,0,0,0.5)',
                     backdropFilter: 'blur(4px)',
                     zIndex: 999,
@@ -92,9 +95,9 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
                 style={{
                     position: 'fixed',
                     top: '50%',
-                    left: '50%',
+                    left: 'calc(50% + var(--content-left-offset, 0px) / 2)',
                     transform: 'translate(-50%, -50%)',
-                    background: '#1A1F2E',
+                    background: '#F4F7FB',
                     border: `1px solid ${G.glassBorder}`,
                     borderRadius: '16px',
                     padding: '24px',
@@ -228,10 +231,10 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
                         <div
                             style={{
                                 padding: '12px',
-                                background: 'rgba(255,107,107,0.15)',
-                                border: `1px solid rgba(255,107,107,0.30)`,
+                                background: 'rgba(240,68,56,0.15)',
+                                border: `1px solid rgba(240,68,56,0.30)`,
                                 borderRadius: '8px',
-                                color: '#FF9999',
+                                color: '#FDA29B',
                                 fontSize: '13px',
                             }}
                         >
@@ -266,7 +269,7 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({
                             style={{
                                 flex: 1,
                                 padding: '12px',
-                                background: 'rgba(0,214,143,0.20)',
+                                background: 'rgba(18,183,106,0.20)',
                                 border: `1px solid ${G.accent}`,
                                 borderRadius: '10px',
                                 color: G.accent,

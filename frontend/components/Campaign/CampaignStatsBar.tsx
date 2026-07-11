@@ -60,8 +60,8 @@ export const CampaignStatsBar: React.FC<CampaignStatsBarProps> = ({
           className="p-6 rounded-xl transition-all duration-300 hover:shadow-lg"
           style={{ background: '#FFFFFF', boxShadow: '0 6px 16px rgba(15, 14, 12, 0.10)' }}
         >
-          <p className="text-sm font-medium mb-2" style={{ color: '#9F9A93' }}>{stat.title}</p>
-          <p className="text-2xl font-serif font-light" style={{ color: '#0F0E0C' }}>{stat.value}</p>
+          <p className="text-sm font-medium mb-2" style={{ color: '#7A8699' }}>{stat.title}</p>
+          <p className="text-2xl font-serif font-light" style={{ color: '#0B1220' }}>{stat.value}</p>
         </div>
       ))}
     </div>

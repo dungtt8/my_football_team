@@ -1,23 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#12B76A",
 };
 
 export const metadata: Metadata = {
@@ -41,14 +44,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      style={{ background: 'linear-gradient(135deg, #FFFCF9 0%, #F5F3F0 100%)' }}
+      lang="vi"
+      className={`${jakarta.variable} ${sora.variable} h-full antialiased`}
+      style={{
+        background:
+          'radial-gradient(900px 500px at 90% -10%, #E6FBF1 0%, transparent 55%), radial-gradient(800px 500px at -10% 10%, #EAF1FF 0%, transparent 55%), #F4F7FB',
+      }}
     >
       <head>
-        <meta name="theme-color" content="#3D5A50" />
+        <meta name="theme-color" content="#12B76A" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Team Manager" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>

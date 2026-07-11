@@ -52,8 +52,8 @@ export const Button: React.FC<ButtonProps> = ({
     `,
     danger: `
       bg-error-red text-cream
-      hover:bg-[#B84D46]
-      focus:ring-[#C85A54]
+      hover:bg-[#F04438]
+      focus:ring-[#F04438]
       focus:ring-offset-cream
     `,
   }

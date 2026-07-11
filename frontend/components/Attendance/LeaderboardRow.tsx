@@ -26,13 +26,13 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   const getRankBadgeColor = (rank: number) => {
     switch (rank) {
       case 1:
-        return '#FFD700'
+        return '#F5A623'
       case 2:
-        return '#C0C0C0'
+        return '#A9B4C2'
       case 3:
-        return '#CD7F32'
+        return '#C97B4A'
       default:
-        return '#BDBDBD'
+        return '#A9B4C2'
     }
   }
 
@@ -55,7 +55,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         padding: '12px 16px',
         border: `1px solid ${COLORS.lightGray}`,
         borderRadius: '8px',
-        backgroundColor: isCurrentUser ? '#FFFBF7' : COLORS.white,
+        backgroundColor: isCurrentUser ? '#FFFFFF' : COLORS.white,
         borderLeft: isCurrentUser ? `4px solid ${COLORS.black}` : 'none',
         paddingLeft: isCurrentUser ? '12px' : '16px',
         display: 'grid',
@@ -66,10 +66,10 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         transition: 'background-color 0.2s',
       }}
       onMouseOver={(e) => {
-        (e.currentTarget as HTMLElement).style.backgroundColor = isCurrentUser ? '#FFF9F5' : COLORS.bone
+        (e.currentTarget as HTMLElement).style.backgroundColor = isCurrentUser ? '#FFFFFF' : COLORS.bone
       }}
       onMouseOut={(e) => {
-        (e.currentTarget as HTMLElement).style.backgroundColor = isCurrentUser ? '#FFFBF7' : COLORS.white
+        (e.currentTarget as HTMLElement).style.backgroundColor = isCurrentUser ? '#FFFFFF' : COLORS.white
       }}
     >
       {/* Rank Badge */}

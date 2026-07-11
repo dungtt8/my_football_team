@@ -9,9 +9,9 @@ import { AttendanceList } from '@/components/Attendance/AttendanceList'
 import { AttendanceStatsCard } from '@/components/Attendance/AttendanceStatsCard'
 
 const G = {
-    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', blue: '#4A7CFF',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+    bg: '#FFFFFF', glass: '#FFFFFF', glassBorder: '#E7ECF3',
+    accent: '#12B76A', blue: '#2E7CF6',
+    t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
 }
 
 const inputStyle: React.CSSProperties = {
@@ -19,7 +19,7 @@ const inputStyle: React.CSSProperties = {
     padding: '10px 12px',
     borderRadius: '10px',
     border: `1px solid ${G.glassBorder}`,
-    background: 'rgba(255,255,255,0.05)',
+    background: '#F8FAFC',
     color: G.t1,
     fontSize: '13px',
     boxSizing: 'border-box',
@@ -237,8 +237,8 @@ export default function AttendanceHistoryPage() {
                         disabled={currentPage === 1}
                         style={{
                             padding: '8px 14px',
-                            background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : G.accent,
-                            color: currentPage === 1 ? G.t3 : '#06110D',
+                            background: currentPage === 1 ? '#F8FAFC' : G.accent,
+                            color: currentPage === 1 ? G.t3 : '#F4F7FB',
                             border: 'none',
                             borderRadius: '10px',
                             fontSize: '13px',
@@ -258,8 +258,8 @@ export default function AttendanceHistoryPage() {
                                     style={{
                                         width: '32px',
                                         height: '32px',
-                                        background: currentPage === page ? G.accent : 'rgba(255,255,255,0.05)',
-                                        color: currentPage === page ? '#06110D' : G.t2,
+                                        background: currentPage === page ? G.accent : '#F8FAFC',
+                                        color: currentPage === page ? '#F4F7FB' : G.t2,
                                         border: `1px solid ${G.glassBorder}`,
                                         borderRadius: '8px',
                                         fontSize: '13px',
@@ -277,8 +277,8 @@ export default function AttendanceHistoryPage() {
                         disabled={currentPage === totalPages}
                         style={{
                             padding: '8px 14px',
-                            background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : G.accent,
-                            color: currentPage === totalPages ? G.t3 : '#06110D',
+                            background: currentPage === totalPages ? '#F8FAFC' : G.accent,
+                            color: currentPage === totalPages ? G.t3 : '#F4F7FB',
                             border: 'none',
                             borderRadius: '10px',
                             fontSize: '13px',

@@ -14,22 +14,25 @@ interface SessionFormProps {
     onSubmit: (data: SessionFormData) => void
     isLoading?: boolean
     onCancel?: () => void
+    initialData?: Partial<SessionFormData>
+    submitLabel?: string
+    loadingLabel?: string
 }
 
 const G = {
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438',
 }
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '12px 14px',
     borderRadius: '12px',
-    background: 'rgba(255,255,255,0.05)',
+    background: '#F8FAFC',
     border: `1px solid ${G.glassBorder}`,
     color: G.t1,
     fontSize: '14px',
@@ -47,7 +50,7 @@ const labelStyle: React.CSSProperties = {
     color: G.t3,
 }
 
-export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = false, onCancel }) => {
+export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = false, onCancel, initialData, submitLabel, loadingLabel }) => {
     const toLocalDatetime = (d: Date) => {
         const pad = (n: number) => String(n).padStart(2, '0')
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -59,11 +62,11 @@ export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = 
     const defaultDeadline = new Date(now); defaultDeadline.setHours(17, 0, 0, 0)
 
     const [formData, setFormData] = useState<SessionFormData>({
-        session_date: toLocalDatetime(defaultSession),
-        session_type: 'training',
-        location: '',
-        description: '',
-        check_in_deadline: toLocalDatetime(defaultDeadline),
+        session_date: initialData?.session_date ? toLocalDatetime(new Date(initialData.session_date)) : toLocalDatetime(defaultSession),
+        session_type: initialData?.session_type || 'training',
+        location: initialData?.location || '',
+        description: initialData?.description || '',
+        check_in_deadline: initialData?.check_in_deadline ? toLocalDatetime(new Date(initialData.check_in_deadline)) : toLocalDatetime(defaultDeadline),
     })
     const [errors, setErrors] = useState<Partial<Record<keyof SessionFormData, string>>>({})
 
@@ -112,7 +115,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = 
                                 style={{
                                     flex: 1, padding: '11px', borderRadius: '12px', cursor: 'pointer',
                                     border: `2px solid ${selected ? G.accent : G.glassBorder}`,
-                                    background: selected ? 'rgba(0,214,143,0.10)' : 'transparent',
+                                    background: selected ? 'rgba(18,183,106,0.10)' : 'transparent',
                                     color: selected ? G.accent : G.t2,
                                     fontWeight: selected ? 700 : 500, fontSize: '14px',
                                     transition: 'all 0.15s',
@@ -176,8 +179,8 @@ export const SessionForm: React.FC<SessionFormProps> = ({ onSubmit, isLoading = 
                     </button>
                 )}
                 <button type="submit" disabled={isLoading}
-                    style={{ flex: 2, padding: '13px', borderRadius: '12px', border: 'none', background: isLoading ? 'rgba(0,214,143,0.4)' : G.accent, color: '#070B14', fontWeight: 700, fontSize: '14px', cursor: isLoading ? 'default' : 'pointer', transition: 'all 0.2s' }}>
-                    {isLoading ? 'Đang tạo...' : '✓ Tạo lịch điểm danh'}
+                    style={{ flex: 2, padding: '13px', borderRadius: '12px', border: 'none', background: isLoading ? 'rgba(18,183,106,0.4)' : G.accent, color: '#FFFFFF', fontWeight: 700, fontSize: '14px', cursor: isLoading ? 'default' : 'pointer', transition: 'all 0.2s' }}>
+                    {isLoading ? (loadingLabel || 'Đang tạo...') : (submitLabel || '✓ Tạo lịch điểm danh')}
                 </button>
             </div>
         </form>

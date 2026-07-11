@@ -56,15 +56,15 @@ export const PaymentQRDisplay: React.FC = () => {
     return (
         <div
             style={{
-                background: '#fff8e6',
-                border: '2px solid #ffb84d',
+                background: '#FEF6E7',
+                border: '2px solid #F5A623',
                 borderRadius: '8px',
                 padding: '16px',
                 marginBottom: '16px',
                 textAlign: 'center'
             }}
         >
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#ff8c00' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#FF7A1A' }}>
                 💳 Hạn chót thanh toán
             </h3>
 
@@ -80,7 +80,7 @@ export const PaymentQRDisplay: React.FC = () => {
                         style={{
                             maxWidth: '200px',
                             maxHeight: '200px',
-                            border: '2px solid #ffb84d',
+                            border: '2px solid #F5A623',
                             borderRadius: '4px',
                             padding: '8px',
                             background: 'white',

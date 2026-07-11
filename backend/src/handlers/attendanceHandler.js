@@ -121,6 +121,62 @@ const getSession = async (req, res) => {
     }
 };
 
+// ─── Update session ──────────────────────────────────────────────────────────
+/**
+ * PATCH /api/attendance/sessions/:id
+ * Body: any of { session_date, session_type, check_in_deadline, location, description }
+ * Lets a manager edit an active session's details.
+ */
+const updateSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const teamId = req.team.id;
+        const { session_date, session_type, check_in_deadline, location, description } = req.body;
+
+        const session = await db('attendance_sessions')
+            .where({ id, team_id: teamId })
+            .first();
+
+        if (!session) throw new NotFoundError('Session not found');
+        if (session.status !== 'active') throw new ValidationError('Cannot edit a closed session');
+
+        const updates = { updated_at: new Date() };
+
+        if (session_date !== undefined) {
+            const d = new Date(session_date);
+            if (isNaN(d.getTime())) throw new ValidationError('Invalid session_date format');
+            updates.session_date = d;
+        }
+        if (check_in_deadline !== undefined) {
+            if (check_in_deadline === null) {
+                updates.check_in_deadline = null;
+            } else {
+                const d = new Date(check_in_deadline);
+                if (isNaN(d.getTime())) throw new ValidationError('Invalid check_in_deadline format');
+                updates.check_in_deadline = d;
+            }
+        }
+        if (session_type !== undefined) {
+            if (!['training', 'match'].includes(session_type))
+                throw new ValidationError('session_type must be "training" or "match"');
+            updates.session_type = session_type;
+        }
+        if (location !== undefined) updates.location = location || null;
+        if (description !== undefined) updates.description = description || null;
+
+        const [updated] = await db('attendance_sessions')
+            .where({ id })
+            .update(updates)
+            .returning('*');
+
+        logger.info('Attendance session updated', { session_id: id, team_id: teamId });
+
+        return res.json(updated);
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'PATCH /api/attendance/sessions/:id' });
+    }
+};
+
 // ─── Close session ───────────────────────────────────────────────────────────
 /**
  * POST /api/attendance/sessions/:id/close
@@ -243,6 +299,7 @@ module.exports = {
     createSession,
     listSessions,
     getSession,
+    updateSession,
     closeSession,
     getLeaderboard,
     getHistoricalLeaderboard,

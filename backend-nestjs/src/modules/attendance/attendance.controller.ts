@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -147,6 +148,61 @@ export class AttendanceController {
       stats,
       total_records: checkins.length,
     };
+  }
+
+  @Patch('sessions/:id')
+  @Roles('co_manager', 'owner')
+  async updateSession(
+    @Param('id') id: string,
+    @Body() body: any,
+    @CurrentTeam() team: any,
+  ) {
+    const teamId = team.id;
+    const { session_date, session_type, check_in_deadline, location, description } =
+      body;
+
+    const session = await this.prisma.attendance_sessions.findFirst({
+      where: { id: bi(id), team_id: bi(teamId) },
+    });
+    if (!session) throw new NotFoundError('Session not found');
+    if (session.status !== 'active') {
+      throw new ValidationError('Cannot edit a closed session');
+    }
+
+    const data: any = { updated_at: new Date() };
+
+    if (session_date !== undefined) {
+      const d = new Date(session_date);
+      if (isNaN(d.getTime())) throw new ValidationError('Invalid session_date format');
+      data.session_date = d;
+    }
+    if (check_in_deadline !== undefined) {
+      if (check_in_deadline === null) {
+        data.check_in_deadline = null;
+      } else {
+        const d = new Date(check_in_deadline);
+        if (isNaN(d.getTime())) {
+          throw new ValidationError('Invalid check_in_deadline format');
+        }
+        data.check_in_deadline = d;
+      }
+    }
+    if (session_type !== undefined) {
+      if (!['training', 'match'].includes(session_type)) {
+        throw new ValidationError('session_type must be "training" or "match"');
+      }
+      data.session_type = session_type;
+    }
+    if (location !== undefined) data.location = location || null;
+    if (description !== undefined) data.description = description || null;
+
+    const updated = await this.prisma.attendance_sessions.update({
+      where: { id: bi(id) },
+      data,
+    });
+
+    logger.info('Attendance session updated', { session_id: id, team_id: teamId });
+    return updated;
   }
 
   @Post('sessions/:id/close')

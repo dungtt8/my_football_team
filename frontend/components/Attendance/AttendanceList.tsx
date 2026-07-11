@@ -4,9 +4,9 @@ import React from 'react'
 import { AttendanceCheckin } from '@/hooks/useAttendance'
 
 const G = {
-  glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)', glassHover: 'rgba(255,255,255,0.11)',
-  accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
-  t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+  glass: '#FFFFFF', glassBorder: '#E7ECF3', glassHover: '#EEF2F7',
+  accent: '#12B76A', accentDim: 'rgba(18,183,106,0.12)', red: '#F04438', redDim: 'rgba(240,68,56,0.12)',
+  t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
 }
 
 interface AttendanceListProps {
@@ -33,7 +33,7 @@ export const AttendanceList: React.FC<AttendanceListProps> = ({
         ? { bg: G.accentDim, text: G.accent, label: 'Tham gia' }
         : response === 'no'
           ? { bg: G.redDim, text: G.red, label: 'Vắng' }
-          : { bg: 'rgba(255,255,255,0.08)', text: G.t2, label: 'Chưa phản hồi' }
+          : { bg: '#EEF2F7', text: G.t2, label: 'Chưa phản hồi' }
 
     return (
       <span

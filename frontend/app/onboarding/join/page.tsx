@@ -6,8 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/useToast'
 
 const G = {
-  glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-  accent: '#00D68F', t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+  glass: '#FFFFFF', glassBorder: '#E7ECF3',
+  accent: '#12B76A', t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
@@ -70,7 +70,7 @@ function JoinTeamFormContent() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#070B14', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', color: G.t1 }}>
+    <div style={{ minHeight: '100dvh', background: '#FFFFFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', color: G.t1 }}>
       <div style={{ width: '100%', maxWidth: '400px' }}>
         {authLoading ? (
           <div style={{ textAlign: 'center' }}>
@@ -80,7 +80,7 @@ function JoinTeamFormContent() {
           <>
             <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', fontSize: '16px', marginBottom: '28px' }}>‹ Quay lại</button>
 
-            <h1 style={{ fontSize: '26px', fontWeight: 300, fontFamily: 'serif', margin: '0 0 8px' }}>Tham gia đội</h1>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-head)', margin: '0 0 8px' }}>Tham gia đội</h1>
             <p style={{ color: G.t2, fontSize: '14px', margin: '0 0 32px' }}>Nhập mã mời 7 ký tự từ chủ đội của bạn.</p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -93,20 +93,20 @@ function JoinTeamFormContent() {
                   maxLength={7}
                   style={{
                     width: '100%', padding: '18px 16px', borderRadius: '12px', boxSizing: 'border-box',
-                    background: 'rgba(255,255,255,0.05)', border: `1px solid ${G.glassBorder}`,
+                    background: '#F8FAFC', border: `1px solid ${G.glassBorder}`,
                     color: G.accent, fontSize: '28px', fontWeight: 700, letterSpacing: '0.25em',
                     outline: 'none', textAlign: 'center',
                   }}
                 />
               </div>
 
-              {error && <p style={{ color: '#FF6B6B', fontSize: '13px', margin: 0 }}>{error}</p>}
+              {error && <p style={{ color: '#F04438', fontSize: '13px', margin: 0 }}>{error}</p>}
 
               <button type="submit" disabled={loading} style={{
                 padding: '16px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-                background: 'linear-gradient(135deg, #00D68F, #00A36C)',
-                color: '#070B14', fontWeight: 700, fontSize: '15px',
-                boxShadow: '0 4px 24px rgba(0,214,143,0.3)',
+                background: 'linear-gradient(135deg, #12B76A, #039855)',
+                color: '#FFFFFF', fontWeight: 700, fontSize: '15px',
+                boxShadow: '0 4px 24px rgba(18,183,106,0.3)',
                 opacity: loading ? 0.6 : 1, marginTop: '8px',
               }}>
                 {loading ? 'Đang xử lý...' : '→ Tham gia'}
@@ -122,8 +122,8 @@ function JoinTeamFormContent() {
 export default function JoinTeamPage() {
   return (
     <Suspense fallback={
-      <div style={{ minHeight: '100dvh', background: '#070B14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '24px', height: '24px', border: '2px solid rgba(255,255,255,0.2)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100dvh', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '24px', height: '24px', border: '2px solid #D5DCE6', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     }>
       <JoinTeamFormContent />

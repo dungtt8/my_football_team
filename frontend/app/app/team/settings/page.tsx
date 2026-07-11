@@ -7,11 +7,11 @@ import { useToast } from '@/hooks/useToast'
 import { Gear, Clock, CurrencyDollar, CalendarPlus, Copy, CheckCircle, Calendar } from 'phosphor-react'
 
 const G = {
-    glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)',
-    blue: '#4A7CFF', blueDim: 'rgba(74,124,255,0.12)',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
+    glass: '#FFFFFF', glassBorder: '#E7ECF3',
+    accent: '#12B76A', accentDim: 'rgba(18,183,106,0.12)',
+    blue: '#2E7CF6', blueDim: 'rgba(46,124,246,0.12)',
+    t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
+    red: '#F04438', redDim: 'rgba(240,68,56,0.12)',
 }
 
 type TabType = 'general' | 'finance' | 'scheduling' | 'invite' | 'attendance'
@@ -264,7 +264,7 @@ export default function TeamSettingsPage() {
                 <button onClick={() => router.back()} style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, color: G.t1, borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', fontSize: 'clamp(14px, 4vw, 16px)', flexShrink: 0 }}>‹</button>
                 <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ fontSize: 'clamp(9px, 2.5vw, 11px)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '2px' }}>Cấu hình</p>
-                    <h1 style={{ fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
+                    <h1 style={{ fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 800, fontFamily: 'var(--font-head)', color: G.t1, margin: 0 }}>Cài Đặt Đội</h1>
                 </div>
             </div>
 
@@ -290,7 +290,7 @@ export default function TeamSettingsPage() {
                             border: 'none',
                             cursor: 'pointer',
                             background: tab === t.id ? G.accent : G.glass,
-                            color: tab === t.id ? '#070B14' : G.t2,
+                            color: tab === t.id ? '#FFFFFF' : G.t2,
                             transition: 'all 0.2s ease',
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
@@ -327,7 +327,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -358,7 +358,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -379,7 +379,7 @@ export default function TeamSettingsPage() {
                                     borderRadius: '12px',
                                     border: 'none',
                                     background: G.accent,
-                                    color: '#070B14',
+                                    color: '#FFFFFF',
                                     fontWeight: 600,
                                     cursor: loading ? 'default' : 'pointer',
                                     opacity: loading ? 0.6 : 1,
@@ -415,7 +415,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -449,7 +449,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -481,7 +481,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -516,7 +516,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -555,7 +555,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -586,7 +586,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '14px',
@@ -617,7 +617,7 @@ export default function TeamSettingsPage() {
                                     width: '100%',
                                     padding: '12px 14px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: '#F8FAFC',
                                     border: `1px solid ${G.glassBorder}`,
                                     color: G.t1,
                                     fontSize: '13px',
@@ -657,7 +657,7 @@ export default function TeamSettingsPage() {
                                     padding: '12px 24px',
                                     borderRadius: '12px',
                                     background: loading ? G.t3 : G.accent,
-                                    color: loading ? G.t2 : '#070B14',
+                                    color: loading ? G.t2 : '#FFFFFF',
                                     border: 'none',
                                     fontWeight: 600,
                                     cursor: loading ? 'not-allowed' : 'pointer',
@@ -677,7 +677,7 @@ export default function TeamSettingsPage() {
                 {tab === 'scheduling' && (() => {
                     const inputStyle: React.CSSProperties = {
                         width: '100%', padding: '11px 14px', borderRadius: '10px',
-                        background: 'rgba(255,255,255,0.05)', border: `1px solid ${G.glassBorder}`,
+                        background: '#F8FAFC', border: `1px solid ${G.glassBorder}`,
                         color: G.t1, fontSize: '14px', outline: 'none', boxSizing: 'border-box',
                         opacity: isOwner ? 1 : 0.6,
                     }
@@ -752,7 +752,7 @@ export default function TeamSettingsPage() {
                                                                     const days = (settings.session_days || '').split(',').map(d => d.trim())
                                                                     setSettings({ ...settings, session_days: (selected ? days.filter(d => d !== day) : [...days, day]).filter(Boolean).join(',') })
                                                                 }}
-                                                                style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${selected ? G.accent : G.glassBorder}`, background: selected ? 'rgba(0,214,143,0.1)' : 'transparent', color: selected ? G.accent : G.t2, fontWeight: selected ? 700 : 500, cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6, fontSize: '13px' }}>
+                                                                style={{ padding: '8px 14px', borderRadius: '10px', border: `2px solid ${selected ? G.accent : G.glassBorder}`, background: selected ? 'rgba(18,183,106,0.1)' : 'transparent', color: selected ? G.accent : G.t2, fontWeight: selected ? 700 : 500, cursor: isOwner ? 'pointer' : 'default', opacity: isOwner ? 1 : 0.6, fontSize: '13px' }}>
                                                                 {DAY_SHORT[day]}
                                                             </button>
                                                         )
@@ -845,7 +845,7 @@ export default function TeamSettingsPage() {
 
                             {isOwner && (
                                 <button onClick={handleSaveSettings} disabled={loading}
-                                    style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: G.accent, color: '#070B14', fontWeight: 600, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+                                    style={{ padding: '12px 24px', borderRadius: '12px', border: 'none', background: G.accent, color: '#FFFFFF', fontWeight: 600, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1 }}>
                                     {loading ? 'Đang lưu...' : '✓ Lưu thay đổi'}
                                 </button>
                             )}
@@ -874,7 +874,7 @@ export default function TeamSettingsPage() {
                             padding: 'clamp(8px, 2vw, 12px)',
                             borderRadius: '12px',
                             background: G.accentDim,
-                            border: `1px solid rgba(0,214,143,0.25)`,
+                            border: `1px solid rgba(18,183,106,0.25)`,
                             marginBottom: 'clamp(10px, 2vh, 12px)',
                         }}>
                             <input
@@ -899,7 +899,7 @@ export default function TeamSettingsPage() {
                                     padding: 'clamp(5px, 1.5vw, 6px) clamp(8px, 2vw, 10px)',
                                     borderRadius: '8px',
                                     background: G.accent,
-                                    color: '#070B14',
+                                    color: '#FFFFFF',
                                     border: 'none',
                                     cursor: 'pointer',
                                     fontWeight: 600,
@@ -927,7 +927,7 @@ export default function TeamSettingsPage() {
                                     borderRadius: '10px',
                                     background: G.accent,
                                     border: 'none',
-                                    color: '#070B14',
+                                    color: '#FFFFFF',
                                     cursor: loadingInvite ? 'default' : 'pointer',
                                     fontSize: '13px',
                                     fontWeight: 600,
@@ -953,10 +953,10 @@ export default function TeamSettingsPage() {
                 <div style={{
                     marginTop: 'clamp(16px, 3vh, 20px)',
                     padding: 'clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 14px)',
-                    background: 'rgba(255,165,0,0.1)',
-                    border: '1px solid rgba(255,165,0,0.25)',
+                    background: 'rgba(255,122,26,0.1)',
+                    border: '1px solid rgba(255,122,26,0.25)',
                     borderRadius: '12px',
-                    color: '#FFA500',
+                    color: '#FF7A1A',
                     fontSize: 'clamp(11px, 2.5vw, 12px)',
                     lineHeight: '1.4',
                 }}

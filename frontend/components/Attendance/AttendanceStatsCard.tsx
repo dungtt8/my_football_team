@@ -3,9 +3,9 @@
 import React from 'react'
 
 const G = {
-  glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-  accent: '#00D68F', blue: '#4A7CFF', red: '#FF6B6B',
-  t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+  glass: '#FFFFFF', glassBorder: '#E7ECF3',
+  accent: '#12B76A', blue: '#2E7CF6', red: '#F04438',
+  t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
 }
 
 interface AttendanceStatsCardProps {
@@ -61,7 +61,7 @@ export const AttendanceStatsCard: React.FC<AttendanceStatsCardProps> = ({
       {/* Attendance Rate Bar - spans full width */}
       <div style={{ gridColumn: 'span 4', marginTop: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ flex: 1, height: '8px', background: 'rgba(255,255,255,0.10)', borderRadius: '4px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, height: '8px', background: '#E7ECF3', borderRadius: '4px', overflow: 'hidden' }}>
             <div
               style={{
                 height: '100%',

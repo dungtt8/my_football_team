@@ -5,20 +5,30 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useAttendance, LeaderboardEntry } from '@/hooks/useAttendance'
 import { useToast } from '@/hooks/useToast'
-import { ArrowLeft, CaretLeft, CaretRight } from 'phosphor-react'
+import { CaretLeft, CaretRight } from 'phosphor-react'
 
-const G = {
-    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', blue: '#4A7CFF',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+const AVATAR_GRADS = [
+    'linear-gradient(135deg,#FFB27A,#FF7A1A)',
+    'linear-gradient(135deg,#7A5AF8,#2E7CF6)',
+    'linear-gradient(135deg,#12B76A,#027A48)',
+    'linear-gradient(135deg,#F04438,#F5A623)',
+    'linear-gradient(135deg,#2E7CF6,#12B76A)',
+]
+
+const POD_GRAD: Record<number, string> = {
+    1: 'linear-gradient(135deg,#FFD772,#F5A623)',
+    2: 'linear-gradient(135deg,#CBD5E1,#94A3B8)',
+    3: 'linear-gradient(135deg,#F0B08A,#C97B4A)',
 }
 
-const getMedalEmoji = (rank: number) => {
-    if (rank === 1) return '🥇'
-    if (rank === 2) return '🥈'
-    if (rank === 3) return '🥉'
-    return null
-}
+const getMedal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
+
+const getName = (e?: LeaderboardEntry) => e?.full_name || e?.userName || 'Thành viên'
+
+const getInitials = (name: string) =>
+    name.trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase()
+
+const getPoints = (e?: LeaderboardEntry) => e?.total_points ?? e?.points ?? 0
 
 export default function LeaderboardPage() {
     const router = useRouter()
@@ -31,34 +41,20 @@ export default function LeaderboardPage() {
         const now = new Date()
         return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
     })
-    const [userRank, setUserRank] = useState<number | null>(null)
-    const [userPoints, setUserPoints] = useState<number | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+
+    const nowYearMonth = () => {
+        const now = new Date()
+        return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
+    }
 
     const loadLeaderboard = useCallback(async () => {
         setIsLoading(true)
         try {
-            let data
-            const now = new Date()
-            const yearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
-
-            if (currentMonth === yearMonth) {
-                data = await getLeaderboard()
-            } else {
-                data = await getHistoricalLeaderboard(currentMonth)
-            }
-
+            const data = currentMonth === nowYearMonth()
+                ? await getLeaderboard()
+                : await getHistoricalLeaderboard(currentMonth)
             setEntries(data || [])
-
-            // Find current user's rank and points
-            if (user?.id && data) {
-                const userEntry = data.find(e => (e.user_id || e.userId) === user.id)
-                if (userEntry) {
-                    const rank = data.indexOf(userEntry) + 1
-                    setUserRank(rank)
-                    setUserPoints(userEntry.total_points ?? userEntry.points ?? 0)
-                }
-            }
         } catch (error) {
             console.error('Error loading leaderboard:', error)
             toast('Failed to load leaderboard', 'error')
@@ -67,7 +63,6 @@ export default function LeaderboardPage() {
         }
     }, [currentMonth, user?.id])
 
-    // Load leaderboard when month changes
     useEffect(() => {
         if (authLoading || !currentMonth) return
         loadLeaderboard()
@@ -77,33 +72,20 @@ export default function LeaderboardPage() {
         const [year, month] = currentMonth.split('-')
         let m = parseInt(month) - 1
         let y = parseInt(year)
-        if (m < 1) {
-            m = 12
-            y -= 1
-        }
+        if (m < 1) { m = 12; y -= 1 }
         setCurrentMonth(`${y}-${String(m).padStart(2, '0')}`)
     }
 
+    const canGoNext = () => currentMonth < nowYearMonth()
+
     const goToNextMonth = () => {
-        const now = new Date()
-        const currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
-
-        // Don't allow going beyond current month
-        if (currentMonth === currentYearMonth) return
-
+        if (!canGoNext()) return
         const [year, month] = currentMonth.split('-')
         let m = parseInt(month) + 1
         let y = parseInt(year)
-        if (m > 12) {
-            m = 1
-            y += 1
-        }
-        const nextMonth = `${y}-${String(m).padStart(2, '0')}`
-
-        // Only allow if not beyond current month
-        if (nextMonth <= currentYearMonth) {
-            setCurrentMonth(nextMonth)
-        }
+        if (m > 12) { m = 1; y += 1 }
+        const next = `${y}-${String(m).padStart(2, '0')}`
+        if (next <= nowYearMonth()) setCurrentMonth(next)
     }
 
     const formatMonthDisplay = (yearMonth: string) => {
@@ -112,157 +94,155 @@ export default function LeaderboardPage() {
         return date.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })
     }
 
-    const canGoNext = () => {
-        const now = new Date()
-        const currentYearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
-        return currentMonth < currentYearMonth
-    }
+    const isMe = (e: LeaderboardEntry) => (e.user_id || e.userId) === user?.id
 
-    return (
-        <div style={{ background: G.bg, minHeight: '100vh', padding: '16px', width: '100%', boxSizing: 'border-box' }}>
-            {/* Header */}
-            <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <button onClick={() => router.back()} style={{
-                        background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: G.t1,
-                    }}>
-                        <ArrowLeft size={20} weight="bold" />
-                    </button>
-                    <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: G.t1 }}>Bảng xếp hạng</h1>
+    const top3 = entries.slice(0, 3)
+    const rest = entries.slice(3)
+
+    // Level card from current user's points
+    const meEntry = entries.find(isMe)
+    const mePoints = getPoints(meEntry)
+    const level = Math.floor(mePoints / 200) + 1
+    const intoLevel = mePoints % 200
+    const pct = Math.round((intoLevel / 200) * 100)
+    const toNext = 200 - intoLevel
+
+    const renderRows = (list: LeaderboardEntry[]) => list.map((entry, i) => {
+        const rank = entries.indexOf(entry) + 1
+        const me = isMe(entry)
+        const name = getName(entry)
+        return (
+            <div key={entry.user_id || entry.userId || i} className={`lb-row${me ? ' me' : ''}`}>
+                <div className={`rank${rank <= 3 ? ' top' : ''}`}>{rank}</div>
+                <div className="avatar" style={{ width: 38, height: 38, borderRadius: 11, background: AVATAR_GRADS[i % AVATAR_GRADS.length] }}>
+                    {getInitials(name)}
                 </div>
+                <div className="rc" style={{ flex: 1 }}>
+                    <b style={{ fontSize: 14 }}>
+                        {rank <= 3 ? `${getMedal(rank)} ` : ''}{name}
+                        {me && <span className="chip soft" style={{ padding: '2px 8px', marginLeft: 4 }}>Bạn</span>}
+                    </b>
+                    <small>
+                        {entry.streak ? `chuỗi ${entry.streak}` : `${getPoints(entry)} điểm`}
+                    </small>
+                </div>
+                <b className="amt-pos">{getPoints(entry)}</b>
             </div>
+        )
+    })
 
-            {/* Month Navigation */}
-            <div style={{
-                background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '14px',
-                padding: '14px 16px', marginBottom: '24px', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', backdropFilter: 'blur(12px)',
-            }}>
-                <button onClick={goToPreviousMonth} style={{
-                    background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: G.t2,
-                }}>
+    // ---- Reusable pieces ----
+
+    const pillsAndNavEl = (
+        <>
+            <div className="pills">
+                <div className="pill on">Tháng này</div>
+                <div className="pill">Mùa giải</div>
+                <div className="pill">Mọi lúc</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 14 }}>
+                <button onClick={goToPreviousMonth} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', color: 'var(--ink-3)' }}>
                     <CaretLeft size={18} weight="bold" />
                 </button>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: G.t1, minWidth: '150px', textAlign: 'center' }}>
-                    {formatMonthDisplay(currentMonth)}
-                </span>
-                <button onClick={goToNextMonth} disabled={!canGoNext()} style={{
-                    background: 'transparent', border: 'none', cursor: canGoNext() ? 'pointer' : 'not-allowed',
-                    padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: canGoNext() ? G.t2 : G.t3, opacity: canGoNext() ? 1 : 0.5,
-                }}>
+                <span style={{ fontSize: 14, fontWeight: 600, minWidth: 150, textAlign: 'center' }}>{formatMonthDisplay(currentMonth)}</span>
+                <button onClick={goToNextMonth} disabled={!canGoNext()} style={{ background: 'transparent', border: 'none', cursor: canGoNext() ? 'pointer' : 'not-allowed', display: 'flex', color: 'var(--ink-3)', opacity: canGoNext() ? 1 : 0.4 }}>
                     <CaretRight size={18} weight="bold" />
                 </button>
             </div>
+        </>
+    )
 
-            {/* User Stats Card */}
-            {userRank && (
-                <div style={{
-                    background: `linear-gradient(135deg, ${G.accentDim}, rgba(0,214,143,0.06))`,
-                    border: `1px solid rgba(0,214,143,0.25)`, borderRadius: '16px', padding: '16px',
-                    marginBottom: '24px', backdropFilter: 'blur(12px)',
-                }}>
-                    <p style={{ fontSize: '11px', color: G.t3, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Your Rank This Month
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
-                        <div>
-                            <p style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: G.accent }}>
-                                #{userRank}
-                            </p>
-                            <p style={{ margin: '4px 0 0', fontSize: '13px', color: G.t2 }}>
-                                {userPoints} điểm
-                            </p>
+    const podiumEl = !isLoading && top3.length >= 3 && (
+        <div className="card pad">
+            <div className="podium">
+                {[
+                    { e: top3[1], rank: 2, cls: 'p2' },
+                    { e: top3[0], rank: 1, cls: 'p1' },
+                    { e: top3[2], rank: 3, cls: 'p3' },
+                ].map(({ e, rank, cls }) => (
+                    <div key={rank} className={`pod ${cls}`}>
+                        <div className="pa">{getInitials(getName(e))}</div>
+                        <div className="stand">
+                            <span className="medal">{getMedal(rank)}</span>
+                            <b>{getName(e)}</b>
+                            <small>{getPoints(e)} đ</small>
                         </div>
-                        <span style={{ fontSize: '32px', marginBottom: '4px' }}>
-                            {getMedalEmoji(userRank) || '⭐'}
-                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+
+    const restListEl = isLoading ? (
+        <div className="empty">Đang tải bảng xếp hạng...</div>
+    ) : entries.length === 0 ? (
+        <div className="empty">Chưa có dữ liệu cho kỳ này</div>
+    ) : (
+        <div className="card">{renderRows(rest.length > 0 ? rest : entries)}</div>
+    )
+
+    const fullListRowsEl = isLoading ? (
+        <div className="empty">Đang tải bảng xếp hạng...</div>
+    ) : entries.length === 0 ? (
+        <div className="empty">Chưa có dữ liệu cho kỳ này</div>
+    ) : (
+        renderRows(entries)
+    )
+
+    const levelEl = !isLoading && meEntry && (
+        <div className="card pad levelcard">
+            <div className="ring" style={{ '--p': pct } as React.CSSProperties}><i>Lv {level}</i></div>
+            <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <b style={{ fontFamily: 'var(--font-head)' }}>Cấp độ {level}</b>
+                    <small style={{ color: 'var(--ink-3)' }}>{mePoints} / {level * 200}</small>
+                </div>
+                <div className="bar"><i style={{ width: `${pct}%` }} /></div>
+                <small style={{ color: 'var(--ink-3)', marginTop: 8, display: 'block' }}>
+                    Còn {toNext} điểm để lên <b style={{ color: 'var(--brand-600)' }}>Lv {level + 1}</b>
+                </small>
+            </div>
+        </div>
+    )
+
+    return (
+        <div className="screen-body" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+
+            {/* Mobile header — matches mockup M.rank */}
+            <div className="md:hidden">
+                <div className="eyebrow">Bảng xếp hạng</div>
+                <div className="sec-title" style={{ fontSize: 22, marginTop: 4 }}>Cầu thủ chuyên cần nhất</div>
+            </div>
+
+            {/* Desktop header — matches mockup D.rank .page-h */}
+            <div className="hidden md:block page-h">
+                <h1>Bảng xếp hạng 🏆</h1>
+                <p>Cầu thủ chuyên cần nhất mùa giải.</p>
+            </div>
+
+            {/* Mobile layout — matches mockup M.rank: pills, podium, list, level */}
+            <div className="md:hidden">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {pillsAndNavEl}
+                    {podiumEl}
+                    {restListEl}
+                    {levelEl}
+                </div>
+            </div>
+
+            {/* Desktop layout — matches mockup D.rank: pills+full list (left) | podium+level (right) */}
+            <div className="hidden md:block">
+                <div className="dgrid">
+                    <div className="card">
+                        <div className="pad">{pillsAndNavEl}</div>
+                        {fullListRowsEl}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {podiumEl}
+                        {levelEl}
                     </div>
                 </div>
-            )}
-
-            {/* Leaderboard */}
-            {isLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 16px', color: G.t3 }}>
-                    <p>Loading leaderboard...</p>
-                </div>
-            ) : entries.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 16px', color: G.t3 }}>
-                    <p>No data available for this period</p>
-                </div>
-            ) : (
-                <div style={{
-                    background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '16px',
-                    overflow: 'hidden', backdropFilter: 'blur(12px)',
-                }}>
-                    {entries.map((entry, index) => {
-                        const rank = index + 1
-                        const isMe = (entry.user_id || entry.userId) === user?.id
-                        const medal = getMedalEmoji(rank)
-
-                        return (
-                            <div
-                                key={entry.user_id || entry.userId || index}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '14px 16px',
-                                    borderBottom: index < entries.length - 1 ? `1px solid rgba(255,255,255,0.05)` : 'none',
-                                    background: isMe ? G.accentDim : 'transparent',
-                                    transition: 'all 0.15s ease',
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-                                    <div style={{
-                                        width: '32px', height: '32px', borderRadius: '50%',
-                                        background: rank <= 3 ? 'rgba(0,214,143,0.2)' : 'rgba(255,255,255,0.08)',
-                                        border: `1px solid ${rank <= 3 ? 'rgba(0,214,143,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: medal ? '16px' : '14px', fontWeight: 700,
-                                        color: rank <= 3 ? G.accent : G.t3,
-                                    }}>
-                                        {medal || rank}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{
-                                            margin: 0, fontSize: '14px', fontWeight: isMe ? 700 : 600,
-                                            color: isMe ? G.accent : G.t1,
-                                        }}>
-                                            {entry.full_name || entry.userName || 'Thành viên'}
-                                        </p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
-                                            {rank <= 3 ? ['🥇 Gold', '🥈 Silver', '🥉 Bronze'][rank - 1] : 'Member'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div style={{ textAlign: 'right' }}>
-                                    <p style={{
-                                        margin: 0, fontSize: '16px', fontWeight: 700,
-                                        color: G.accent,
-                                    }}>
-                                        {entry.total_points ?? entry.points ?? 0}
-                                    </p>
-                                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3 }}>
-                                        điểm
-                                    </p>
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-
-            {/* Back to Attendance */}
-            <button onClick={() => router.push('/app/attendance')} style={{
-                width: '100%', marginTop: '20px', padding: '14px', borderRadius: '12px',
-                background: 'transparent', border: `1px solid ${G.glassBorder}`,
-                color: G.t2, fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                transition: 'all 0.15s ease',
-            }}>
-                ← Back to Attendance
-            </button>
+            </div>
         </div>
     )
 }

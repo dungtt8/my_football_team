@@ -175,12 +175,12 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     const editable = isOwner && !readOnly
 
     return (
-        <div style={{ padding: '16px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', marginBottom: '16px', backdropFilter: 'blur(12px)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '12px', fontSize: '16px', fontWeight: '600', color: '#F0F4FF' }}>💳 Cài đặt thanh toán</h3>
+        <div style={{ padding: '16px', background: '#FFFFFF', border: '1px solid #E7ECF3', borderRadius: '16px', marginBottom: '16px', backdropFilter: 'blur(12px)' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '12px', fontSize: '16px', fontWeight: '600', color: '#0B1220' }}>💳 Cài đặt thanh toán</h3>
 
             {/* Bank Information */}
             <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(240,244,255,0.55)' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(11,18,32,0.55)' }}>
                     Tên ngân hàng
                 </label>
                 <input
@@ -192,10 +192,10 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                     style={{
                         width: '100%',
                         padding: '8px',
-                        border: '1px solid rgba(255,255,255,0.10)',
+                        border: '1px solid #E7ECF3',
                         borderRadius: '8px',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#F0F4FF',
+                        background: '#F8FAFC',
+                        color: '#0B1220',
                         fontSize: '13px',
                         boxSizing: 'border-box',
                         opacity: editable ? 1 : 0.7,
@@ -205,7 +205,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(240,244,255,0.55)' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(11,18,32,0.55)' }}>
                     Số tài khoản
                 </label>
                 <input
@@ -217,10 +217,10 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                     style={{
                         width: '100%',
                         padding: '8px',
-                        border: '1px solid rgba(255,255,255,0.10)',
+                        border: '1px solid #E7ECF3',
                         borderRadius: '8px',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#F0F4FF',
+                        background: '#F8FAFC',
+                        color: '#0B1220',
                         fontSize: '13px',
                         boxSizing: 'border-box',
                         opacity: editable ? 1 : 0.7,
@@ -235,9 +235,9 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                     disabled={loading}
                     style={{
                         padding: '8px 16px',
-                        background: 'rgba(0,214,143,0.12)',
-                        color: '#00D68F',
-                        border: '1px solid rgba(0,214,143,0.25)',
+                        background: 'rgba(18,183,106,0.12)',
+                        color: '#12B76A',
+                        border: '1px solid rgba(18,183,106,0.25)',
                         borderRadius: '8px',
                         fontSize: '13px',
                         cursor: loading ? 'not-allowed' : 'pointer',
@@ -250,8 +250,8 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
             )}
 
             {/* QR Code Upload */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.10)', paddingTop: '16px' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '500', color: '#F0F4FF' }}>Mã QR thanh toán</h4>
+            <div style={{ borderTop: '1px solid #E7ECF3', paddingTop: '16px' }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '500', color: '#0B1220' }}>Mã QR thanh toán</h4>
 
                 {/* QR Code Preview */}
                 {previewUrl && (
@@ -262,10 +262,10 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                             style={{
                                 maxWidth: '200px',
                                 maxHeight: '200px',
-                                border: '1px solid rgba(255,255,255,0.10)',
+                                border: '1px solid #E7ECF3',
                                 borderRadius: '8px',
                                 padding: '8px',
-                                background: 'rgba(255,255,255,0.05)'
+                                background: '#F8FAFC'
                             }}
                         />
                         {editable && (
@@ -275,9 +275,9 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                                     disabled={loading}
                                     style={{
                                         padding: '6px 12px',
-                                        background: 'rgba(255,107,107,0.12)',
-                                        color: '#FF6B6B',
-                                        border: '1px solid rgba(255,107,107,0.25)',
+                                        background: 'rgba(240,68,56,0.12)',
+                                        color: '#F04438',
+                                        border: '1px solid rgba(240,68,56,0.25)',
                                         borderRadius: '8px',
                                         fontSize: '12px',
                                         cursor: loading ? 'not-allowed' : 'pointer',
@@ -311,9 +311,9 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                                 disabled={uploading}
                                 style={{
                                     padding: '8px 16px',
-                                    background: 'rgba(0,214,143,0.12)',
-                                    color: '#00D68F',
-                                    border: '1px solid rgba(0,214,143,0.25)',
+                                    background: 'rgba(18,183,106,0.12)',
+                                    color: '#12B76A',
+                                    border: '1px solid rgba(18,183,106,0.25)',
                                     borderRadius: '8px',
                                     fontSize: '13px',
                                     cursor: uploading ? 'not-allowed' : 'pointer',
@@ -327,7 +327,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                 )}
 
                 {!previewUrl && !editable && (
-                    <p style={{ color: 'rgba(240,244,255,0.30)', fontSize: '12px', margin: '0' }}>Chưa có mã QR thanh toán</p>
+                    <p style={{ color: 'rgba(11,18,32,0.30)', fontSize: '12px', margin: '0' }}>Chưa có mã QR thanh toán</p>
                 )}
             </div>
         </div>

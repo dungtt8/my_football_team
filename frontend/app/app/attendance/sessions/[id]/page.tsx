@@ -6,20 +6,21 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAttendance, AttendanceSession, AttendanceCheckin, SessionStats } from '@/hooks/useAttendance'
 import { useToast } from '@/hooks/useToast'
 import { ArrowLeft } from 'phosphor-react'
+import { SessionForm, SessionFormData } from '@/components/Attendance/SessionForm'
 
 const G = {
-    bg: '#070B14',
-    glass: 'rgba(255,255,255,0.07)',
-    glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F',
-    accentDim: 'rgba(0,214,143,0.12)',
-    red: '#FF6B6B',
-    redDim: 'rgba(255,107,107,0.12)',
-    yellow: '#FFB84D',
-    yellowDim: 'rgba(255,184,77,0.12)',
-    t1: '#F0F4FF',
-    t2: 'rgba(240,244,255,0.55)',
-    t3: 'rgba(240,244,255,0.30)',
+    bg: '#FFFFFF',
+    glass: '#FFFFFF',
+    glassBorder: '#E7ECF3',
+    accent: '#12B76A',
+    accentDim: 'rgba(18,183,106,0.12)',
+    red: '#F04438',
+    redDim: 'rgba(240,68,56,0.12)',
+    yellow: '#F5A623',
+    yellowDim: 'rgba(245,166,35,0.12)',
+    t1: '#0B1220',
+    t2: 'rgba(11,18,32,0.55)',
+    t3: 'rgba(11,18,32,0.30)',
 }
 
 export default function SessionDetailPage() {
@@ -29,7 +30,7 @@ export default function SessionDetailPage() {
     const { toast } = useToast()
     const id = params.id as string
 
-    const { getSession, respondToCheckin, managerRespondToCheckin, closeSession } = useAttendance()
+    const { getSession, respondToCheckin, managerRespondToCheckin, closeSession, updateSession } = useAttendance()
     const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
     const [session, setSession] = useState<AttendanceSession | null>(null)
@@ -39,6 +40,8 @@ export default function SessionDetailPage() {
     const [isActing, setIsActing] = useState<string | null>(null)
     const [confirmClose, setConfirmClose] = useState(false)
     const [activeTab, setActiveTab] = useState<'all' | 'yes' | 'no' | 'pending'>('all')
+    const [showEditForm, setShowEditForm] = useState(false)
+    const [isSavingEdit, setIsSavingEdit] = useState(false)
 
     useEffect(() => { loadData() }, [id])
 
@@ -60,6 +63,17 @@ export default function SessionDetailPage() {
         try { await fn(); toast(successMsg, 'success'); loadData() }
         catch (e: any) { toast(e?.message || 'Lỗi', 'error') }
         finally { setIsActing(null) }
+    }
+
+    const handleEditSubmit = async (data: SessionFormData) => {
+        setIsSavingEdit(true)
+        try {
+            await updateSession(id, data)
+            toast('Đã cập nhật buổi tập', 'success')
+            setShowEditForm(false)
+            loadData()
+        } catch (e: any) { toast(e?.message || 'Lỗi cập nhật', 'error') }
+        finally { setIsSavingEdit(false) }
     }
 
     const myCheckin = checkins.find(c => c.user_id === user?.id)
@@ -108,16 +122,26 @@ export default function SessionDetailPage() {
 
             {/* Header */}
             <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '36px' }}>{isMatch ? '⚽' : '🏃'}</span>
-                    <div>
-                        <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, margin: '0 0 4px' }}>
-                            {isMatch ? 'Trận đấu' : 'Buổi tập'}
-                        </p>
-                        <h1 style={{ fontSize: '24px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>
-                            {fmtDate(session.session_date)}
-                        </h1>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '36px' }}>{isMatch ? '⚽' : '🏃'}</span>
+                        <div>
+                            <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, margin: '0 0 4px' }}>
+                                {isMatch ? 'Trận đấu' : 'Buổi tập'}
+                            </p>
+                            <h1 style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-head)', color: G.t1, margin: 0 }}>
+                                {fmtDate(session.session_date)}
+                            </h1>
+                        </div>
                     </div>
+                    {isManager && isActive && (
+                        <button onClick={() => setShowEditForm(true)} style={{
+                            flexShrink: 0, padding: '8px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 600,
+                            cursor: 'pointer', background: G.glass, color: G.t1, border: `1px solid ${G.glassBorder}`,
+                        }}>
+                            ✏️ Chỉnh sửa
+                        </button>
+                    )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
                     {session.location && <span style={{ fontSize: '12px', color: G.t2 }}>📍 {session.location}</span>}
@@ -125,7 +149,7 @@ export default function SessionDetailPage() {
                         fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px',
                         background: isActive ? G.accentDim : G.glass,
                         color: isActive ? G.accent : G.t3,
-                        border: `1px solid ${isActive ? 'rgba(0,214,143,0.25)' : G.glassBorder}`,
+                        border: `1px solid ${isActive ? 'rgba(18,183,106,0.25)' : G.glassBorder}`,
                     }}>
                         {isActive ? '● Đang mở' : '○ Đã đóng'}
                     </span>
@@ -146,9 +170,9 @@ export default function SessionDetailPage() {
             {stats && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '28px' }}>
                     {[
-                        { label: 'Tham gia', value: stats.yes, color: G.accent, bg: G.accentDim, border: 'rgba(0,214,143,0.2)' },
-                        { label: 'Không', value: stats.no, color: G.red, bg: G.redDim, border: 'rgba(255,107,107,0.2)' },
-                        { label: 'Chưa TL', value: stats.pending, color: G.yellow, bg: G.yellowDim, border: 'rgba(255,184,77,0.2)' },
+                        { label: 'Tham gia', value: stats.yes, color: G.accent, bg: G.accentDim, border: 'rgba(18,183,106,0.2)' },
+                        { label: 'Không', value: stats.no, color: G.red, bg: G.redDim, border: 'rgba(240,68,56,0.2)' },
+                        { label: 'Chưa TL', value: stats.pending, color: G.yellow, bg: G.yellowDim, border: 'rgba(245,166,35,0.2)' },
                         { label: 'Tổng', value: stats.total, color: G.t1, bg: G.glass, border: G.glassBorder },
                     ].map(s => (
                         <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: '14px', padding: '12px 10px', backdropFilter: 'blur(12px)' }}>
@@ -163,7 +187,7 @@ export default function SessionDetailPage() {
             {!isManager && (
                 <div style={{
                     background: myCheckin?.response === 'yes' ? G.accentDim : myCheckin?.response === 'no' ? G.redDim : G.glass,
-                    border: `1px solid ${myCheckin?.response === 'yes' ? 'rgba(0,214,143,0.30)' : myCheckin?.response === 'no' ? 'rgba(255,107,107,0.25)' : G.glassBorder}`,
+                    border: `1px solid ${myCheckin?.response === 'yes' ? 'rgba(18,183,106,0.30)' : myCheckin?.response === 'no' ? 'rgba(240,68,56,0.25)' : G.glassBorder}`,
                     borderRadius: '20px', padding: '24px', marginBottom: '28px', backdropFilter: 'blur(16px)',
                 }}>
                     {myCheckin?.response === 'yes' ? (
@@ -177,7 +201,7 @@ export default function SessionDetailPage() {
                                 <button
                                     onClick={() => act('change', () => respondToCheckin(myCheckin.id, 'no').then(() => {}), 'Đã cập nhật: Không tham gia')}
                                     disabled={!!isActing}
-                                    style={{ marginTop: '14px', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: G.redDim, color: G.red, border: `1px solid rgba(255,107,107,0.25)`, opacity: isActing ? 0.5 : 1 }}
+                                    style={{ marginTop: '14px', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: G.redDim, color: G.red, border: `1px solid rgba(240,68,56,0.25)`, opacity: isActing ? 0.5 : 1 }}
                                 >
                                     Đổi thành Không tham gia
                                 </button>
@@ -194,7 +218,7 @@ export default function SessionDetailPage() {
                                 <button
                                     onClick={() => act('change', () => respondToCheckin(myCheckin.id, 'yes').then(() => {}), 'Đã cập nhật: Tham gia')}
                                     disabled={!!isActing}
-                                    style={{ marginTop: '14px', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`, opacity: isActing ? 0.5 : 1 }}
+                                    style={{ marginTop: '14px', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: G.accentDim, color: G.accent, border: `1px solid rgba(18,183,106,0.25)`, opacity: isActing ? 0.5 : 1 }}
                                 >
                                     Đổi thành Tham gia
                                 </button>
@@ -223,9 +247,9 @@ export default function SessionDetailPage() {
                                     onClick={() => act('yes', () => respondToCheckin(myCheckin.id, 'yes').then(() => {}), '✅ Đã xác nhận tham gia! +10 điểm')}
                                     style={{
                                         flex: 1, padding: '14px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-                                        background: `linear-gradient(135deg, ${G.accent}, #00A36C)`,
-                                        color: '#070B14', fontWeight: 700, fontSize: '15px',
-                                        boxShadow: '0 4px 24px rgba(0,214,143,0.35)',
+                                        background: `linear-gradient(135deg, ${G.accent}, #039855)`,
+                                        color: '#FFFFFF', fontWeight: 700, fontSize: '15px',
+                                        boxShadow: '0 4px 24px rgba(18,183,106,0.35)',
                                         opacity: isActing ? 0.6 : 1, transition: 'opacity 0.2s',
                                     }}
                                 >
@@ -262,9 +286,9 @@ export default function SessionDetailPage() {
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
                         {([
                             ['all', 'Tất cả', stats?.total ?? 0, G.t3, G.glass, G.glassBorder],
-                            ['yes', 'Tham gia', stats?.yes ?? 0, G.accent, G.accentDim, 'rgba(0,214,143,0.25)'],
-                            ['no', 'Không', stats?.no ?? 0, G.red, G.redDim, 'rgba(255,107,107,0.25)'],
-                            ['pending', 'Chưa TL', stats?.pending ?? 0, G.yellow, G.yellowDim, 'rgba(255,184,77,0.25)'],
+                            ['yes', 'Tham gia', stats?.yes ?? 0, G.accent, G.accentDim, 'rgba(18,183,106,0.25)'],
+                            ['no', 'Không', stats?.no ?? 0, G.red, G.redDim, 'rgba(240,68,56,0.25)'],
+                            ['pending', 'Chưa TL', stats?.pending ?? 0, G.yellow, G.yellowDim, 'rgba(245,166,35,0.25)'],
                         ] as const).map(([tab, label, count, color, bg, border]) => (
                             <button key={tab} onClick={() => setActiveTab(tab as any)} style={{
                                 padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
@@ -301,7 +325,7 @@ export default function SessionDetailPage() {
                                         fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px',
                                         background: c.response === 'yes' ? G.accentDim : c.response === 'no' ? G.redDim : G.yellowDim,
                                         color: c.response === 'yes' ? G.accent : c.response === 'no' ? G.red : G.yellow,
-                                        border: `1px solid ${c.response === 'yes' ? 'rgba(0,214,143,0.2)' : c.response === 'no' ? 'rgba(255,107,107,0.2)' : 'rgba(255,184,77,0.2)'}`,
+                                        border: `1px solid ${c.response === 'yes' ? 'rgba(18,183,106,0.2)' : c.response === 'no' ? 'rgba(240,68,56,0.2)' : 'rgba(245,166,35,0.2)'}`,
                                     }}>
                                         {c.response === 'yes' ? 'Tham gia' : c.response === 'no' ? 'Không' : 'Chưa TL'}
                                     </span>
@@ -311,7 +335,7 @@ export default function SessionDetailPage() {
                                             onClick={() => act(`confirm-${c.id}`, () => managerRespondToCheckin(c.id, 'yes').then(() => {}), `Đã xác nhận tham gia cho ${c.full_name || c.email}`)}
                                             style={{
                                                 fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
-                                                background: G.accentDim, color: G.accent, border: `1px solid rgba(0,214,143,0.25)`,
+                                                background: G.accentDim, color: G.accent, border: `1px solid rgba(18,183,106,0.25)`,
                                                 opacity: isActing ? 0.6 : 1,
                                             }}
                                         >
@@ -331,7 +355,7 @@ export default function SessionDetailPage() {
             {/* Close session (manager) */}
             {isManager && isActive && (
                 confirmClose ? (
-                    <div style={{ background: G.redDim, border: `1px solid rgba(255,107,107,0.25)`, borderRadius: '16px', padding: '16px' }}>
+                    <div style={{ background: G.redDim, border: `1px solid rgba(240,68,56,0.25)`, borderRadius: '16px', padding: '16px' }}>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: G.red, margin: '0 0 4px' }}>Xác nhận đóng buổi?</p>
                         <p style={{ fontSize: '11px', color: G.t3, margin: '0 0 14px' }}>Điểm sẽ được trao cho thành viên trả lời "Tham gia". Hành động không thể hoàn tác.</p>
                         <div style={{ display: 'flex', gap: '8px' }}>
@@ -350,12 +374,40 @@ export default function SessionDetailPage() {
                 ) : (
                     <button onClick={() => setConfirmClose(true)} style={{
                         width: '100%', padding: '14px', borderRadius: '14px', cursor: 'pointer',
-                        background: 'transparent', border: `1px solid rgba(255,107,107,0.35)`,
+                        background: 'transparent', border: `1px solid rgba(240,68,56,0.35)`,
                         color: G.red, fontWeight: 600, fontSize: '14px',
                     }}>
                         Đóng buổi & trao điểm
                     </button>
                 )
+            )}
+
+            {/* Edit session modal (manager) */}
+            {showEditForm && (
+                <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 'var(--content-left-offset, 0px)', background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
+                    onClick={() => setShowEditForm(false)}>
+                    <div style={{ background: '#F4F7FB', border: `1px solid ${G.glassBorder}`, borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '600px', margin: '0 auto', maxHeight: '90vh', overflowY: 'auto' }}
+                        onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                            <h2 style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'var(--font-head)', color: G.t1, margin: 0 }}>Chỉnh sửa buổi tập</h2>
+                            <button onClick={() => setShowEditForm(false)} style={{ background: '#FFFFFF', border: `1px solid ${G.glassBorder}`, color: G.t2, borderRadius: '10px', padding: '6px 12px', cursor: 'pointer', fontSize: '18px', lineHeight: 1 }}>✕</button>
+                        </div>
+                        <SessionForm
+                            initialData={{
+                                session_date: session.session_date,
+                                session_type: session.session_type,
+                                location: session.location || '',
+                                description: session.description || '',
+                                check_in_deadline: session.check_in_deadline || '',
+                            }}
+                            onSubmit={handleEditSubmit}
+                            isLoading={isSavingEdit}
+                            onCancel={() => setShowEditForm(false)}
+                            submitLabel="✓ Lưu thay đổi"
+                            loadingLabel="Đang lưu..."
+                        />
+                    </div>
+                </div>
             )}
         </div>
     )

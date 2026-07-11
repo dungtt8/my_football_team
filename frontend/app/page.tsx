@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 export default function Home() {
   const router = useRouter()
-  const { isAuthenticated, isLoading, role, team } = useAuth()
+  const { isAuthenticated, isLoading, team } = useAuth()
 
   useEffect(() => {
     if (isLoading) return
@@ -22,13 +22,9 @@ export default function Home() {
       return
     }
 
-    // Role-based redirect
-    if (role === 'co_manager' || role === 'manager' || role === 'owner') {
-      router.push('/app/finance')
-    } else {
-      router.push('/app/attendance')
-    }
-  }, [isAuthenticated, isLoading, role, team, router])
+    // Everyone lands on the Home dashboard
+    router.push('/app/home')
+  }, [isAuthenticated, isLoading, team, router])
 
   return null
 }

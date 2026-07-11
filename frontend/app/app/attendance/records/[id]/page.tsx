@@ -6,9 +6,9 @@ import { useAttendance, AttendanceRecord } from '@/hooks/useAttendance'
 import { useToast } from '@/hooks/useToast'
 
 const G = {
-    bg: '#070B14', glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)', red: '#FF6B6B', redDim: 'rgba(255,107,107,0.12)',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
+    bg: '#FFFFFF', glass: '#FFFFFF', glassBorder: '#E7ECF3',
+    accent: '#12B76A', accentDim: 'rgba(18,183,106,0.12)', red: '#F04438', redDim: 'rgba(240,68,56,0.12)',
+    t1: '#0B1220', t2: 'rgba(11,18,32,0.55)', t3: 'rgba(11,18,32,0.30)',
 }
 
 const SESSION_TYPE_LABEL: Record<string, string> = {
@@ -61,7 +61,7 @@ export default function AttendanceDetailPage() {
     const getResponseStyle = (response: 'yes' | 'no' | null | undefined) => {
         if (response === 'yes') return { bg: G.accentDim, text: G.accent, label: 'Đã tham gia' }
         if (response === 'no') return { bg: G.redDim, text: G.red, label: 'Vắng mặt' }
-        return { bg: 'rgba(255,255,255,0.08)', text: G.t2, label: 'Chưa phản hồi' }
+        return { bg: '#EEF2F7', text: G.t2, label: 'Chưa phản hồi' }
     }
 
     if (loading && !record) {

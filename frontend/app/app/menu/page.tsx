@@ -7,16 +7,14 @@ import { useToast } from '@/hooks/useToast'
 import { useFinance } from '@/hooks/useFinance'
 import { useCheckin, type ActiveCheckIn } from '@/hooks/useCheckin'
 
-const G = {
-    glass: 'rgba(255,255,255,0.07)', glassBorder: 'rgba(255,255,255,0.10)',
-    accent: '#00D68F', accentDim: 'rgba(0,214,143,0.12)',
-    t1: '#F0F4FF', t2: 'rgba(240,244,255,0.55)', t3: 'rgba(240,244,255,0.30)',
-    red: '#FF6B6B',
-}
-
 const ROLE_LABELS: Record<string, string> = {
     member: 'Thành viên', co_manager: 'Phó quản lý', manager: 'Quản lý', owner: 'Chủ đội',
 }
+
+const BADGES: [string, string][] = [
+    ['⚽', 'Ra sân'], ['🔥', 'Chuỗi'], ['💰', 'Đóng quỹ đủ'], ['⏱️', 'Đúng giờ'],
+    ['🏃', 'Chăm tập'], ['🎯', 'Ghi bàn'], ['🤝', 'Fair-play'], ['🔒', '...'],
+]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
@@ -100,42 +98,26 @@ export default function MenuPage() {
         } catch { router.push('/login') }
     }
 
-    const menuItems = [
-        { label: 'Thông tin cá nhân', icon: '👤', action: () => router.push('/app/menu/settings') },
-        { label: 'Lịch sử điểm danh', icon: '📋', action: () => router.push('/app/attendance/history') },
-        { label: 'Lịch sử chi tiêu', icon: '💰', action: () => router.push('/app/finance') },
-        ...(role === 'owner' ? [{ label: 'Quản lý thành viên', icon: '👥', action: () => router.push('/app/team') }] : []),
-        { label: 'Thông báo', icon: '🔔', action: () => { } },
-        { label: 'Về ứng dụng', icon: 'ℹ️', action: () => { } },
+    const menuItems: { label: string; sub?: string; icon: string; action: () => void }[] = [
+        { label: 'Thông tin cá nhân', sub: 'Tên, số áo, vị trí', icon: '👤', action: () => router.push('/app/menu/settings') },
+        { label: 'Lịch sử điểm danh', sub: 'Buổi tập, trận đấu', icon: '📋', action: () => router.push('/app/attendance/history') },
+        { label: 'Lịch sử chi tiêu', sub: 'Đóng quỹ, thu chi', icon: '💰', action: () => router.push('/app/finance') },
+        ...(role === 'owner' ? [{ label: 'Quản lý thành viên', sub: 'Duyệt, phân quyền', icon: '👥', action: () => router.push('/app/team') }] : []),
+        { label: 'Thông báo', sub: 'Nhắc điểm danh, đóng quỹ', icon: '🔔', action: () => { } },
+        { label: 'Về ứng dụng', sub: 'Phiên bản 1.0.0', icon: 'ℹ️', action: () => { } },
     ]
 
-    return (
-        <div style={{ minHeight: '100vh', padding: '24px 20px', color: G.t1, width: '100%', boxSizing: 'border-box' }}>
+    // ---- Reusable pieces ----
 
-            {/* Header */}
-            <div style={{ marginBottom: '28px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.accent, marginBottom: '6px' }}>Tài khoản</p>
-                <h1 style={{ fontSize: '32px', fontWeight: 300, fontFamily: 'serif', color: G.t1, margin: 0 }}>Menu</h1>
-            </div>
-
+    const notificationsEl = (
+        <>
             {/* Finance Payment Deadline Notification */}
             {paymentDeadline && paymentDeadline.is_active && (
-                <div style={{
-                    background: 'rgba(255,107,107,0.15)',
-                    border: `1px solid rgba(255,107,107,0.30)`,
-                    borderRadius: '16px',
-                    padding: '16px 20px',
-                    marginBottom: '24px',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 24px rgba(255,107,107,0.10)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                }}>
-                    <div style={{ fontSize: '20px' }}>⏰</div>
+                <div className="card pad" style={{ borderColor: 'var(--danger)', background: 'var(--danger-050)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ fontSize: 20 }}>⏰</div>
                     <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FF9999' }}>Thời hạn thanh toán quỹ</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(255,153,153,0.9)' }}>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--danger)' }}>Thời hạn thanh toán quỹ</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>
                             Vui lòng thanh toán quỹ trong khoảng ngày {paymentDeadline.start_day}-{paymentDeadline.end_day} ({paymentDeadline.days_remaining} ngày còn lại)
                         </p>
                     </div>
@@ -144,56 +126,28 @@ export default function MenuPage() {
 
             {/* Check-in Notification */}
             {activeCheckIn && !activeCheckIn.responded_at && (
-                <div style={{
-                    background: 'rgba(0,214,143,0.12)',
-                    border: `1px solid rgba(0,214,143,0.30)`,
-                    borderRadius: '16px',
-                    padding: '16px 20px',
-                    marginBottom: '24px',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 24px rgba(0,214,143,0.10)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                        <div style={{ fontSize: '18px', marginTop: '2px' }}>📋</div>
+                <div className="card pad" style={{ borderColor: 'var(--brand-100)', background: 'var(--brand-050)' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{ fontSize: 18, marginTop: 2 }}>📋</div>
                         <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.accent }}>Điểm danh tham gia</p>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(0,214,143,0.85)' }}>
+                            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--brand-700)' }}>Điểm danh tham gia</p>
+                            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--ink-3)' }}>
                                 {activeCheckIn.session_type === 'training' ? '🏋️ Tập luyện' : '⚽ Trận đấu'} - {activeCheckIn.session_time} tại {activeCheckIn.session_location}
                             </p>
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                                 <button
+                                    className="btn btn-primary btn-sm"
                                     onClick={() => handleCheckInResponse('yes')}
                                     disabled={respondingCheckIn}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 12px',
-                                        borderRadius: '10px',
-                                        background: 'rgba(0,214,143,0.20)',
-                                        border: `1px solid rgba(0,214,143,0.40)`,
-                                        color: G.accent,
-                                        fontSize: '13px',
-                                        fontWeight: 600,
-                                        cursor: respondingCheckIn ? 'default' : 'pointer',
-                                        opacity: respondingCheckIn ? 0.6 : 1,
-                                    }}
+                                    style={{ flex: 1, opacity: respondingCheckIn ? 0.6 : 1 }}
                                 >
                                     ✓ Có
                                 </button>
                                 <button
+                                    className="btn btn-ghost btn-sm"
                                     onClick={() => handleCheckInResponse('no')}
                                     disabled={respondingCheckIn}
-                                    style={{
-                                        flex: 1,
-                                        padding: '10px 12px',
-                                        borderRadius: '10px',
-                                        background: 'rgba(255,107,107,0.15)',
-                                        border: `1px solid rgba(255,107,107,0.30)`,
-                                        color: '#FF9999',
-                                        fontSize: '13px',
-                                        fontWeight: 600,
-                                        cursor: respondingCheckIn ? 'default' : 'pointer',
-                                        opacity: respondingCheckIn ? 0.6 : 1,
-                                    }}
+                                    style={{ flex: 1, color: 'var(--danger)', opacity: respondingCheckIn ? 0.6 : 1 }}
                                 >
                                     ✗ Không
                                 </button>
@@ -205,95 +159,140 @@ export default function MenuPage() {
 
             {/* Check-in Confirmed */}
             {activeCheckIn && activeCheckIn.responded_at && (
-                <div style={{
-                    background: activeCheckIn.response === 'yes' ? 'rgba(0,214,143,0.08)' : 'rgba(255,107,107,0.08)',
-                    border: `1px solid ${activeCheckIn.response === 'yes' ? 'rgba(0,214,143,0.25)' : 'rgba(255,107,107,0.25)'}`,
-                    borderRadius: '16px',
-                    padding: '12px 16px',
-                    marginBottom: '24px',
-                    backdropFilter: 'blur(12px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                }}>
-                    <div style={{ fontSize: '16px' }}>
+                <div className="card pad" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 16, color: activeCheckIn.response === 'yes' ? 'var(--brand-600)' : 'var(--danger)' }}>
                         {activeCheckIn.response === 'yes' ? '✓' : '✗'}
                     </div>
-                    <p style={{
-                        margin: 0,
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: activeCheckIn.response === 'yes' ? G.accent : '#FF9999'
-                    }}>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: activeCheckIn.response === 'yes' ? 'var(--brand-700)' : 'var(--danger)' }}>
                         Bạn đã báo {activeCheckIn.response === 'yes' ? 'sẽ tham gia' : 'không tham gia'}
                     </p>
                 </div>
             )}
+        </>
+    )
 
-            {/* Profile card */}
-            <div style={{
-                background: 'rgba(0,214,143,0.08)', border: `1px solid rgba(0,214,143,0.20)`,
-                borderRadius: '24px', padding: '24px', marginBottom: '24px',
-                backdropFilter: 'blur(16px)',
-                boxShadow: '0 0 40px rgba(0,214,143,0.08)',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{
-                        width: '60px', height: '60px', borderRadius: '50%', flexShrink: 0,
-                        background: `linear-gradient(135deg, ${G.accent}, #00A36C)`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '22px', fontWeight: 700, color: '#070B14',
-                        boxShadow: '0 0 20px rgba(0,214,143,0.4)',
-                    }}>{initials}</div>
-                    <div>
-                        <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: G.t1 }}>{displayName}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '13px', color: G.accent, fontWeight: 600 }}>{displayRole}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: G.t3 }}>{displayTeam}</p>
-                    </div>
+    // Profile header — centered layout for mobile (matches M.profile)
+    const profileHeaderMobileEl = (
+        <div className="card pad" style={{ textAlign: 'center' }}>
+            <div className="avatar" style={{ width: 84, height: 84, borderRadius: 26, fontSize: 28, margin: '6px auto 14px' }}>{initials}</div>
+            <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, fontWeight: 800 }}>{displayName}</div>
+            <div style={{ color: 'var(--ink-3)', fontSize: 13, marginTop: 2 }}>{displayRole} · {displayTeam}</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+                <span className="chip soft">{displayRole}</span>
+                <span className="chip blue">{displayTeam}</span>
+            </div>
+        </div>
+    )
+
+    // Profile header — left-aligned row layout for desktop (matches D.profile)
+    const profileHeaderDesktopEl = (
+        <div className="card pad" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div className="avatar" style={{ width: 82, height: 82, borderRadius: 24, fontSize: 28, flexShrink: 0 }}>{initials}</div>
+            <div>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800 }}>{displayName}</div>
+                <div style={{ color: 'var(--ink-3)', fontSize: 14, marginTop: 2 }}>{displayRole} · {displayTeam}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    <span className="chip soft">{displayRole}</span>
+                    <span className="chip blue">{displayTeam}</span>
                 </div>
             </div>
+        </div>
+    )
 
-            {/* Invite code card — owner/co_manager only */}
-            {(role === 'owner' || role === 'co_manager') && inviteCode && (
-                <div style={{ background: 'rgba(74,124,255,0.08)', border: `1px solid rgba(74,124,255,0.20)`, borderRadius: '20px', padding: '18px 20px', marginBottom: '16px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(74,124,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 10px' }}>Mã mời đội</p>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                        <span style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '0.2em', color: G.t1 }}>{inviteCode}</span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={copyCode} style={{ padding: '8px 14px', borderRadius: '10px', background: 'rgba(74,124,255,0.15)', border: `1px solid rgba(74,124,255,0.25)`, color: '#4A7CFF', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Sao chép</button>
-                            {role === 'owner' && <button onClick={handleRegenerateCode} disabled={loadingInvite} style={{ padding: '8px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: `1px solid ${G.glassBorder}`, color: G.t3, fontSize: '12px', cursor: 'pointer' }}>Đổi mã</button>}
-                        </div>
+    const tilesEl = (
+        <div className="tiles">
+            <div className="tile"><div className="n">—</div><div className="l">Điểm mùa</div></div>
+            <div className="tile"><div className="n">—</div><div className="l">Chuyên cần</div></div>
+            <div className="tile"><div className="n">—</div><div className="l">Huy hiệu</div></div>
+        </div>
+    )
+
+    const badgesEl = (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Huy hiệu đã đạt</div>
+            <div className="card pad" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, textAlign: 'center' }}>
+                {BADGES.map(([e, n], i) => (
+                    <div key={i} style={{ opacity: i === 7 ? 0.35 : 1 }}>
+                        <div style={{ width: 48, height: 48, borderRadius: 16, background: 'var(--surface-2)', border: '1px solid var(--line)', display: 'grid', placeItems: 'center', fontSize: 22, margin: '0 auto 6px' }}>{e}</div>
+                        <small style={{ fontSize: 10.5, color: 'var(--ink-3)', fontWeight: 600 }}>{n}</small>
                     </div>
-                </div>
-            )}
-
-            {/* Menu items */}
-            <div style={{ background: G.glass, border: `1px solid ${G.glassBorder}`, borderRadius: '18px', overflow: 'hidden', marginBottom: '16px', backdropFilter: 'blur(12px)' }}>
-                {menuItems.map((item, i) => (
-                    <button key={i} onClick={item.action} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: '100%', padding: '16px 18px',
-                        borderBottom: i < menuItems.length - 1 ? `1px solid rgba(255,255,255,0.05)` : 'none',
-                        background: 'transparent',
-                        cursor: 'pointer', textAlign: 'left',
-                    } as React.CSSProperties}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                            <span style={{ fontSize: '15px', fontWeight: 500, color: G.t1 }}>{item.label}</span>
-                        </div>
-                        <span style={{ color: G.t3, fontSize: '16px' }}>›</span>
-                    </button>
                 ))}
             </div>
+        </div>
+    )
 
-            {/* Logout */}
-            <button onClick={handleLogout} style={{
-                width: '100%', padding: '15px', borderRadius: '16px', border: `1px solid rgba(255,107,107,0.25)`,
-                background: 'rgba(255,107,107,0.08)', color: G.red, fontWeight: 600, fontSize: '15px', cursor: 'pointer',
-            }}>Đăng xuất</button>
+    const inviteCodeEl = (role === 'owner' || role === 'co_manager') && inviteCode && (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Mã mời đội</div>
+            <div className="card pad">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: 'var(--font-head)', fontSize: 26, fontWeight: 800, letterSpacing: '0.2em' }}>{inviteCode}</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-primary btn-sm" onClick={copyCode}>Sao chép</button>
+                        {role === 'owner' && <button className="btn btn-ghost btn-sm" onClick={handleRegenerateCode} disabled={loadingInvite}>Đổi mã</button>}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 
-            {/* Version */}
-            <p style={{ textAlign: 'center', color: G.t3, fontSize: '11px', marginTop: '24px' }}>Phiên bản 1.0.0</p>
+    const settingsListEl = (
+        <div className="card">
+            {menuItems.map((item, i) => (
+                <div
+                    key={i}
+                    className="row"
+                    onClick={item.action}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <div className="lead" style={{ background: 'var(--surface-2)' }}>{item.icon}</div>
+                    <div className="rc"><b>{item.label}</b>{item.sub && <small>{item.sub}</small>}</div>
+                    <span style={{ color: 'var(--ink-4)' }}>›</span>
+                </div>
+            ))}
+            <div className="row" onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                <div className="lead" style={{ background: 'var(--danger-050)' }}>↩️</div>
+                <div className="rc"><b style={{ color: 'var(--danger)' }}>Đăng xuất</b></div>
+            </div>
+        </div>
+    )
+
+    return (
+        <div className="screen-body" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
+
+            {/* Desktop header — matches mockup D.profile .page-h (mobile has no page title, per M.profile) */}
+            <div className="hidden md:block page-h">
+                <h1>Hồ sơ cầu thủ</h1>
+            </div>
+
+            {notificationsEl}
+
+            {/* Mobile layout — matches mockup M.profile: profile card, tiles, badges, invite, settings */}
+            <div className="md:hidden">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {profileHeaderMobileEl}
+                    {tilesEl}
+                    {badgesEl}
+                    {inviteCodeEl}
+                    {settingsListEl}
+                </div>
+            </div>
+
+            {/* Desktop layout — matches mockup D.profile: profile+badges (left) | settings (right) */}
+            <div className="hidden md:block">
+                <div className="dgrid">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {profileHeaderDesktopEl}
+                        {badgesEl}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {settingsListEl}
+                    </div>
+                </div>
+                <div style={{ marginTop: 20 }}>
+                    {inviteCodeEl}
+                </div>
+            </div>
         </div>
     )
 }
