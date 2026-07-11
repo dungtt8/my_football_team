@@ -1,5 +1,5 @@
 {
-	"name": "Football Team Manager",
+	"name": "My Football Team Manager",
 	"short_name": "Team Manager",
 	"description": "Manage team finances, campaigns, attendance and gamification",
 	"start_url": "/app/finance",

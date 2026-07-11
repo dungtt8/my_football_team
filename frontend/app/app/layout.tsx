@@ -6,7 +6,7 @@ export default function AppRootLayout({
   children: React.ReactNode
 }) {
   return (
-    <AppLayout teamName="Football Team">
+    <AppLayout teamName="My Football Team">
       {children}
     </AppLayout>
   )

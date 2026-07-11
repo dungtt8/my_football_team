@@ -54,36 +54,25 @@ export const PaymentQRDisplay: React.FC = () => {
     const { bank_name, bank_account_number, qr_code_url } = deadline.payment_deadline
 
     return (
-        <div
-            style={{
-                background: '#FEF6E7',
-                border: '2px solid #F5A623',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '16px',
-                textAlign: 'center'
-            }}
-        >
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#FF7A1A' }}>
-                💳 Hạn chót thanh toán
-            </h3>
+        <div className="card pad" style={{ border: '1.5px solid var(--accent)', background: 'linear-gradient(180deg,var(--accent-050),#fff)', textAlign: 'center' }}>
+            <span className="chip warn" style={{ display: 'inline-flex' }}>💳 HẠN CHÓT THANH TOÁN</span>
 
-            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#666' }}>
+            <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--ink-3)' }}>
                 Vui lòng thanh toán trước hạn chót
             </p>
 
             {qr_code_url && (
-                <div style={{ marginBottom: '12px' }}>
+                <div style={{ margin: '12px 0' }}>
                     <img
                         src={qr_code_url}
                         alt="Payment QR Code"
                         style={{
-                            maxWidth: '200px',
-                            maxHeight: '200px',
-                            border: '2px solid #F5A623',
-                            borderRadius: '4px',
-                            padding: '8px',
-                            background: 'white',
+                            maxWidth: 200,
+                            maxHeight: 200,
+                            border: '1px solid var(--line)',
+                            borderRadius: 12,
+                            padding: 8,
+                            background: 'var(--surface)',
                             display: 'inline-block'
                         }}
                     />
@@ -91,22 +80,22 @@ export const PaymentQRDisplay: React.FC = () => {
             )}
 
             {(bank_name || bank_account_number) && (
-                <div style={{ fontSize: '12px', color: '#666' }}>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 8 }}>
                     {bank_name && (
                         <p style={{ margin: '4px 0' }}>
-                            <strong>Ngân hàng:</strong> {bank_name}
+                            <b style={{ color: 'var(--ink)' }}>Ngân hàng:</b> {bank_name}
                         </p>
                     )}
                     {bank_account_number && (
                         <p style={{ margin: '4px 0' }}>
-                            <strong>Tài khoản:</strong> {bank_account_number}
+                            <b style={{ color: 'var(--ink)' }}>Tài khoản:</b> {bank_account_number}
                         </p>
                     )}
                 </div>
             )}
 
             {!qr_code_url && !bank_name && !bank_account_number && (
-                <p style={{ fontSize: '12px', color: '#999', margin: '0' }}>
+                <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: '12px 0 0' }}>
                     Thông tin thanh toán chưa được cập nhật
                 </p>
             )}

@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => 
                 </div>
                 <div style={{ lineHeight: 1.25 }}>
                     <div style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: '15px', color: '#fff' }}>
-                        {(user as any)?.teamName || 'Football Team'}
+                        {(user as any)?.teamName || 'My Football Team'}
                     </div>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Quản lý đội bóng</div>
                 </div>
@@ -151,6 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => 
                                     color: active ? '#fff' : 'rgba(255,255,255,0.68)',
                                     fontWeight: active ? 700 : 600,
                                     boxShadow: active ? 'var(--shadow-brand)' : 'none',
+                                    padding: 10,
                                 }}
                                 onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
                                 onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}
@@ -188,6 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => 
                                             color: active ? '#fff' : 'rgba(255,255,255,0.68)',
                                             fontWeight: active ? 700 : 600,
                                             boxShadow: active ? 'var(--shadow-brand)' : 'none',
+                                            padding: 10,
                                         }}
                                         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
                                         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent' }}

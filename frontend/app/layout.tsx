@@ -24,13 +24,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Football Team Manager",
+  title: "My Football Team Manager",
   description: "Manage team finances, campaigns, attendance and gamification",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Football Team Manager",
+    title: "My Football Team Manager",
   },
   formatDetection: {
     telephone: false,

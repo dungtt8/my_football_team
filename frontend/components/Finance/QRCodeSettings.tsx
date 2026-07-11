@@ -16,6 +16,8 @@ interface QRCodeSettingsProps {
     readOnly?: boolean
 }
 
+const inputClass = 'w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none'
+
 export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnly = false }) => {
     const { request } = useApi()
     const { isLoading: authLoading } = useAuth()
@@ -169,18 +171,18 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
     }
 
     if (loading && !settings.qr_code_url) {
-        return <div style={{ padding: '12px', textAlign: 'center', color: '#999' }}>Đang tải cài đặt thanh toán...</div>
+        return <div className="card pad" style={{ textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Đang tải cài đặt thanh toán...</div>
     }
 
     const editable = isOwner && !readOnly
 
     return (
-        <div style={{ padding: '16px', background: '#FFFFFF', border: '1px solid #E7ECF3', borderRadius: '16px', marginBottom: '16px', backdropFilter: 'blur(12px)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '12px', fontSize: '16px', fontWeight: '600', color: '#0B1220' }}>💳 Cài đặt thanh toán</h3>
+        <div className="card pad">
+            <div className="sec-title" style={{ marginBottom: 16 }}>💳 Cài đặt thanh toán</div>
 
             {/* Bank Information */}
-            <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(11,18,32,0.55)' }}>
+            <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-3)' }}>
                     Tên ngân hàng
                 </label>
                 <input
@@ -189,23 +191,13 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="VD: Vietcombank, Techcombank..."
                     disabled={!editable}
-                    style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #E7ECF3',
-                        borderRadius: '8px',
-                        background: '#F8FAFC',
-                        color: '#0B1220',
-                        fontSize: '13px',
-                        boxSizing: 'border-box',
-                        opacity: editable ? 1 : 0.7,
-                        cursor: editable ? 'text' : 'default'
-                    }}
+                    className={inputClass}
+                    style={{ borderColor: 'var(--line)', background: editable ? 'var(--surface-2)' : 'var(--surface-2)', color: 'var(--ink)', opacity: editable ? 1 : 0.7, cursor: editable ? 'text' : 'default' }}
                 />
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500', color: 'rgba(11,18,32,0.55)' }}>
+            <div style={{ marginBottom: editable ? 14 : 20 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600, color: 'var(--ink-3)' }}>
                     Số tài khoản
                 </label>
                 <input
@@ -214,76 +206,39 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                     onChange={(e) => setBankAccount(e.target.value)}
                     placeholder="VD: 1234567890"
                     disabled={!editable}
-                    style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #E7ECF3',
-                        borderRadius: '8px',
-                        background: '#F8FAFC',
-                        color: '#0B1220',
-                        fontSize: '13px',
-                        boxSizing: 'border-box',
-                        opacity: editable ? 1 : 0.7,
-                        cursor: editable ? 'text' : 'default'
-                    }}
+                    className={inputClass}
+                    style={{ borderColor: 'var(--line)', background: 'var(--surface-2)', color: 'var(--ink)', opacity: editable ? 1 : 0.7, cursor: editable ? 'text' : 'default' }}
                 />
             </div>
 
             {editable && (
-                <button
-                    onClick={handleSaveBankInfo}
-                    disabled={loading}
-                    style={{
-                        padding: '8px 16px',
-                        background: 'rgba(18,183,106,0.12)',
-                        color: '#12B76A',
-                        border: '1px solid rgba(18,183,106,0.25)',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.6 : 1,
-                        marginBottom: '16px'
-                    }}
-                >
+                <button className="btn btn-primary btn-sm" onClick={handleSaveBankInfo} disabled={loading} style={{ marginBottom: 20, opacity: loading ? 0.6 : 1 }}>
                     {loading ? 'Đang lưu...' : 'Lưu thông tin'}
                 </button>
             )}
 
             {/* QR Code Upload */}
-            <div style={{ borderTop: '1px solid #E7ECF3', paddingTop: '16px' }}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '500', color: '#0B1220' }}>Mã QR thanh toán</h4>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Mã QR thanh toán</div>
 
                 {/* QR Code Preview */}
                 {previewUrl && (
-                    <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                    <div style={{ marginBottom: 12, textAlign: 'center' }}>
                         <img
                             src={previewUrl}
                             alt="QR Code"
                             style={{
-                                maxWidth: '200px',
-                                maxHeight: '200px',
-                                border: '1px solid #E7ECF3',
-                                borderRadius: '8px',
-                                padding: '8px',
-                                background: '#F8FAFC'
+                                maxWidth: 200,
+                                maxHeight: 200,
+                                border: '1px solid var(--line)',
+                                borderRadius: 12,
+                                padding: 8,
+                                background: 'var(--surface-2)'
                             }}
                         />
                         {editable && (
-                            <div style={{ marginTop: '8px' }}>
-                                <button
-                                    onClick={handleDeleteQR}
-                                    disabled={loading}
-                                    style={{
-                                        padding: '6px 12px',
-                                        background: 'rgba(240,68,56,0.12)',
-                                        color: '#F04438',
-                                        border: '1px solid rgba(240,68,56,0.25)',
-                                        borderRadius: '8px',
-                                        fontSize: '12px',
-                                        cursor: loading ? 'not-allowed' : 'pointer',
-                                        opacity: loading ? 0.6 : 1
-                                    }}
-                                >
+                            <div style={{ marginTop: 10 }}>
+                                <button className="btn btn-ghost btn-sm" onClick={handleDeleteQR} disabled={loading} style={{ color: 'var(--danger)', opacity: loading ? 0.6 : 1 }}>
                                     {loading ? 'Đang xóa...' : 'Xóa'}
                                 </button>
                             </div>
@@ -293,33 +248,16 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
 
                 {/* File Upload Input */}
                 {editable && (
-                    <div style={{ marginBottom: '12px' }}>
+                    <div>
                         <input
                             type="file"
                             accept="image/*"
                             onChange={handleFileSelect}
                             disabled={uploading}
-                            style={{
-                                display: 'block',
-                                marginBottom: '8px',
-                                fontSize: '13px'
-                            }}
+                            style={{ display: 'block', marginBottom: 10, fontSize: 13, color: 'var(--ink-2)' }}
                         />
                         {selectedFile && (
-                            <button
-                                onClick={handleUploadQR}
-                                disabled={uploading}
-                                style={{
-                                    padding: '8px 16px',
-                                    background: 'rgba(18,183,106,0.12)',
-                                    color: '#12B76A',
-                                    border: '1px solid rgba(18,183,106,0.25)',
-                                    borderRadius: '8px',
-                                    fontSize: '13px',
-                                    cursor: uploading ? 'not-allowed' : 'pointer',
-                                    opacity: uploading ? 0.6 : 1
-                                }}
-                            >
+                            <button className="btn btn-primary btn-sm" onClick={handleUploadQR} disabled={uploading} style={{ opacity: uploading ? 0.6 : 1 }}>
                                 {uploading ? 'Đang tải lên...' : 'Tải lên'}
                             </button>
                         )}
@@ -327,7 +265,7 @@ export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnl
                 )}
 
                 {!previewUrl && !editable && (
-                    <p style={{ color: 'rgba(11,18,32,0.30)', fontSize: '12px', margin: '0' }}>Chưa có mã QR thanh toán</p>
+                    <p style={{ color: 'var(--ink-4)', fontSize: 12, margin: 0 }}>Chưa có mã QR thanh toán</p>
                 )}
             </div>
         </div>
