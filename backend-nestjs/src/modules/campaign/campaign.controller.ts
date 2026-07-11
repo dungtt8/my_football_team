@@ -228,7 +228,7 @@ export class CampaignController {
     const memberId = user.id;
     const teamId = team.id;
 
-    if (parseInt(userId) !== memberId) {
+    if (String(userId) !== String(memberId)) {
       throw new ValidationError('Can only confirm your own assignment');
     }
     if (
@@ -318,7 +318,7 @@ export class CampaignController {
     const memberId = user.id;
     const teamId = team.id;
 
-    if (parseInt(userId) !== memberId) {
+    if (String(userId) !== String(memberId)) {
       throw new ValidationError('Can only reject your own assignment');
     }
 

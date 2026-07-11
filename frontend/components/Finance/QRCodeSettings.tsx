@@ -25,6 +25,12 @@ const fieldStyle = (editable: boolean): React.CSSProperties => ({
     color: 'var(--ink)',
     opacity: editable ? 1 : 0.7,
     cursor: editable ? 'text' : 'default',
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
 })
 
 export const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({ isOwner, readOnly = false }) => {

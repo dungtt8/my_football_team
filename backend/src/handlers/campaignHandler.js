@@ -242,7 +242,7 @@ const memberConfirm = async (req, res) => {
     const teamId = req.team.id;
 
     // Verify the requesting user is the one confirming
-    if (parseInt(userId) !== memberId) {
+    if (String(userId) !== String(memberId)) {
       throw new ValidationError('Can only confirm your own assignment');
     }
 
@@ -353,7 +353,7 @@ const memberReject = async (req, res) => {
     const teamId = req.team.id;
 
     // Verify the requesting user is the one rejecting
-    if (parseInt(userId) !== memberId) {
+    if (String(userId) !== String(memberId)) {
       throw new ValidationError('Can only reject your own assignment');
     }
 
