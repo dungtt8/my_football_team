@@ -55,16 +55,6 @@ async function checkAndNotifyPaymentDeadline() {
                     continue;
                 }
 
-                // Get all team members
-                const members = await db('team_members')
-                    .where({ team_id: team.id, status: 'active' })
-                    .select('user_id');
-
-                if (members.length === 0) {
-                    logger.warn(`No active members in team ${team.id} for payment deadline notification`);
-                    continue;
-                }
-
                 const endDay = team.finance_payment_end_day;
                 const notification = {
                     team_id: team.id,
@@ -78,8 +68,13 @@ async function checkAndNotifyPaymentDeadline() {
                     },
                 };
 
-                // Broadcast to all members
-                await notificationService.broadcastNotification(notification);
+                // Broadcast to all members (fetches + validates membership internally)
+                const result = await notificationService.broadcastNotification(notification);
+
+                if (result.successful === 0) {
+                    logger.warn(`No active members notified in team ${team.id} for payment deadline notification`);
+                    continue;
+                }
 
                 // Mark as notified for this month
                 await db('teams')

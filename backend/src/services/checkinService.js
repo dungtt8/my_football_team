@@ -12,7 +12,6 @@
  */
 const db = require('../config/database');
 const logger = require('../utils/logger');
-const notificationService = require('./notificationService');
 
 const POINTS_YES = 10;
 
@@ -348,31 +347,44 @@ async function checkAndCreateCheckInNotifications() {
                 this.whereNull('check_in_deadline').orWhere('check_in_deadline', '>', new Date());
             });
 
-        for (const session of activeSessions) {
-            sessionsChecked++;
+        if (activeSessions.length === 0) continue;
 
-            const pending = await db('attendance_checkins')
-                .where('session_id', session.id)
-                .whereNull('response')
-                .select('user_id');
+        sessionsChecked += activeSessions.length;
+        const sessionById = new Map(activeSessions.map(s => [s.id, s]));
 
-            for (const checkin of pending) {
-                try {
-                    await notificationService.sendInternalNotification(
-                        checkin.user_id,
-                        `Nhắc điểm danh: vui lòng phản hồi buổi ${session.session_type === 'match' ? 'thi đấu' : 'tập'} ngày ${new Date(session.session_date).toLocaleDateString('vi-VN')}`,
-                        { session_id: session.id },
-                        team.id
-                    );
-                    notificationsSent++;
-                } catch (error) {
-                    logger.warn('Failed to send checkin reminder', {
-                        session_id: session.id,
-                        user_id: checkin.user_id,
-                        error: error.message,
-                    });
-                }
-            }
+        // One query for every session's pending checkins instead of one per session.
+        const pending = await db('attendance_checkins')
+            .whereIn('session_id', activeSessions.map(s => s.id))
+            .whereNull('response')
+            .select('session_id', 'user_id');
+
+        if (pending.length === 0) continue;
+
+        const now = db.fn.now();
+        const rows = pending.map(checkin => {
+            const session = sessionById.get(checkin.session_id);
+            return {
+                user_id: checkin.user_id,
+                team_id: team.id,
+                message: `Nhắc điểm danh: vui lòng phản hồi buổi ${session.session_type === 'match' ? 'thi đấu' : 'tập'} ngày ${new Date(session.session_date).toLocaleDateString('vi-VN')}`,
+                metadata: JSON.stringify({ session_id: session.id }),
+                is_read: false,
+                created_at: now,
+            };
+        });
+
+        // Bulk insert instead of one insert per pending checkin — the
+        // per-user existence check that sendInternalNotification does is
+        // unnecessary here since checkin.user_id is already FK-backed.
+        try {
+            await db('notifications').insert(rows);
+            notificationsSent += rows.length;
+        } catch (error) {
+            logger.warn('Failed to send checkin reminders batch', {
+                team_id: team.id,
+                count: rows.length,
+                error: error.message,
+            });
         }
     }
 

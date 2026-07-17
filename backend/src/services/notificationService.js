@@ -156,40 +156,51 @@ class NotificationService {
    */
   async broadcastNotification(notification) {
     const { team_id, message, title, data } = notification;
-    const results = { successful: 0, failed: 0 };
 
     if (!team_id || !message) {
       throw new Error('broadcastNotification requires team_id and message');
     }
 
+    // getTeamUsers already joins against `users`, so every member here is a
+    // confirmed existing user — no need to re-verify per-user like
+    // sendInternalNotification does for a single ad-hoc call.
     const members = await getTeamUsers(team_id, { status: 'active' });
 
-    for (const member of members) {
-      try {
-        await this.sendInternalNotification(
-          member.id,
-          title ? `${title}: ${message}` : message,
-          data || {},
-          team_id
-        );
-        results.successful++;
-      } catch (error) {
-        results.failed++;
-        logger.error('Failed to broadcast notification to member', {
-          team_id,
-          user_id: member.id,
-          error: error.message
-        });
-      }
+    if (members.length === 0) {
+      logger.info('Broadcast notification skipped: no active members', { team_id });
+      return { successful: 0, failed: 0 };
     }
 
-    logger.info('Broadcast notification completed', {
-      team_id,
-      successful: results.successful,
-      failed: results.failed
-    });
+    const finalMessage = title ? `${title}: ${message}` : message;
+    const now = db.fn.now();
 
-    return results;
+    try {
+      await db('notifications').insert(
+        members.map(member => ({
+          user_id: member.id,
+          team_id,
+          message: finalMessage,
+          metadata: JSON.stringify(data || {}),
+          is_read: false,
+          created_at: now,
+        }))
+      );
+
+      logger.info('Broadcast notification completed', {
+        team_id,
+        successful: members.length,
+        failed: 0
+      });
+
+      return { successful: members.length, failed: 0 };
+    } catch (error) {
+      logger.error('Failed to broadcast notification', {
+        team_id,
+        error: error.message
+      });
+
+      return { successful: 0, failed: members.length };
+    }
   }
 
   /**
