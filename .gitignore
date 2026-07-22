@@ -16,4 +16,7 @@ build/
 # Hệ điều hành rác
 .DS_Store
 Thumbs.db
+
+# Thư mục logs (mọi cấp)
 logs/
+*.log

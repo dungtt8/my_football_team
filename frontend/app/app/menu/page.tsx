@@ -293,6 +293,22 @@ export default function MenuPage() {
                     {inviteCodeEl}
                 </div>
             </div>
+
+            {/* Copyright / attribution — shown on all screen sizes */}
+            <p
+                className="text-center"
+                style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 8, paddingBottom: 8 }}
+            >
+                © {new Date().getFullYear()} Bản quyền thuộc về{' '}
+                <a
+                    href="https://revonexus.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--brand-600)', fontWeight: 600 }}
+                >
+                    revonexus.net
+                </a>
+            </p>
         </div>
     )
 }

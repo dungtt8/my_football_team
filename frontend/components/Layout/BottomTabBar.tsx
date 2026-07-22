@@ -1,14 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
     House,
     CheckSquare,
     Trophy,
     CreditCard,
     User,
-    Plus,
 } from 'phosphor-react'
 
 interface TabItem {
@@ -60,7 +59,6 @@ const TAB_ITEMS: TabItem[] = [
 
 export const BottomTabBar: React.FC = () => {
     const pathname = usePathname()
-    const router = useRouter()
 
     // Exact-ish matching so BXH (a sub-path of attendance) doesn't also light up Điểm danh
     const isActive = (path: string) => {
@@ -77,18 +75,8 @@ export const BottomTabBar: React.FC = () => {
     }
 
     return (
-        <>
-            {/* Center FAB — quick check-in shortcut */}
-            <button
-                className="md:hidden fab"
-                aria-label="Điểm danh nhanh"
-                onClick={() => router.push('/app/attendance')}
-            >
-                <Plus size={26} weight="bold" />
-            </button>
-
-            <nav
-                className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
+        <nav
+            className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
                 style={{
                     background: 'rgba(255,255,255,0.92)',
                     backdropFilter: 'blur(18px)',
@@ -140,6 +128,5 @@ export const BottomTabBar: React.FC = () => {
                     })}
                 </div>
             </nav>
-        </>
     )
 }

@@ -6,7 +6,7 @@ if (!process.env.JWT_SECRET) {
 
 module.exports = {
   jwtSecret: process.env.JWT_SECRET,
-  jwtExpiration: '24h',
+  jwtExpiration: '7d',
   refreshTokenExpiration: '7d',
   zaloAppId: process.env.ZALO_APP_ID,
   zaloAppSecret: process.env.ZALO_APP_SECRET,
