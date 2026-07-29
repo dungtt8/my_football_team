@@ -3,68 +3,32 @@ const logger = require('../utils/logger');
 
 class ZaloService {
   constructor() {
-    this.oaAccountId = process.env.ZALO_OA_ACCOUNT_ID;
-    this.accessToken = process.env.ZALO_OA_ACCESS_TOKEN;
+    // Token dạng "botId:accessToken" lấy từ bot.zapps.me
+    this.botToken = process.env.ZALO_BOT_TOKEN;
+    this.baseUrl = `https://bot-api.zaloplatforms.com/bot${this.botToken}`;
   }
 
-  async sendUtilityMessage(zaloUserId, message) {
+  /**
+   * Gửi tin nhắn text tới 1 chat_id qua Zalo Bot API
+   * @param {string} chatId - chat_id lưu trong users.zalo_user_id
+   * @param {string} text - nội dung tin nhắn, 1-2000 ký tự
+   */
+  async sendMessage(chatId, text) {
     try {
-      const response = await axios.post(
-        'https://openapi.zalo.me/v3.0/oa/message/send',
-        {
-          recipient: { user_id: zaloUserId },
-          message: { text: message }
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axios.post(`${this.baseUrl}/sendMessage`, {
+        chat_id: chatId,
+        text: text
+      });
 
-      logger.info('Zalo utility message sent', {
-        zalo_user_id: zaloUserId,
-        message_length: message.length
+      logger.info('Zalo bot message sent', {
+        chat_id: chatId,
+        message_length: text.length
       });
 
       return response.data;
     } catch (error) {
-      logger.error('Failed to send Zalo message', {
-        zalo_user_id: zaloUserId,
-        error: error.message
-      });
-      throw error;
-    }
-  }
-
-  async sendZNS(zaloUserId, templateId, templateData) {
-    try {
-      const response = await axios.post(
-        'https://openapi.zalo.me/v3.0/oa/message/zns/send',
-        {
-          recipient: { user_id: zaloUserId },
-          template_id: templateId,
-          template_data: templateData
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      logger.info('Zalo ZNS message sent', {
-        zalo_user_id: zaloUserId,
-        template_id: templateId
-      });
-
-      return response.data;
-    } catch (error) {
-      logger.error('Failed to send ZNS message', {
-        zalo_user_id: zaloUserId,
-        template_id: templateId,
+      logger.error('Failed to send Zalo bot message', {
+        chat_id: chatId,
         error: error.message
       });
       throw error;

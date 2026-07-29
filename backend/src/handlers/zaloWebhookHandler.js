@@ -1,64 +1,25 @@
-const crypto = require('crypto');
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const zaloService = require('../services/zaloService');
+const { consumeCode } = require('../utils/zaloLinkStore');
 const { handleError } = require('../services/errorService');
 
-const verifyZaloSignature = (body, signature) => {
-  const verifyToken = process.env.ZALO_OA_WEBHOOK_VERIFY_TOKEN;
-  if (!verifyToken) {
-    logger.error('ZALO_OA_WEBHOOK_VERIFY_TOKEN is not configured; rejecting webhook request');
-    return false;
-  }
-
-  if (!signature || typeof signature !== 'string') {
-    return false;
-  }
-
-  const hash = crypto
-    .createHmac('sha256', verifyToken)
-    .update(JSON.stringify(body))
-    .digest('hex');
-
-  const hashBuffer = Buffer.from(hash);
-  const signatureBuffer = Buffer.from(signature);
-
-  if (hashBuffer.length !== signatureBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
-};
-
+// Zalo Bot API gửi webhook dạng { update_id, message: { chat: { id }, text, from } }
+// giống Telegram, khác hoàn toàn format OA cũ ({ event, user_id, message }).
 const zaloWebhookHandler = async (req, res) => {
   try {
-    const signature = req.headers['x-zalo-signature'];
     const body = req.body;
+    logger.info('Zalo bot webhook received', { update_id: body.update_id });
 
-    // Verify webhook signature
-    if (!verifyZaloSignature(body, signature)) {
-      logger.warn('Invalid Zalo webhook signature');
-      return res.status(403).json({ error: 'Invalid signature' });
+    const chatId = body.message?.chat?.id;
+    const text = body.message?.text?.trim();
+
+    if (!chatId || !text) {
+      // Không phải tin nhắn text (sticker, ảnh...) — bỏ qua an toàn
+      return res.json({ success: true });
     }
 
-    logger.info('Zalo webhook received', { event: body.event });
-
-    // Route by event type
-    switch (body.event) {
-      case 'follow':
-        await handleFollowEvent(body);
-        break;
-      case 'unfollow':
-        await handleUnfollowEvent(body);
-        break;
-      case 'message':
-        await handleMessageEvent(body);
-        break;
-      case 'view':
-        await handleViewEvent(body);
-        break;
-      default:
-        logger.warn('Unknown Zalo event type', { event: body.event });
-    }
+    await handleIncomingMessage(chatId, text);
 
     res.json({ success: true });
   } catch (error) {
@@ -66,45 +27,26 @@ const zaloWebhookHandler = async (req, res) => {
   }
 };
 
-const handleFollowEvent = async (event) => {
-  const { user_id: zaloUserId, name, avatar } = event;
+const handleIncomingMessage = async (chatId, text) => {
+  const isLinkCode = /^\d{6}$/.test(text);
 
-  logger.info('User followed OA', { zalo_user_id: zaloUserId });
-
-  // Check if user exists (mock for now)
-  if (!db || !db.query) {
-    logger.info('Database not available, skipping user creation');
+  if (!isLinkCode) {
+    logger.info('Zalo bot received non-link message', { chat_id: chatId });
     return;
   }
 
-  let user = await db('users')
-    .where('zalo_user_id', zaloUserId)
-    .first();
+  const userId = consumeCode(text);
 
-  if (!user) {
-    logger.info('New follower detected', { zalo_user_id: zaloUserId });
+  if (!userId) {
+    await zaloService.sendMessage(chatId, '⚠️ Mã không hợp lệ hoặc đã hết hạn. Vui lòng lấy mã mới trong app.');
+    return;
   }
-};
 
-const handleUnfollowEvent = async (event) => {
-  const { user_id: zaloUserId } = event;
+  await db('users').where('id', userId).update({ zalo_user_id: chatId });
 
-  logger.info('User unfollowed OA', { zalo_user_id: zaloUserId });
-};
+  logger.info('User linked Zalo bot chat_id', { user_id: userId, chat_id: chatId });
 
-const handleMessageEvent = async (event) => {
-  const { user_id: zaloUserId, message } = event;
-
-  logger.info('Message received from user', {
-    zalo_user_id: zaloUserId,
-    message_length: message?.text?.length
-  });
-};
-
-const handleViewEvent = async (event) => {
-  const { user_id: zaloUserId } = event;
-
-  logger.info('User viewed OA', { zalo_user_id: zaloUserId });
+  await zaloService.sendMessage(chatId, '✅ Đã liên kết thành công! Bạn sẽ nhận thông báo quỹ và điểm danh tại đây.');
 };
 
 module.exports = zaloWebhookHandler;

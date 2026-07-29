@@ -6,8 +6,18 @@ const authService = require('../services/authService');
 const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
 const { isDayInRange } = require('../services/financeClosingService');
 const { DAYS_OF_WEEK, daysUntil } = require('../services/sessionSchedulingService');
-
+const { generateCode } = require('../utils/zaloLinkStore'); 
 const VALID_ROLES = ['member', 'co_manager', 'owner'];
+
+
+const generateZaloLinkCode = async (req, res) => {
+    try {
+        const code = generateCode(req.user.user_id);
+        res.json({ code, expires_in: 600 });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: '/api/zalo/link-code' });
+    }
+};
 
 function generateInviteCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1183,5 +1193,6 @@ module.exports = {
     // Multi-team exports
     listUserTeams,
     switchTeam,
-    getUserTeams
+    getUserTeams,
+    generateZaloLinkCode          
 };

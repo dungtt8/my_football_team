@@ -3,6 +3,7 @@ const inngest = require('../config/inngest');
 const zaloService = require('./zaloService');
 const logger = require('../utils/logger');
 const { getTeamUsers } = require('../utils/teamUsers');
+const { buildTextFromTemplate } = require('../templates/zaloTemplates');
 
 class NotificationService {
   /**
@@ -14,6 +15,12 @@ class NotificationService {
    */
   async sendZaloMessage(zaloUserId, templateId, params) {
     try {
+
+      if (!zaloUserId) {
+        const error = 'zaloUserId is required (received null/undefined)';
+        logger.warn('Zalo message send skipped', { template_id: templateId, reason: error });
+        throw new Error(error);
+      }
       // Verify user exists with zaloUserId
       const user = await db('users')
         .where('zalo_user_id', zaloUserId)
@@ -30,7 +37,8 @@ class NotificationService {
       }
 
       // Send ZNS message via Zalo service
-      const response = await zaloService.sendZNS(zaloUserId, templateId, params);
+      const text = buildTextFromTemplate(templateId, params);
+      const response = await zaloService.sendMessage(zaloUserId, text);
 
       logger.info('Zalo message queued successfully', {
         zalo_user_id: zaloUserId,
@@ -243,7 +251,8 @@ class NotificationService {
             continue;
           }
 
-          const response = await zaloService.sendZNS(zaloUserId, templateId, params);
+          const text = buildTextFromTemplate(templateId, params);
+          const response = await zaloService.sendMessage(zaloUserId, text);
           results.successful.push({
             zalo_user_id: zaloUserId,
             response

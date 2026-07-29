@@ -172,6 +172,11 @@ app.put('/api/team/members/:memberId/kick', rbacMiddleware(['owner', 'co_manager
 // Jersey number update (tenancy-scoped via the global tenancyMiddleware applied above, self-update)
 app.put('/api/members/jersey-number', teamHandler.updateJerseyNumber);
 
+app.put('/api/profile', teamHandler.updateProfile);
+app.put('/api/auth/password', teamHandler.changePassword);
+
+app.post('/api/zalo/link-code', teamHandler.generateZaloLinkCode);
+
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
     handleError(err, req, res, {
