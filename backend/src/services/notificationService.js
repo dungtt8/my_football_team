@@ -4,6 +4,7 @@ const zaloService = require('./zaloService');
 const logger = require('../utils/logger');
 const { getTeamUsers } = require('../utils/teamUsers');
 const { buildTextFromTemplate } = require('../templates/zaloTemplates');
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 class NotificationService {
   /**
@@ -257,7 +258,7 @@ class NotificationService {
             zalo_user_id: zaloUserId,
             response
           });
-
+          await sleep(150); // update giới hạn tin nhắn mỗi phút gửi tránh gây rare limit 
           logger.info('Batch notification sent to user', {
             zalo_user_id: zaloUserId,
             template_id: templateId

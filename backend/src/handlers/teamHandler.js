@@ -998,7 +998,7 @@ const updateProfile = async (req, res) => {
         // Update user
         const [updated] = await db('users')
             .where('id', userId)
-            .update({ ...updateData, updated_at: new Date() })
+            .update(updateData)
             .returning('*');
 
         logger.info('Profile updated', { user_id: userId });
@@ -1051,11 +1051,13 @@ const changePassword = async (req, res) => {
             throw new ValidationError('Current password is incorrect');
         }
 
-        // Hash and update new password
+        // Hash and update new passwor, delete update_at
         const hashedPassword = await hashPassword(new_password);
         await db('users')
             .where('id', userId)
-            .update({ password_hash: hashedPassword, updated_at: new Date() });
+            .update({
+                password_hash: hashedPassword
+            });
 
         logger.info('Password changed', { user_id: userId });
 
@@ -1173,6 +1175,15 @@ const switchTeam = async (req, res) => {
     }
 };
 
+const getZaloLinkStatus = async (req, res) => {
+    try {
+        const user = await db('users').where('id', req.user.user_id).select('zalo_user_id').first();
+        res.json({ linked: !!user?.zalo_user_id });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: '/api/zalo/status' });
+    }
+};
+
 module.exports = {
     // Existing exports
     createTeam,
@@ -1194,5 +1205,6 @@ module.exports = {
     listUserTeams,
     switchTeam,
     getUserTeams,
+    getZaloLinkStatus,
     generateZaloLinkCode          
 };

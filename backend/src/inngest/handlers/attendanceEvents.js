@@ -266,14 +266,14 @@ const onSessionClosedLogic = async ({ event, step }) => {
 
   // Step 3: Fetch attendance records for this session
   const attendanceRecords = await step.run('fetch-attendance-records', async () => {
-    return db('attendance_records')
+    return db('attendance_checkins')              // ĐÃ SỬA: đổi tên bảng
       .where('session_id', session_id)
-      .select('user_id', 'status');
+      .select('user_id', 'response');              // ĐÃ SỬA: đổi cột status → response
   });
 
   const attendedUserIds = new Set(
     attendanceRecords
-      .filter(record => record.status === 'attended')
+      .filter(record => record.response === 'yes')  // ĐÃ SỬA: 'attended' → 'yes'
       .map(record => record.user_id)
   );
 
@@ -291,13 +291,13 @@ const onSessionClosedLogic = async ({ event, step }) => {
     if (!attendedUserIds.has(member.id)) {
       // Mark as absent
       await step.run(`mark-absent-${member.id}`, async () => {
-        return db('attendance_records').insert({
-          session_id,
-          user_id: member.id,
-          status: 'marked_absent',
-          marked_by: closed_by,
-          created_at: db.fn.now()
-        }).onConflict('session_id', 'user_id').merge();
+        return db('attendance_checkins')
+          .where({ session_id, user_id: member.id })
+          .update({
+            response: 'no',
+            responded_at: db.fn.now(),
+            updated_at: db.fn.now()
+          });
       });
 
       absentCount++;

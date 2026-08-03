@@ -176,6 +176,7 @@ app.put('/api/profile', teamHandler.updateProfile);
 app.put('/api/auth/password', teamHandler.changePassword);
 
 app.post('/api/zalo/link-code', teamHandler.generateZaloLinkCode);
+app.get('/api/zalo/status', teamHandler.getZaloLinkStatus);
 
 // Error handler (final middleware)
 app.use((err, req, res, next) => {
