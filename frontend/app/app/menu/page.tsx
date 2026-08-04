@@ -29,6 +29,10 @@ export default function MenuPage() {
     const [paymentDeadline, setPaymentDeadline] = useState<any>(null)
     const [activeCheckIn, setActiveCheckIn] = useState<ActiveCheckIn | null>(null)
     const [respondingCheckIn, setRespondingCheckIn] = useState(false)
+    const [zaloCode, setZaloCode] = useState<string | null>(null)
+    const [loadingZalo, setLoadingZalo] = useState(false)
+    const [zaloLinked, setZaloLinked] = useState(false)
+
 
     const displayName = (user as any)?.full_name || (user as any)?.name || user?.email || 'Thành viên'
     const displayRole = role ? (ROLE_LABELS[role] || role) : 'Thành viên'
@@ -42,6 +46,7 @@ export default function MenuPage() {
             fetch(`${API_URL}/team/invite`, { headers: { Authorization: `Bearer ${token}` } })
                 .then(r => r.json()).then(d => { if (d.invite_code) setInviteCode(d.invite_code) }).catch(() => { })
         }
+
 
         // Fetch payment deadline
         getPaymentDeadline()
@@ -57,6 +62,15 @@ export default function MenuPage() {
             })
             .catch(() => { })
     }, [authLoading, role])
+
+
+    useEffect(() => {
+        const token = localStorage.getItem('auth_token')
+        fetch(`${API_URL}/zalo/status`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => res.json())
+            .then(d => setZaloLinked(d.linked))
+            .catch(() => {})
+    }, [])
 
     const handleRegenerateCode = async () => {
         setLoadingInvite(true)
@@ -74,6 +88,18 @@ export default function MenuPage() {
         if (!inviteCode) return
         navigator.clipboard.writeText(inviteCode)
         toast('Đã sao chép mã mời', 'success')
+    }
+
+    const handleGenerateZaloCode = async () => {
+        setLoadingZalo(true)
+        try {
+            const token = localStorage.getItem('auth_token')
+            const res = await fetch(`${API_URL}/zalo/link-code`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+            const d = await res.json()
+            setZaloCode(d.code)
+            toast('Đã tạo mã, mở Zalo và nhắn mã này trong 10 phút', 'success')
+        } catch { toast('Lỗi tạo mã', 'error') }
+        finally { setLoadingZalo(false) }
     }
 
     const handleCheckInResponse = async (response: 'yes' | 'no') => {
@@ -236,6 +262,33 @@ export default function MenuPage() {
         </div>
     )
 
+    const zaloLinkEl = (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Nhận thông báo qua Zalo</div>
+            <div className="card pad">
+                {zaloLinked ? (
+                    <div style={{ color: 'var(--brand)', fontWeight: 600 }}>Đã liên kết Zalo</div>
+                ) : zaloCode ? (
+                    <div>
+                        <p style={{ margin: '0 0 12px 0', fontSize: 13, color: 'var(--ink-3)' }}>
+                            Mở Zalo, tìm bot đội bóng, gửi mã sau (hết hạn sau 10 phút):
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                            <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, letterSpacing: '0.1em' }}>{zaloCode}</span>
+                            <button className="btn btn-ghost btn-sm" onClick={handleGenerateZaloCode} disabled={loadingZalo}>
+                                {loadingZalo ? 'Đang tạo...' : 'Lấy mã mới'}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button className="btn btn-primary btn-sm" onClick={handleGenerateZaloCode} disabled={loadingZalo}>
+                        {loadingZalo ? 'Đang tạo mã...' : '-> Liên kết Zalo'}
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+
     const settingsListEl = (
         <div className="card">
             {menuItems.map((item, i) => (
@@ -274,6 +327,7 @@ export default function MenuPage() {
                     {tilesEl}
                     {badgesEl}
                     {inviteCodeEl}
+                    {zaloLinkEl}
                     {settingsListEl}
                 </div>
             </div>
@@ -291,6 +345,9 @@ export default function MenuPage() {
                 </div>
                 <div style={{ marginTop: 20 }}>
                     {inviteCodeEl}
+                </div>
+                <div style={{ marginTop: 20 }}>
+                    {zaloLinkEl}
                 </div>
             </div>
 

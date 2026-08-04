@@ -20,3 +20,4 @@ Thumbs.db
 # Thư mục logs (mọi cấp)
 logs/
 *.log
+backend/logs/

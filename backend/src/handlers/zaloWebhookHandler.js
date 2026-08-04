@@ -1,64 +1,29 @@
-const crypto = require('crypto');
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const zaloService = require('../services/zaloService');
+const checkinService = require('../services/checkinService');
+const { consumeCode } = require('../utils/zaloLinkStore');
 const { handleError } = require('../services/errorService');
-
-const verifyZaloSignature = (body, signature) => {
-  const verifyToken = process.env.ZALO_OA_WEBHOOK_VERIFY_TOKEN;
-  if (!verifyToken) {
-    logger.error('ZALO_OA_WEBHOOK_VERIFY_TOKEN is not configured; rejecting webhook request');
-    return false;
-  }
-
-  if (!signature || typeof signature !== 'string') {
-    return false;
-  }
-
-  const hash = crypto
-    .createHmac('sha256', verifyToken)
-    .update(JSON.stringify(body))
-    .digest('hex');
-
-  const hashBuffer = Buffer.from(hash);
-  const signatureBuffer = Buffer.from(signature);
-
-  if (hashBuffer.length !== signatureBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(hashBuffer, signatureBuffer);
-};
 
 const zaloWebhookHandler = async (req, res) => {
   try {
-    const signature = req.headers['x-zalo-signature'];
+    const secretHeader = req.headers['x-bot-api-secret-token'];
+    if (secretHeader !== process.env.ZALO_WEBHOOK_SECRET) {
+      logger.warn('Zalo webhook rejected — invalid secret token');
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     const body = req.body;
+    logger.info('Zalo bot webhook received', { update_id: body.update_id });
 
-    // Verify webhook signature
-    if (!verifyZaloSignature(body, signature)) {
-      logger.warn('Invalid Zalo webhook signature');
-      return res.status(403).json({ error: 'Invalid signature' });
+    const chatId = body.message?.chat?.id;
+    const text = body.message?.text?.trim();
+
+    if (!chatId || !text) {
+      return res.json({ success: true });
     }
 
-    logger.info('Zalo webhook received', { event: body.event });
-
-    // Route by event type
-    switch (body.event) {
-      case 'follow':
-        await handleFollowEvent(body);
-        break;
-      case 'unfollow':
-        await handleUnfollowEvent(body);
-        break;
-      case 'message':
-        await handleMessageEvent(body);
-        break;
-      case 'view':
-        await handleViewEvent(body);
-        break;
-      default:
-        logger.warn('Unknown Zalo event type', { event: body.event });
-    }
+    await handleIncomingMessage(chatId, text);
 
     res.json({ success: true });
   } catch (error) {
@@ -66,45 +31,61 @@ const zaloWebhookHandler = async (req, res) => {
   }
 };
 
-const handleFollowEvent = async (event) => {
-  const { user_id: zaloUserId, name, avatar } = event;
+const handleIncomingMessage = async (chatId, text) => {
+  const isLinkCode = /^\d{6}$/.test(text);
 
-  logger.info('User followed OA', { zalo_user_id: zaloUserId });
-
-  // Check if user exists (mock for now)
-  if (!db || !db.query) {
-    logger.info('Database not available, skipping user creation');
+  if (isLinkCode) {
+    const userId = consumeCode(text);
+    if (!userId) {
+      await zaloService.sendMessage(chatId, 'Mã không hợp lệ hoặc đã hết hạn. Vui lòng lấy mã mới trong app.');
+      return;
+    }
+    await db('users').where('id', userId).update({ zalo_user_id: chatId });
+    logger.info('User linked Zalo bot chat_id', { user_id: userId, chat_id: chatId });
+    await zaloService.sendMessage(chatId, 'ĐÃ LIÊN KẾT THÀNH CÔNG! Bạn sẽ nhận thông báo quỹ và điểm danh tại đây.');
     return;
   }
 
-  let user = await db('users')
-    .where('zalo_user_id', zaloUserId)
-    .first();
-
-  if (!user) {
-    logger.info('New follower detected', { zalo_user_id: zaloUserId });
+  if (text === '1' || text === '2') {
+    return handleCheckinResponse(chatId, text === '1' ? 'yes' : 'no');
   }
+
+  logger.info('Zalo bot received unrecognized message', { chat_id: chatId, text });
+  await zaloService.sendMessage(chatId, 'Không hiểu tin nhắn này. Trả lời "1" (tham gia) hoặc "2" (không tham gia) cho buổi tập gần nhất, hoặc nhắn mã liên kết 6 số.');
 };
 
-const handleUnfollowEvent = async (event) => {
-  const { user_id: zaloUserId } = event;
+const handleCheckinResponse = async (chatId, response) => {
+  const user = await db('users').where('zalo_user_id', chatId).first();
+  if (!user) {
+    await zaloService.sendMessage(chatId, 'Tài khoản chưa liên kết. Vào app để lấy mã liên kết trước.');
+    return;
+  }
 
-  logger.info('User unfollowed OA', { zalo_user_id: zaloUserId });
-};
+  const userTeams = await db('team_members')
+    .where({ user_id: user.id, status: 'active' })
+    .select('team_id');
 
-const handleMessageEvent = async (event) => {
-  const { user_id: zaloUserId, message } = event;
+  let activeCheckin = null;
+  for (const { team_id } of userTeams) {
+    const checkin = await checkinService.getActiveCheckinForUser(team_id, user.id);
+    if (checkin) {
+      activeCheckin = checkin;
+      break;
+    }
+  }
 
-  logger.info('Message received from user', {
-    zalo_user_id: zaloUserId,
-    message_length: message?.text?.length
-  });
-};
+  if (!activeCheckin) {
+    await zaloService.sendMessage(chatId, 'Hiện không có buổi tập nào cần điểm danh.');
+    return;
+  }
 
-const handleViewEvent = async (event) => {
-  const { user_id: zaloUserId } = event;
-
-  logger.info('User viewed OA', { zalo_user_id: zaloUserId });
+  try {
+    await checkinService.respondToCheckin(activeCheckin.id, user.id, response);
+    await zaloService.sendMessage(chatId, response === 'yes' ? 'Đã ghi nhận: Có mặt!' : 'Đã ghi nhận: Vắng mặt.');
+  } catch (error) {
+    logger.error('Failed to respond to checkin via Zalo', { user_id: user.id, error: error.message });
+    await zaloService.sendMessage(chatId, 'Có lỗi xảy ra (buổi tập có thể đã đóng), vui lòng kiểm tra lại trong app.');
+  }
 };
 
 module.exports = zaloWebhookHandler;

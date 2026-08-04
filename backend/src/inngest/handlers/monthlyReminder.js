@@ -1,5 +1,4 @@
 const db = require('../../config/database');
-const zaloService = require('../../services/zaloService');
 const gamificationService = require('../../services/gamificationService');
 const notificationService = require('../../services/notificationService');
 const logger = require('../../utils/logger');
@@ -110,15 +109,16 @@ const monthlyReminderLogic = async ({ event, step }) => {
         });
 
         logger.info(`Processing team ${team.id} with ${activeMembers.length} active members for leaderboard notification`);
-
+        const linkedMembers = activeMembers.filter(m => m.zalo_user_id);
         // Send leaderboard summary to each member
-        for (const member of activeMembers) {
+        for (const member of linkedMembers) {
           try {
             if (topThreeUsers.length > 0 && member.zalo_user_id) {
-              const leaderboardMessage = formatLeaderboardMessage(topThreeUsers);
-              
-              // Send as utility message with formatted leaderboard
-              await zaloService.sendUtilityMessage(member.zalo_user_id, leaderboardMessage);
+              await notificationService.sendZaloMessage(
+                member.zalo_user_id,
+                'LEADERBOARD_SUMMARY',
+                { topUsers: topThreeUsers }
+              );
               totalNotifications++;
 
               logger.info('Leaderboard summary sent to member', {
@@ -133,17 +133,20 @@ const monthlyReminderLogic = async ({ event, step }) => {
               member_id: member.id,
               error: error.message
             });
-            // Continue with next member on error
           }
         }
 
         // Also send fund reminder for existing functionality
-        for (const member of activeMembers) {
+        // Also send fund reminder for existing functionality
+        for (const member of linkedMembers) {
           try {
             const currentMonthDisplay = new Date().toLocaleString('vi-VN', { month: 'long', year: 'numeric' });
-            const fundMessage = `📢 Nhắc nợ quỹ tháng ${currentMonthDisplay}\n\nVui lòng thanh toán trước hết hạn.\nhttps://myteam.revonexus.net/fund`;
 
-            await zaloService.sendUtilityMessage(member.zalo_user_id, fundMessage);
+            await notificationService.sendZaloMessage(
+              member.zalo_user_id,
+              'FUND_MONTHLY_REMINDER',
+              { month: currentMonthDisplay, link: 'https://myteam.revonexus.net/fund' }
+            );
             totalNotifications++;
           } catch (error) {
             logger.error('Failed to send fund reminder', {
@@ -151,7 +154,6 @@ const monthlyReminderLogic = async ({ event, step }) => {
               member_id: member.id,
               error: error.message
             });
-            // Continue with next member on error
           }
         }
       } catch (error) {

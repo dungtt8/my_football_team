@@ -116,44 +116,9 @@ const createCampaignDeadlineCheckFunction = inngest.createFunction(
  * Triggered when: attendance.session-created event is emitted
  * Action: Notify team members of new attendance session
  */
-const onAttendanceSessionCreatedHandler = inngest.createFunction(
-  {
-    id: 'attendance.session-created',
-    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
-  },
-  // NOTE: id above uses a hyphen, but the actual event trigger must match what's
-  // emitted (attendanceHandler.js / sessionSchedulingService.js use underscores)
-  { event: 'attendance.session_created' },
-  onAttendanceSessionCreated
-);
-
-/**
- * Attendance Check-In Handler
- * Triggered when: attendance.check-in event is emitted
- * Action: Award gamification points for attendance
- */
-const onAttendanceCheckInHandler = inngest.createFunction(
-  {
-    id: 'attendance.check-in',
-    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
-  },
-  { event: 'attendance.check-in' },
-  onAttendanceCheckIn
-);
-
-/**
- * Attendance Session Closed Handler
- * Triggered when: attendance.session-closed event is emitted
- * Action: Finalize session attendance, process any pending check-ins
- */
-const onAttendanceSessionClosedHandler = inngest.createFunction(
-  {
-    id: 'attendance.session-closed',
-    retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
-  },
-  { event: 'attendance.session_closed' },
-  onAttendanceSessionClosed
-);
+const onAttendanceSessionCreatedHandler = onAttendanceSessionCreated;
+const onAttendanceCheckInHandler = onAttendanceCheckIn;
+const onAttendanceSessionClosedHandler = onAttendanceSessionClosed;
 
 /**
  * Auto-Create Sessions Scheduled Job

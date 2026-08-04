@@ -6,8 +6,18 @@ const authService = require('../services/authService');
 const { utcToGmt7, gmt7ToUtc } = require('../utils/timeZoneConverter');
 const { isDayInRange } = require('../services/financeClosingService');
 const { DAYS_OF_WEEK, daysUntil } = require('../services/sessionSchedulingService');
-
+const { generateCode } = require('../utils/zaloLinkStore'); 
 const VALID_ROLES = ['member', 'co_manager', 'owner'];
+
+
+const generateZaloLinkCode = async (req, res) => {
+    try {
+        const code = generateCode(req.user.user_id);
+        res.json({ code, expires_in: 600 });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: '/api/zalo/link-code' });
+    }
+};
 
 function generateInviteCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -988,7 +998,7 @@ const updateProfile = async (req, res) => {
         // Update user
         const [updated] = await db('users')
             .where('id', userId)
-            .update({ ...updateData, updated_at: new Date() })
+            .update(updateData)
             .returning('*');
 
         logger.info('Profile updated', { user_id: userId });
@@ -1041,11 +1051,13 @@ const changePassword = async (req, res) => {
             throw new ValidationError('Current password is incorrect');
         }
 
-        // Hash and update new password
+        // Hash and update new passwor, delete update_at
         const hashedPassword = await hashPassword(new_password);
         await db('users')
             .where('id', userId)
-            .update({ password_hash: hashedPassword, updated_at: new Date() });
+            .update({
+                password_hash: hashedPassword
+            });
 
         logger.info('Password changed', { user_id: userId });
 
@@ -1163,6 +1175,15 @@ const switchTeam = async (req, res) => {
     }
 };
 
+const getZaloLinkStatus = async (req, res) => {
+    try {
+        const user = await db('users').where('id', req.user.user_id).select('zalo_user_id').first();
+        res.json({ linked: !!user?.zalo_user_id });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: '/api/zalo/status' });
+    }
+};
+
 module.exports = {
     // Existing exports
     createTeam,
@@ -1183,5 +1204,7 @@ module.exports = {
     // Multi-team exports
     listUserTeams,
     switchTeam,
-    getUserTeams
+    getUserTeams,
+    getZaloLinkStatus,
+    generateZaloLinkCode          
 };
