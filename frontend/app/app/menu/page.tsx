@@ -17,6 +17,7 @@ const BADGES: [string, string][] = [
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const ZALO_BOT_USERNAME = process.env.NEXT_PUBLIC_ZALO_BOT_USERNAME || ''
 
 export default function MenuPage() {
     const router = useRouter()
@@ -263,31 +264,98 @@ export default function MenuPage() {
     )
 
     const zaloLinkEl = (
-        <div>
-            <div className="sec-title" style={{ marginBottom: 12 }}>Nhận thông báo qua Zalo</div>
-            <div className="card pad">
-                {zaloLinked ? (
-                    <div style={{ color: 'var(--brand)', fontWeight: 600 }}>Đã liên kết Zalo</div>
-                ) : zaloCode ? (
-                    <div>
-                        <p style={{ margin: '0 0 12px 0', fontSize: 13, color: 'var(--ink-3)' }}>
-                            Mở Zalo, tìm bot đội bóng, gửi mã sau (hết hạn sau 10 phút):
-                        </p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                            <span style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, letterSpacing: '0.1em' }}>{zaloCode}</span>
-                            <button className="btn btn-ghost btn-sm" onClick={handleGenerateZaloCode} disabled={loadingZalo}>
-                                {loadingZalo ? 'Đang tạo...' : 'Lấy mã mới'}
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <button className="btn btn-primary btn-sm" onClick={handleGenerateZaloCode} disabled={loadingZalo}>
-                        {loadingZalo ? 'Đang tạo mã...' : '-> Liên kết Zalo'}
-                    </button>
-                )}
-            </div>
+    <div>
+        <div className="sec-title" style={{ marginBottom: 12 }}>
+        Nhận thông báo qua Zalo
         </div>
-    )
+
+        <div
+        style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "stretch",
+        }}
+        >
+        {/* Khung trạng thái */}
+        <div
+            className="card pad"
+            style={{
+            flex: 1,
+            }}
+        >
+            {zaloLinked ? (
+            <div style={{ color: "var(--brand)", fontWeight: 600 }}>
+                Đã liên kết Zalo
+            </div>
+            ) : zaloCode ? (
+            <>
+                <p
+                style={{
+                    margin: "0 0 12px",
+                    fontSize: 13,
+                    color: "var(--ink-3)",
+                }}
+                >
+                Bấm nút bên phải để mở Zalo, rồi gửi mã sau (hết hạn sau 10 phút):
+                </p>
+
+                <div
+                style={{
+                    fontFamily: "var(--font-head)",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    textAlign: "center",
+                    background: "rgba(18,183,106,0.08)",
+                    borderRadius: 8,
+                    padding: 10,
+                    marginBottom: 10,
+                }}
+                >
+                {zaloCode}
+                </div>
+
+                <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleGenerateZaloCode}
+                disabled={loadingZalo}
+                style={{ width: "100%" }}
+                >
+                {loadingZalo ? "Đang tạo..." : "Lấy mã mới"}
+                </button>
+            </>
+            ) : (
+            <button
+                className="btn btn-primary btn-sm"
+                onClick={handleGenerateZaloCode}
+                disabled={loadingZalo}
+            >
+                {loadingZalo ? "Đang tạo mã..." : "→ Liên kết Zalo"}
+            </button>
+            )}
+        </div>
+
+        {/* Nút mở Zalo nằm ngoài khung */}
+        {ZALO_BOT_USERNAME && (
+        <a
+            href={ZALO_BOT_USERNAME}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary btn-sm"
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+            }}
+        >
+            Mở Zalo Bot
+        </a>
+        )}
+        </div>
+    </div>
+    );
 
     const settingsListEl = (
         <div className="card">
