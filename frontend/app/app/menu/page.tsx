@@ -91,6 +91,14 @@ export default function MenuPage() {
         toast('Đã sao chép mã mời', 'success')
     }
 
+    const handleOpenZaloBot = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        if (isMobile) {
+            e.preventDefault()
+            window.location.href = ZALO_BOT_USERNAME
+        }
+    }
+
     const handleGenerateZaloCode = async () => {
         setLoadingZalo(true)
         try {
@@ -299,6 +307,25 @@ export default function MenuPage() {
                 Bấm nút bên phải để mở Zalo, rồi gửi mã sau (hết hạn sau 10 phút):
                 </p>
 
+                {ZALO_BOT_USERNAME && (
+                <p
+                style={{
+                    margin: "0 0 12px",
+                    fontSize: 13,
+                }}
+                >
+                <a
+                    href={ZALO_BOT_USERNAME}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleOpenZaloBot}
+                    style={{ color: "var(--brand-600)", fontWeight: 600, wordBreak: "break-all" }}
+                >
+                    {ZALO_BOT_USERNAME}
+                </a>
+                </p>
+                )}
+
                 <div
                 style={{
                     fontFamily: "var(--font-head)",
@@ -341,6 +368,7 @@ export default function MenuPage() {
             href={ZALO_BOT_USERNAME}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleOpenZaloBot}
             className="btn btn-primary btn-sm"
             style={{
                 display: 'flex',

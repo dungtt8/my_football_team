@@ -82,8 +82,12 @@ function LoginFormContent() {
                 if (data.has_team === false) {
                     targetUrl = '/onboarding'
                     console.log('[Login] User has no team, redirecting to onboarding')
+                } else if (data.is_new_user) {
+                    // Priority 2: New phone number → default to Zalo linking flow
+                    targetUrl = '/app/menu'
+                    console.log('[Login] New user, redirecting to Zalo link flow')
                 } else {
-                    // Priority 2: If there's a redirect param and user has team → use it
+                    // Priority 3: If there's a redirect param → use it
                     const redirect = searchParams.get('redirect') || searchParams.get('from')
                     if (redirect && redirect !== '/login') {
                         targetUrl = redirect

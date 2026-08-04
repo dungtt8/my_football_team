@@ -19,6 +19,7 @@ const phoneAuthHandler = async (req, res) => {
 
         // 1. Upsert user by phone
         let user = await db('users').where({ phone }).first();
+        const isNewUser = !user;
 
         if (!user) {
             const email = `phone_${phone.replace(/\D/g, '')}@football-team.local`;
@@ -65,7 +66,8 @@ const phoneAuthHandler = async (req, res) => {
                 user: { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role: 'member', team_id: null },
                 team: null,
                 has_team: false,
-                teams: []
+                teams: [],
+                is_new_user: isNewUser
             });
         }
 
@@ -76,7 +78,8 @@ const phoneAuthHandler = async (req, res) => {
             user: { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role: currentRole, team_id: currentTeam.id },
             team: currentTeam,
             has_team: true,
-            teams: allTeams
+            teams: allTeams,
+            is_new_user: isNewUser
         });
     } catch (error) {
         return handleError(error, req, res, { endpoint: '/auth/phone/login' });
