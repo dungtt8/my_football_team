@@ -20,16 +20,28 @@ class ZaloService {
         text: text
       });
 
+      // Zalo Bot API can return HTTP 200 with { ok: false, ... } on failure —
+      // a 2xx status alone does not mean the message was actually delivered.
+      if (response.data && response.data.ok === false) {
+        logger.error('Zalo bot API rejected sendMessage', {
+          chat_id: chatId,
+          response: response.data
+        });
+        throw new Error(`Zalo sendMessage failed: ${response.data.description || 'unknown error'}`);
+      }
+
       logger.info('Zalo bot message sent', {
         chat_id: chatId,
-        message_length: text.length
+        message_length: text.length,
+        response: response.data
       });
 
       return response.data;
     } catch (error) {
       logger.error('Failed to send Zalo bot message', {
         chat_id: chatId,
-        error: error.message
+        error: error.message,
+        response: error.response?.data
       });
       throw error;
     }
