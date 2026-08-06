@@ -10,6 +10,7 @@ function LoginFormContent() {
     const { isAuthenticated, isLoading, setAuthData } = useAuth()
     const [phone, setPhone] = useState('')
     const [fullName, setFullName] = useState('')
+    const [password, setPassword] = useState('')
     const [isPhoneLoading, setIsPhoneLoading] = useState(false)
     const [error, setError] = useState('')
     const [focusedField, setFocusedField] = useState<string | null>(null)
@@ -35,8 +36,11 @@ function LoginFormContent() {
         setIsPhoneLoading(true)
 
         try {
-            if (!phone || !fullName) {
+            if (!phone || !fullName || !password) {
                 throw new Error('Vui lòng nhập đầy đủ thông tin')
+            }
+            if (password.length < 8) {
+                throw new Error('Mật khẩu phải có ít nhất 8 ký tự')
             }
 
             console.log('[Login] Starting phone authentication...')
@@ -45,7 +49,7 @@ function LoginFormContent() {
             const response = await fetch(`${apiUrl}/auth/phone/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, full_name: fullName }),
+                body: JSON.stringify({ phone, full_name: fullName, password }),
             })
 
             const data = await response.json()
@@ -231,6 +235,37 @@ function LoginFormContent() {
                                 required
                             />
                         </div>
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--ink-3)', marginBottom: '8px' }}>
+                            Mật khẩu
+                        </label>
+                        <div
+                            className="relative rounded-2xl transition-all duration-200"
+                            style={{
+                                background: focusedField === 'password' ? 'var(--surface)' : 'var(--surface-2)',
+                                border: `1.5px solid ${focusedField === 'password' ? 'var(--brand)' : 'var(--line)'}`,
+                                boxShadow: focusedField === 'password' ? '0 0 0 3px rgba(18,183,106,0.12)' : 'none',
+                            }}
+                        >
+                            <input
+                                type="password"
+                                placeholder="Tối thiểu 8 ký tự"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onFocus={() => setFocusedField('password')}
+                                onBlur={() => setFocusedField(null)}
+                                className="w-full bg-transparent focus:outline-none text-base"
+                                style={{ color: 'var(--ink)', padding: '14px 18px' }}
+                                minLength={8}
+                                required
+                            />
+                        </div>
+                        <p className="text-[11px]" style={{ color: 'var(--ink-4)', marginTop: '8px' }}>
+                            Nếu số điện thoại chưa có tài khoản, mật khẩu này sẽ được dùng để tạo tài khoản mới.
+                        </p>
                     </div>
 
                     {/* Submit */}
