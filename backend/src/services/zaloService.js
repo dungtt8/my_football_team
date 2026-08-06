@@ -5,6 +5,11 @@ class ZaloService {
   constructor() {
     // Token dạng "botId:accessToken" lấy từ bot.zapps.me
     this.botToken = process.env.ZALO_BOT_TOKEN;
+    if (!this.botToken) {
+      // Without this, requests silently hit .../botundefined/... and Zalo
+      // returns a 404 that looks like a generic API error, not a config issue.
+      logger.error('ZALO_BOT_TOKEN is not set — Zalo bot messages will fail');
+    }
     this.baseUrl = `https://bot-api.zaloplatforms.com/bot${this.botToken}`;
   }
 
