@@ -62,9 +62,6 @@ app.get('/health', (req, res) => {
 });
 
 // Auth routes (no tenancy required)
-const authHandler = require('./handlers/authHandler');
-app.post('/api/auth/zalo/callback', authHandler);
-
 const phoneAuthHandler = require('./handlers/phoneAuthHandler');
 app.post('/api/auth/phone/login', phoneAuthHandler);
 

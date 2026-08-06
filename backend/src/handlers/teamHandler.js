@@ -12,7 +12,7 @@ const VALID_ROLES = ['member', 'co_manager', 'owner'];
 
 const generateZaloLinkCode = async (req, res) => {
     try {
-        const code = generateCode(req.user.user_id);
+        const code = await generateCode(req.user.user_id);
         res.json({ code, expires_in: 600 });
     } catch (error) {
         return handleError(error, req, res, { endpoint: '/api/zalo/link-code' });

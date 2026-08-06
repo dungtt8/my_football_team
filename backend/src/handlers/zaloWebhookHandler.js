@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const zaloService = require('../services/zaloService');
@@ -5,10 +6,21 @@ const checkinService = require('../services/checkinService');
 const { consumeCode } = require('../utils/zaloLinkStore');
 const { handleError } = require('../services/errorService');
 
+function isValidSecret(secretHeader) {
+  const expected = process.env.ZALO_WEBHOOK_SECRET;
+  if (!expected || !secretHeader) return false;
+
+  const expectedBuf = Buffer.from(expected);
+  const headerBuf = Buffer.from(secretHeader);
+  if (expectedBuf.length !== headerBuf.length) return false;
+
+  return crypto.timingSafeEqual(expectedBuf, headerBuf);
+}
+
 const zaloWebhookHandler = async (req, res) => {
   try {
     const secretHeader = req.headers['x-bot-api-secret-token'];
-    if (secretHeader !== process.env.ZALO_WEBHOOK_SECRET) {
+    if (!isValidSecret(secretHeader)) {
       logger.warn('Zalo webhook rejected — invalid secret token');
       return res.status(403).json({ error: 'Forbidden' });
     }
@@ -35,7 +47,7 @@ const handleIncomingMessage = async (chatId, text) => {
   const isLinkCode = /^\d{6}$/.test(text);
 
   if (isLinkCode) {
-    const userId = consumeCode(text);
+    const userId = await consumeCode(text);
     if (!userId) {
       await zaloService.sendMessage(chatId, 'Mã không hợp lệ hoặc đã hết hạn. Vui lòng lấy mã mới trong app.');
       return;
