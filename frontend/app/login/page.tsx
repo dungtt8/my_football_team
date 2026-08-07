@@ -268,6 +268,15 @@ function LoginFormContent() {
 
                 {/* Footer */}
                 <p className="text-center text-[11px]" style={{ color: 'var(--ink-4)', marginTop: '24px' }}>
+                    <a
+                        href="/gioi-thieu.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'var(--brand-600)', fontWeight: 600 }}
+                    >
+                        Giới thiệu
+                    </a>
+                    {' · '}
                     © {new Date().getFullYear()} My Football Team · Bản quyền thuộc về{' '}
                     <a
                         href="https://revonexus.net"
