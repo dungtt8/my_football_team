@@ -29,15 +29,16 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
     .map(o => o.trim())
     .filter(Boolean);
 
-// Always allow localhost in development
-if (process.env.NODE_ENV !== 'production') {
-    ALLOWED_ORIGINS.push('http://localhost:3000', 'http://127.0.0.1:3000');
-}
+const isDev = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
     origin: (origin, callback) => {
         // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin) return callback(null, true);
+        // Allow any localhost/127.0.0.1 port in development (dev servers pick a free port)
+        if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+            return callback(null, true);
+        }
         if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
             return callback(null, true);
         }
@@ -62,8 +63,9 @@ app.get('/health', (req, res) => {
 });
 
 // Auth routes (no tenancy required)
-const phoneAuthHandler = require('./handlers/phoneAuthHandler');
-app.post('/api/auth/phone/login', phoneAuthHandler);
+const { phoneLoginHandler, phoneRegisterHandler } = require('./handlers/phoneAuthHandler');
+app.post('/api/auth/phone/login', phoneLoginHandler);
+app.post('/api/auth/phone/register', phoneRegisterHandler);
 
 // Zalo webhook (NO AUTH - verify signature before processing)
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');

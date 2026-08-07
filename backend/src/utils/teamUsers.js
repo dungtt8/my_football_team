@@ -11,7 +11,7 @@ const db = require('../config/database');
  *
  * @param {number|string} teamId
  * @param {object} [opts]
- * @param {string} [opts.role] - filter by team_members.role (e.g. 'co_manager')
+ * @param {string|string[]} [opts.role] - filter by team_members.role (e.g. 'co_manager', or ['owner', 'co_manager'])
  * @param {string} [opts.status='active'] - filter by team_members.status (pass null to skip)
  * @param {number|string} [opts.excludeUserId] - exclude this user id
  * @param {string[]} [opts.columns] - columns to select, prefixed with `u.` by default
@@ -30,7 +30,7 @@ const getTeamUsers = async (teamId, opts = {}) => {
         .select(columns);
 
     if (status) query = query.where('tm.status', status);
-    if (role) query = query.where('tm.role', role);
+    if (role) query = Array.isArray(role) ? query.whereIn('tm.role', role) : query.where('tm.role', role);
     if (excludeUserId) query = query.whereNot('u.id', excludeUserId);
 
     return query;
