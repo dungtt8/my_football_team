@@ -114,7 +114,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({
                         onChange={handleChange}
                         onFocus={focusRing}
                         onBlur={blurRing}
-                        placeholder="100.000"
+                        placeholder="100000"
                         min="0"
                         style={{ ...inputStyle, paddingLeft: 30, borderColor: errors.amount_per_member ? 'var(--danger)' : 'var(--line)' }}
                     />
