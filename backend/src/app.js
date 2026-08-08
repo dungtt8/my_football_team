@@ -132,6 +132,10 @@ app.patch('/api/campaigns/:id/assignments/:userId/exempt', rbacMiddleware(['co_m
 app.post('/api/campaigns/:id/close', rbacMiddleware(['co_manager', 'owner']), campaignHandler.closeCampaign);
 // Manually remind members who haven't paid yet
 app.post('/api/campaigns/:id/remind', rbacMiddleware(['co_manager', 'owner']), campaignHandler.remindCampaign);
+// List active members who joined after this campaign was created and don't have an assignment yet
+app.get('/api/campaigns/:id/missing-members', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getMissingMembers);
+// Add assignments for the selected members
+app.post('/api/campaigns/:id/sync-assignments', rbacMiddleware(['co_manager', 'owner']), campaignHandler.syncAssignments);
 // Get campaign report (analytics and results)
 app.get('/api/campaigns/:id/report', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getReport);
 

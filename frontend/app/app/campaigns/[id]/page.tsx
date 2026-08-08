@@ -25,6 +25,8 @@ export default function CampaignDetailPage() {
         coManagerExempt,
         closeCampaign,
         remindCampaign,
+        getMissingMembers,
+        syncAssignments,
         getReport,
     } = useCampaign()
     const { request } = useApi()
@@ -38,7 +40,13 @@ export default function CampaignDetailPage() {
     const [billFile, setBillFile] = useState<File | null>(null)
     const [billPreview, setBillPreview] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
-    const [isRefreshing, setIsRefreshing] = useState(false)
+    // "Add missing members" modal — lists active team members without an
+    // assignment yet (e.g. joined after this campaign was created).
+    const [showAddMembersModal, setShowAddMembersModal] = useState(false)
+    const [missingMembers, setMissingMembers] = useState<{ user_id: string; full_name: string }[]>([])
+    const [selectedMissingIds, setSelectedMissingIds] = useState<Set<string>>(new Set())
+    const [isLoadingMissing, setIsLoadingMissing] = useState(false)
+    const [isAddingMembers, setIsAddingMembers] = useState(false)
     // Team's payment QR code, shown next to the payment request so members
     // can scan-and-pay without leaving the confirmation card.
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -98,12 +106,45 @@ export default function CampaignDetailPage() {
     const getApproveAmount = (userId: string) =>
         approveAmounts[userId] ?? String(campaign?.amount_per_member ?? '')
 
-    const handleRefreshAssignments = async () => {
-        setIsRefreshing(true)
+    const handleOpenAddMembersModal = async () => {
+        setShowAddMembersModal(true)
+        setIsLoadingMissing(true)
         try {
-            await loadData()
+            const members = await getMissingMembers(id)
+            setMissingMembers(members)
+            setSelectedMissingIds(new Set(members.map(m => m.user_id)))
+        } catch (e: any) {
+            toast(e?.message || 'Không thể tải danh sách thành viên', 'error')
+            setShowAddMembersModal(false)
         } finally {
-            setIsRefreshing(false)
+            setIsLoadingMissing(false)
+        }
+    }
+
+    const toggleMissingMember = (userId: string) => {
+        setSelectedMissingIds(prev => {
+            const next = new Set(prev)
+            if (next.has(userId)) next.delete(userId)
+            else next.add(userId)
+            return next
+        })
+    }
+
+    const handleConfirmAddMembers = async () => {
+        if (selectedMissingIds.size === 0) {
+            toast('Chọn ít nhất 1 thành viên', 'error')
+            return
+        }
+        setIsAddingMembers(true)
+        try {
+            const res = await syncAssignments(id, Array.from(selectedMissingIds))
+            setShowAddMembersModal(false)
+            await loadData()
+            toast(`Đã thêm ${res.added} thành viên vào danh sách phân công`, 'success')
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi thêm thành viên', 'error')
+        } finally {
+            setIsAddingMembers(false)
         }
     }
 
@@ -350,22 +391,15 @@ export default function CampaignDetailPage() {
                     <div className="sec-title" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                         Danh sách phân công
                         <button
-                            onClick={handleRefreshAssignments}
-                            disabled={isRefreshing}
-                            title="Cập nhật lại danh sách"
+                            onClick={handleOpenAddMembersModal}
+                            title="Thêm thành viên chưa có trong danh sách"
                             style={{
                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                 width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent',
-                                cursor: isRefreshing ? 'default' : 'pointer', color: 'var(--ink-3)', padding: 0,
+                                cursor: 'pointer', color: 'var(--ink-3)', padding: 0,
                             }}
                         >
-                            <ArrowClockwise
-                                size={16}
-                                weight="bold"
-                                style={{
-                                    animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none',
-                                }}
-                            />
+                            <ArrowClockwise size={16} weight="bold" />
                         </button>
                     </div>
                     <div className="card">
@@ -434,6 +468,70 @@ export default function CampaignDetailPage() {
                     className="btn btn-ghost btn-block" style={{ color: 'var(--danger)', borderColor: 'var(--danger-050)' }}>
                     Đóng khoản thu
                 </button>
+            )}
+
+            {/* Add missing members modal */}
+            {showAddMembersModal && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20,
+                    }}
+                    onClick={() => !isAddingMembers && setShowAddMembersModal(false)}
+                >
+                    <div
+                        className="card pad"
+                        style={{ width: '100%', maxWidth: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Thêm thành viên</h2>
+                            <button onClick={() => setShowAddMembersModal(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>✕</button>
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>
+                            Thành viên active trong đội nhưng chưa có trong danh sách phân công của khoản thu này.
+                        </p>
+
+                        {isLoadingMissing ? (
+                            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Đang tải...</div>
+                        ) : missingMembers.length === 0 ? (
+                            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+                                Không có thành viên nào thiếu — danh sách đã đầy đủ.
+                            </div>
+                        ) : (
+                            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                                {missingMembers.map((m) => (
+                                    <label
+                                        key={m.user_id}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                                            border: '1px solid var(--line)', borderRadius: 10, cursor: 'pointer',
+                                            background: selectedMissingIds.has(m.user_id) ? 'var(--brand-050)' : 'transparent',
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedMissingIds.has(m.user_id)}
+                                            onChange={() => toggleMissingMember(m.user_id)}
+                                        />
+                                        <span style={{ fontSize: 14, fontWeight: 600 }}>{m.full_name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        {missingMembers.length > 0 && (
+                            <button
+                                disabled={isAddingMembers || selectedMissingIds.size === 0}
+                                onClick={handleConfirmAddMembers}
+                                className="btn btn-primary btn-block"
+                                style={{ opacity: (isAddingMembers || selectedMissingIds.size === 0) ? 0.6 : 1 }}
+                            >
+                                {isAddingMembers ? 'Đang thêm...' : `Thêm ${selectedMissingIds.size} thành viên đã chọn`}
+                            </button>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     )
