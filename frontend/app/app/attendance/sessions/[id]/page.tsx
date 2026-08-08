@@ -30,7 +30,7 @@ export default function SessionDetailPage() {
     const { toast } = useToast()
     const id = params.id as string
 
-    const { getSession, respondToCheckin, managerRespondToCheckin, closeSession, updateSession } = useAttendance()
+    const { getSession, respondToCheckin, managerRespondToCheckin, closeSession, remindSession, updateSession } = useAttendance()
     const isManager = role === 'co_manager' || role === 'manager' || role === 'owner'
 
     const [session, setSession] = useState<AttendanceSession | null>(null)
@@ -63,6 +63,18 @@ export default function SessionDetailPage() {
         try { await fn(); toast(successMsg, 'success'); loadData() }
         catch (e: any) { toast(e?.message || 'Lỗi', 'error') }
         finally { setIsActing(null) }
+    }
+
+    const handleRemindSession = async () => {
+        setIsActing('remind')
+        try {
+            const res = await remindSession(id)
+            toast(`Đã nhắc ${res?.successful ?? 0}/${res?.total ?? 0} thành viên chưa phản hồi`, 'success')
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi', 'error')
+        } finally {
+            setIsActing(null)
+        }
     }
 
     const handleEditSubmit = async (data: SessionFormData) => {
@@ -350,6 +362,22 @@ export default function SessionDetailPage() {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Remind pending members (manager) */}
+            {isManager && isActive && (stats?.pending ?? 0) > 0 && (
+                <button
+                    disabled={!!isActing}
+                    onClick={handleRemindSession}
+                    style={{
+                        width: '100%', padding: '14px', borderRadius: '14px', cursor: 'pointer',
+                        background: 'transparent', border: `1px solid ${G.glassBorder}`,
+                        color: G.t2, fontWeight: 600, fontSize: '14px', marginBottom: '10px',
+                        opacity: isActing ? 0.6 : 1,
+                    }}
+                >
+                    {isActing === 'remind' ? 'Đang gửi...' : `🔔 Nhắc điểm danh (${stats?.pending} chưa phản hồi)`}
+                </button>
             )}
 
             {/* Close session (manager) */}

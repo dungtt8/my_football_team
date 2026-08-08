@@ -161,6 +161,18 @@ export const useAttendance = () => {
         }
     }, [request])
 
+    const remindSession = useCallback(async (id: string) => {
+        try {
+            setLocalError(null)
+            return await request<{ successful: number; failed: number; total: number }>(
+                `/attendance/sessions/${id}/remind`, 'POST'
+            )
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to send reminder')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
     // ── Checkin responses ───────────────────────────────────────────────────
 
     const getActiveCheckin = useCallback(async () => {
@@ -287,6 +299,7 @@ export const useAttendance = () => {
         getSession,
         updateSession,
         closeSession,
+        remindSession,
         getActiveCheckin,
         respondToCheckin,
         managerRespondToCheckin,

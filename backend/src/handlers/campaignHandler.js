@@ -741,6 +741,67 @@ const closeCampaign = async (req, res) => {
 };
 
 /**
+ * Send a manual Zalo reminder to members who haven't paid yet
+ * POST /api/campaigns/:id/remind
+ */
+const remindCampaign = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teamId = req.team.id;
+
+    const campaign = await db('campaigns')
+      .where('id', id)
+      .where('team_id', teamId)
+      .first();
+
+    if (!campaign) {
+      throw new NotFoundError('Campaign', id);
+    }
+
+    const pending = await db('campaign_assignments as ca')
+      .join('users as u', 'u.id', 'ca.user_id')
+      .where('ca.campaign_id', id)
+      .where('ca.status', 'pending_confirmation')
+      .whereNotNull('u.zalo_user_id')
+      .select('u.zalo_user_id');
+
+    if (pending.length === 0) {
+      return res.json({ successful: 0, failed: 0, total: 0 });
+    }
+
+    const zaloUserIds = pending.map(p => p.zalo_user_id);
+
+    const results = await notificationService.sendBatchNotifications(
+      zaloUserIds,
+      'CAMPAIGN_PAYMENT_REMINDER',
+      {
+        campaign_name: campaign.name,
+        amount_per_member: campaign.amount_per_member,
+        deadline: campaign.deadline ? new Date(campaign.deadline).toLocaleDateString('vi-VN') : 'Không có hạn',
+      }
+    );
+
+    logger.info('Campaign payment reminder sent', {
+      campaign_id: id,
+      team_id: teamId,
+      successful: results.successful.length,
+      failed: results.failed.length
+    });
+
+    return res.json({
+      successful: results.successful.length,
+      failed: results.failed.length,
+      total: zaloUserIds.length
+    });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/api/campaigns/:id/remind',
+      method: 'POST'
+    });
+  }
+};
+
+/**
  * Get campaign report with statistics
  * GET /api/campaigns/:id/report
  */
@@ -869,6 +930,7 @@ module.exports = {
   coManagerReject,
   coManagerExempt,
   closeCampaign,
+  remindCampaign,
   getReport,
   uploadBillImage
 };

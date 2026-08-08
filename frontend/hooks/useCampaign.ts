@@ -70,6 +70,7 @@ export interface UseCampaignReturn {
     coManagerReject: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     coManagerExempt: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     closeCampaign: (id: string) => Promise<Campaign>
+    remindCampaign: (id: string) => Promise<{ successful: number; failed: number; total: number }>
     getReport: (id: string) => Promise<CampaignReport>
     loading: boolean
     error: Error | null
@@ -249,6 +250,20 @@ export const useCampaign = (): UseCampaignReturn => {
         [request]
     )
 
+    const remindCampaign = useCallback(
+        async (id: string) => {
+            try {
+                setLocalError(null)
+                return await request<{ successful: number; failed: number; total: number }>(`/campaigns/${id}/remind`, 'POST')
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to send reminder')
+                setLocalError(error)
+                throw error
+            }
+        },
+        [request]
+    )
+
     const getReport = useCallback(
         async (id: string) => {
             try {
@@ -274,6 +289,7 @@ export const useCampaign = (): UseCampaignReturn => {
         coManagerReject,
         coManagerExempt,
         closeCampaign,
+        remindCampaign,
         getReport,
         loading,
         error: error || localError,

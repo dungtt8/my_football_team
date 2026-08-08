@@ -24,6 +24,7 @@ export default function CampaignDetailPage() {
         coManagerReject,
         coManagerExempt,
         closeCampaign,
+        remindCampaign,
         getReport,
     } = useCampaign()
     const { request } = useApi()
@@ -95,6 +96,18 @@ export default function CampaignDetailPage() {
 
     const getApproveAmount = (userId: string) =>
         approveAmounts[userId] ?? String(campaign?.amount_per_member ?? '')
+
+    const handleRemindCampaign = async () => {
+        setIsActing(true)
+        try {
+            const res = await remindCampaign(id)
+            toast(`Đã nhắc ${res?.successful ?? 0}/${res?.total ?? 0} thành viên chưa đóng quỹ`, 'success')
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi', 'error')
+        } finally {
+            setIsActing(false)
+        }
+    }
 
     const handleApprove = (userId: string) => {
         const raw = getApproveAmount(userId)
@@ -377,6 +390,13 @@ export default function CampaignDetailPage() {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {isManager && campaign.status === 'active' && (breakdown?.pending_confirmation ?? 0) > 0 && (
+                <button disabled={isActing} onClick={handleRemindCampaign}
+                    className="btn btn-ghost btn-block">
+                    🔔 Nhắc đóng quỹ ({breakdown?.pending_confirmation} chưa đóng)
+                </button>
             )}
 
             {isManager && campaign.status === 'active' && (

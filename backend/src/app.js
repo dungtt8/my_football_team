@@ -130,6 +130,8 @@ app.patch('/api/campaigns/:id/assignments/:userId/reject', rbacMiddleware(['co_m
 app.patch('/api/campaigns/:id/assignments/:userId/exempt', rbacMiddleware(['co_manager', 'owner']), campaignHandler.coManagerExempt);
 // Close campaign and finalize
 app.post('/api/campaigns/:id/close', rbacMiddleware(['co_manager', 'owner']), campaignHandler.closeCampaign);
+// Manually remind members who haven't paid yet
+app.post('/api/campaigns/:id/remind', rbacMiddleware(['co_manager', 'owner']), campaignHandler.remindCampaign);
 // Get campaign report (analytics and results)
 app.get('/api/campaigns/:id/report', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getReport);
 
@@ -141,6 +143,7 @@ app.get('/api/attendance/sessions', rbacMiddleware(['member', 'co_manager', 'own
 app.get('/api/attendance/sessions/:id', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getSession);
 app.patch('/api/attendance/sessions/:id', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.updateSession);
 app.post('/api/attendance/sessions/:id/close', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.closeSession);
+app.post('/api/attendance/sessions/:id/remind', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.remindSession);
 app.get('/api/attendance/leaderboard', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getLeaderboard);
 app.get('/api/attendance/leaderboard/:month', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getHistoricalLeaderboard);
 app.get('/api/attendance/stats/:userId', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getUserStats);
