@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCampaign, Campaign, CampaignReport } from '@/hooks/useCampaign'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/useToast'
-import { ArrowLeft } from 'phosphor-react'
+import { ArrowLeft, ArrowClockwise } from 'phosphor-react'
 
 export default function CampaignDetailPage() {
     const router = useRouter()
@@ -38,6 +38,7 @@ export default function CampaignDetailPage() {
     const [billFile, setBillFile] = useState<File | null>(null)
     const [billPreview, setBillPreview] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    const [isRefreshing, setIsRefreshing] = useState(false)
     // Team's payment QR code, shown next to the payment request so members
     // can scan-and-pay without leaving the confirmation card.
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -96,6 +97,15 @@ export default function CampaignDetailPage() {
 
     const getApproveAmount = (userId: string) =>
         approveAmounts[userId] ?? String(campaign?.amount_per_member ?? '')
+
+    const handleRefreshAssignments = async () => {
+        setIsRefreshing(true)
+        try {
+            await loadData()
+        } finally {
+            setIsRefreshing(false)
+        }
+    }
 
     const handleRemindCampaign = async () => {
         setIsActing(true)
@@ -337,7 +347,27 @@ export default function CampaignDetailPage() {
             {/* Assignments list — manager only */}
             {isManager && campaign.assignments && campaign.assignments.length > 0 && (
                 <div>
-                    <div className="sec-title" style={{ marginBottom: 12 }}>Danh sách phân công</div>
+                    <div className="sec-title" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Danh sách phân công
+                        <button
+                            onClick={handleRefreshAssignments}
+                            disabled={isRefreshing}
+                            title="Cập nhật lại danh sách"
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent',
+                                cursor: isRefreshing ? 'default' : 'pointer', color: 'var(--ink-3)', padding: 0,
+                            }}
+                        >
+                            <ArrowClockwise
+                                size={16}
+                                weight="bold"
+                                style={{
+                                    animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none',
+                                }}
+                            />
+                        </button>
+                    </div>
                     <div className="card">
                         {campaign.assignments.map((a) => (
                             <div key={a.user_id} className="row">
