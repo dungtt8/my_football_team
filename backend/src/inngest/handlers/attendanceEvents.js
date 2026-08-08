@@ -101,7 +101,7 @@ const onSessionCreatedLogic = async ({ event, step }) => {
 
 const onSessionCreatedHandler = inngest.createFunction(
   {
-    id: 'attendance.session_created',
+    id: 'attendance.session-created',
     retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
   },
   { event: 'attendance.session_created' },
@@ -220,7 +220,7 @@ const onCheckInLogic = async ({ event, step }) => {
 
 const onCheckInHandler = inngest.createFunction(
   {
-    id: 'attendance.check_in',
+    id: 'attendance.check-in',
     retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
   },
   { event: 'attendance.check_in' },
@@ -389,7 +389,7 @@ const onSessionClosedLogic = async ({ event, step }) => {
 
 const onSessionClosedHandler = inngest.createFunction(
   {
-    id: 'attendance.session_closed',
+    id: 'attendance.session-closed',
     retryOptions: { maxRetries: 3, initialDelayMs: 5000 }
   },
   { event: 'attendance.session_closed' },
