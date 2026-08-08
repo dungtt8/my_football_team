@@ -62,7 +62,15 @@ const serveHandler = serve({
 // PUT = Inngest sync, POST = step invocation). Helps confirm whether Inngest
 // Cloud is even reaching this endpoint.
 const inngestHandler = (req, res, next) => {
-  logger.info('[inngest] request received', { method: req.method, path: req.path });
+  // NOTE: req.path strips the query string by design — logging it alone can
+  // never reveal whether Inngest's `fnId`/`stepId` params actually arrived.
+  // Log originalUrl + parsed query so a "No function ID found in request"
+  // error can be diagnosed from these logs instead of guessed at.
+  logger.info('[inngest] request received', {
+    method: req.method,
+    originalUrl: req.originalUrl,
+    query: req.query,
+  });
   return serveHandler(req, res, next);
 };
 
