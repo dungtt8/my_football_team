@@ -154,6 +154,23 @@ const joinTeam = async (req, res) => {
             });
         }
 
+        // Backfill assignments for campaigns created before this member joined —
+        // campaign_assignments is otherwise only populated at campaign creation time,
+        // so a member who joins later would never see (or be reminded about) them.
+        const activeCampaigns = await db('campaigns').where({ team_id: team.id, status: 'active' }).select('id');
+        if (activeCampaigns.length > 0) {
+            await db('campaign_assignments')
+                .insert(activeCampaigns.map(c => ({
+                    campaign_id: c.id,
+                    user_id: userId,
+                    status: 'pending_confirmation',
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })))
+                .onConflict(['campaign_id', 'user_id'])
+                .ignore();
+        }
+
         const role = existing?.role || 'member';
 
         // Get all user's teams for JWT
