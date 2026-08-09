@@ -646,6 +646,9 @@ const updateSettings = async (req, res) => {
                     if (isNaN(amount) || amount < 0) {
                         throw new ValidationError('Team fund amount must be a non-negative number');
                     }
+                    if (amount > 0 && amount < 1000) {
+                        throw new ValidationError('Team fund amount looks too small — did you mean to enter it in whole đồng (e.g. 150000 instead of 150)?');
+                    }
                     updates.team_fund_amount = amount;
                 }
             }
