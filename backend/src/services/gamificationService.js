@@ -22,7 +22,7 @@ class GamificationService {
    * @returns {Promise<Object>} Created point record
    * @throws {Error} If insertion fails
    */
-  async addPoints(userId, points, reason, teamId) {
+  async addPoints(userId, points, reason, teamId, sessionId = null) {
     try {
       const month = this.getCurrentMonth();
 
@@ -32,6 +32,7 @@ class GamificationService {
         points,
         reason,
         month,
+        session_id: sessionId,
         created_at: db.fn.now()
       }).returning('*');
 
