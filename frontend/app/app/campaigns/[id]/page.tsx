@@ -404,29 +404,31 @@ export default function CampaignDetailPage() {
                     </div>
                     <div className="card">
                         {campaign.assignments.map((a) => (
-                            <div key={a.user_id} className="row">
-                                <div className="lead" style={{ background: 'var(--brand-050)', color: 'var(--brand-700)', fontSize: 14, fontWeight: 700 }}>
-                                    {initials(a.full_name)}
-                                </div>
-                                <div className="rc">
-                                    <b>{a.full_name || a.user_id}</b>
-                                    <small>
-                                        <span className={assignmentBadgeClass(a.status)}>{assignmentLabel(a.status)}</span>
-                                        {a.status === 'approved' && a.approved_amount != null && (
-                                            <span style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 700 }}>
-                                                {fmtMoney(a.approved_amount)}
-                                            </span>
-                                        )}
-                                        {a.bill_image_url && (
-                                            <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
-                                                style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 600 }}>
-                                                Xem hoá đơn
-                                            </a>
-                                        )}
-                                    </small>
+                            <div key={a.user_id} className="row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                                    <div className="lead" style={{ background: 'var(--brand-050)', color: 'var(--brand-700)', fontSize: 14, fontWeight: 700 }}>
+                                        {initials(a.full_name)}
+                                    </div>
+                                    <div className="rc">
+                                        <b>{a.full_name || a.user_id}</b>
+                                        <small>
+                                            <span className={assignmentBadgeClass(a.status)}>{assignmentLabel(a.status)}</span>
+                                            {a.status === 'approved' && a.approved_amount != null && (
+                                                <span style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 700 }}>
+                                                    {fmtMoney(a.approved_amount)}
+                                                </span>
+                                            )}
+                                            {a.bill_image_url && (
+                                                <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
+                                                    style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 600 }}>
+                                                    Xem hoá đơn
+                                                </a>
+                                            )}
+                                        </small>
+                                    </div>
                                 </div>
                                 {a.status === 'pending_approval' && (
-                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
                                         <input
                                             type="number"
                                             min="0"
@@ -447,8 +449,10 @@ export default function CampaignDetailPage() {
                                     </div>
                                 )}
                                 {a.status === 'pending_confirmation' && (
-                                    <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                        className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>Miễn</button>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
+                                            className="btn btn-ghost btn-sm">Miễn</button>
+                                    </div>
                                 )}
                             </div>
                         ))}
