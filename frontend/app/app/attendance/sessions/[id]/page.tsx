@@ -7,6 +7,7 @@ import { useAttendance, AttendanceSession, AttendanceCheckin, SessionStats } fro
 import { useToast } from '@/hooks/useToast'
 import { ArrowLeft } from 'phosphor-react'
 import { SessionForm, SessionFormData } from '@/components/Attendance/SessionForm'
+import MatchPerformancePanel from '@/components/Attendance/MatchPerformancePanel'
 
 const G = {
     bg: '#FFFFFF',
@@ -193,6 +194,19 @@ export default function SessionDetailPage() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {isMatch && (
+                <MatchPerformancePanel
+                    sessionId={id}
+                    isManager={isManager}
+                    currentUserId={user?.id}
+                    myCheckinResponse={myCheckin?.response}
+                    homeScore={session.home_score}
+                    awayScore={session.away_score}
+                    sessionActive={isActive}
+                    onResultUpdated={(updates) => setSession(prev => prev ? { ...prev, ...updates } : prev)}
+                />
             )}
 
             {/* Member: my response card */}
