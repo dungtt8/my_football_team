@@ -161,6 +161,13 @@ app.post('/api/attendance/checkin/:checkInId/respond', rbacMiddleware(['member',
 app.patch('/api/attendance/checkin/:checkInId/confirm', rbacMiddleware(['co_manager', 'owner']), checkinHandler.managerRespondToCheckIn);
 app.get('/api/attendance/sessions/:sessionId/checkin-stats', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.getCheckInStats);
 
+// ── Match performance (goals/assists + result) ───────────────────────────────
+const matchPerformanceHandler = require('./handlers/matchPerformanceHandler');
+app.get('/api/attendance/sessions/:id/performance', rbacMiddleware(['member', 'co_manager', 'owner']), matchPerformanceHandler.listPerformances);
+app.post('/api/attendance/sessions/:id/performance', rbacMiddleware(['member', 'co_manager', 'owner']), matchPerformanceHandler.submitMyPerformance);
+app.patch('/api/attendance/sessions/:id/performance/:userId', rbacMiddleware(['co_manager', 'owner']), matchPerformanceHandler.reviewPerformance);
+app.put('/api/attendance/sessions/:id/result', rbacMiddleware(['co_manager', 'owner']), matchPerformanceHandler.setMatchResult);
+
 // Team management routes (tenancy-scoped)
 app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.listMembers);
 app.patch('/api/team/members/:userId/role', rbacMiddleware(['owner']), teamHandler.updateMemberRole);
