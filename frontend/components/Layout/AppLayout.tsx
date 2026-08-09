@@ -12,19 +12,12 @@ interface AppLayoutProps {
     children: React.ReactNode
     teamName?: string
     teamLogo?: string
-    user?: {
-        name: string
-        email: string
-        avatar?: string
-        role?: string
-    }
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({
     children,
     teamName,
     teamLogo,
-    user,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Default closed on mobile
@@ -55,7 +48,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     }, [isDesktop, isSidebarOpen])
 
     const router = useRouter()
-    const { logout } = useAuth()
+    const { logout, user, role } = useAuth()
+    const menuUser = user
+        ? { name: user.full_name || user.email, email: user.email, role: role || undefined }
+        : undefined
 
     const handleNavigate = (path: string) => {
         router.push(path)
@@ -88,7 +84,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     <MenuDrawer
                         isOpen={isMenuOpen}
                         onClose={() => setIsMenuOpen(false)}
-                        user={user}
+                        user={menuUser}
                         onNavigate={handleNavigate}
                         onLogout={handleLogout}
                     />

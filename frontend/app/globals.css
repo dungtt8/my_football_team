@@ -246,9 +246,9 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); }
 .row{display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid var(--line-2)}
 .row:last-child{border-bottom:none}
 .row .lead{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:19px;flex-shrink:0}
-.row .rc{flex:1;min-width:0}
-.row .rc b{font-size:14px;font-weight:700;display:block}
-.row .rc small{color:var(--ink-3);font-size:12px}
+.row .rc,.lb-row .rc{flex:1;min-width:0}
+.row .rc b,.lb-row .rc b{font-size:14px;font-weight:700;display:block}
+.row .rc small,.lb-row .rc small{color:var(--ink-3);font-size:12px;display:block}
 .row .rt{text-align:right;flex-shrink:0}
 .amt-pos{color:var(--brand-600);font-weight:800;font-family:var(--font-head)}
 .amt-neg{color:var(--danger);font-weight:800;font-family:var(--font-head)}
