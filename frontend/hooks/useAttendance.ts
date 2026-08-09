@@ -17,6 +17,10 @@ export interface AttendanceSession {
     description: string | null
     status: 'active' | 'closed'
     closed_at: string | null
+    home_score: number | null
+    away_score: number | null
+    result_recorded_by: string | null
+    result_recorded_at: string | null
     created_at: string
     updated_at: string
 }
@@ -99,6 +103,20 @@ export interface AttendanceHistory {
     history: AttendanceCheckin[]
 }
 
+export interface MatchPerformance {
+    id: string
+    session_id: string
+    user_id: string
+    goals: number
+    assists: number
+    status: 'pending' | 'approved' | 'rejected'
+    submitted_at: string | null
+    reviewed_by: string | null
+    reviewed_at: string | null
+    full_name?: string
+    email?: string
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export const useAttendance = () => {
@@ -169,6 +187,47 @@ export const useAttendance = () => {
             )
         } catch (err) {
             const e = err instanceof Error ? err : new Error('Failed to send reminder')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
+    const getMatchPerformances = useCallback(async (id: string) => {
+        try {
+            setLocalError(null)
+            const res = await request<{ session_id: string; performances: MatchPerformance[] }>(`/attendance/sessions/${id}/performance`, 'GET')
+            return res?.performances || []
+        } catch (err) {
+            setLocalError(err instanceof Error ? err : new Error('Failed to fetch performances'))
+            return []
+        }
+    }, [request])
+
+    const submitMyPerformance = useCallback(async (id: string, data: { goals: number; assists: number }) => {
+        try {
+            setLocalError(null)
+            return await request<MatchPerformance>(`/attendance/sessions/${id}/performance`, 'POST', data)
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to submit performance')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
+    const reviewPerformance = useCallback(async (id: string, userId: string, data: { goals?: number; assists?: number; status: 'approved' | 'rejected' | 'pending' }) => {
+        try {
+            setLocalError(null)
+            return await request<MatchPerformance>(`/attendance/sessions/${id}/performance/${userId}`, 'PATCH', data)
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to review performance')
+            setLocalError(e); throw e
+        }
+    }, [request])
+
+    const setMatchResult = useCallback(async (id: string, data: { home_score: number; away_score: number }) => {
+        try {
+            setLocalError(null)
+            return await request<AttendanceSession>(`/attendance/sessions/${id}/result`, 'PUT', data)
+        } catch (err) {
+            const e = err instanceof Error ? err : new Error('Failed to set match result')
             setLocalError(e); throw e
         }
     }, [request])
@@ -300,6 +359,10 @@ export const useAttendance = () => {
         updateSession,
         closeSession,
         remindSession,
+        getMatchPerformances,
+        submitMyPerformance,
+        reviewPerformance,
+        setMatchResult,
         getActiveCheckin,
         respondToCheckin,
         managerRespondToCheckin,
