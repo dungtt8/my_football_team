@@ -259,28 +259,30 @@ export default function AdminPage() {
                             const key = `${campaign.id}:${assignment.user_id}`
                             const isBusy = campaignBusy === key
                             return (
-                                <div className="row" key={key}>
-                                    <div
-                                        className="avatar"
-                                        style={{ width: 42, height: 42, borderRadius: 13, background: GRADS[i % GRADS.length] }}
-                                    >
-                                        {initials(memberName)}
+                                <div className="row" key={key} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                                        <div
+                                            className="avatar"
+                                            style={{ width: 42, height: 42, borderRadius: 13, background: GRADS[i % GRADS.length] }}
+                                        >
+                                            {initials(memberName)}
+                                        </div>
+                                        <div className="rc">
+                                            <b>{memberName}</b>
+                                            <small>
+                                                {campaign.name}
+                                                {assignment.bill_image_url && (
+                                                    <>
+                                                        {' · '}
+                                                        <a href={assignment.bill_image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
+                                                            Xem hoá đơn
+                                                        </a>
+                                                    </>
+                                                )}
+                                            </small>
+                                        </div>
                                     </div>
-                                    <div className="rc">
-                                        <b>{memberName}</b>
-                                        <small>
-                                            {campaign.name}
-                                            {assignment.bill_image_url && (
-                                                <>
-                                                    {' · '}
-                                                    <a href={assignment.bill_image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
-                                                        Xem hoá đơn
-                                                    </a>
-                                                </>
-                                            )}
-                                        </small>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
                                         <input
                                             type="number"
                                             min="0"
