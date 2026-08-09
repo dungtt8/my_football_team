@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { useFinance, Transaction, Approval, FinanceBalance } from '@/hooks/useFinance'
+import { useFinance, Transaction, Approval, FinanceBalance, MonthlyFinanceSummary } from '@/hooks/useFinance'
 import { useToast } from '@/hooks/useToast'
 import { TransactionForm, TransactionFormData } from '@/components/Finance/TransactionForm'
 import { PaymentQRDisplay } from '@/components/Finance/PaymentQRDisplay'
 import { QRCodeSettings } from '@/components/Finance/QRCodeSettings'
+import MonthlyFundChart from '@/components/Finance/MonthlyFundChart'
 
 const G = {
     glass: '#FFFFFF', glassBorder: '#E7ECF3',
@@ -20,12 +21,13 @@ export default function FinancePage() {
     const router = useRouter()
     const { user, team, role, isLoading: authLoading } = useAuth()
     const { toast } = useToast()
-    const { listTransactions, getFinanceBalance, getPendingApprovals, approveTransaction, rejectTransaction, submitTransaction } = useFinance()
+    const { listTransactions, getFinanceBalance, getMonthlySummary, getPendingApprovals, approveTransaction, rejectTransaction, submitTransaction } = useFinance()
     const isManager = role === 'manager' || role === 'co_manager' || role === 'owner'
 
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [approvals, setApprovals] = useState<Approval[]>([])
     const [balance, setBalance] = useState<FinanceBalance | null>(null)
+    const [monthlySummary, setMonthlySummary] = useState<MonthlyFinanceSummary[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,13 +46,15 @@ export default function FinancePage() {
         setTransactions([])
         setApprovals([])
         setBalance(null)
+        setMonthlySummary([])
 
         const load = async () => {
             setIsLoading(true)
             try {
-                const [bal, txs] = await Promise.all([getFinanceBalance(), listTransactions({ limit: 10 })])
+                const [bal, txs, monthly] = await Promise.all([getFinanceBalance(), listTransactions({ limit: 10 }), getMonthlySummary(6)])
                 setBalance(bal || null)
                 setTransactions(Array.isArray(txs) ? txs : [])
+                setMonthlySummary(Array.isArray(monthly) ? monthly : [])
                 if (isManager) {
                     try {
                         const approvalList = await getPendingApprovals()
@@ -237,6 +241,7 @@ export default function FinancePage() {
             <div className="md:hidden">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {heroEl}
+                    <MonthlyFundChart data={monthlySummary} />
                     {pillsEl}
                     {approvalQueueEl}
                     {transactionsListEl}
@@ -248,6 +253,7 @@ export default function FinancePage() {
             <div className="hidden md:block">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {statCardsEl}
+                    <MonthlyFundChart data={monthlySummary} />
                     {pillsEl}
                     {approvalQueueEl}
                     {transactionsListEl}

@@ -35,6 +35,12 @@ export interface FinanceBalance {
     currency: string
 }
 
+export interface MonthlyFinanceSummary {
+    month: string // 'YYYY-MM'
+    income: number
+    expense: number
+}
+
 export interface UseFinanceReturn {
     listTransactions: (params?: Record<string, any>) => Promise<Transaction[]>
     getTransactionDetail: (id: string) => Promise<Transaction>
@@ -43,6 +49,7 @@ export interface UseFinanceReturn {
     rejectTransaction: (id: string, reason: string) => Promise<Transaction>
     getPendingApprovals: (params?: Record<string, any>) => Promise<Approval[]>
     getFinanceBalance: () => Promise<FinanceBalance>
+    getMonthlySummary: (months?: number) => Promise<MonthlyFinanceSummary[]>
     getClosingPeriod: () => Promise<any>
     getPaymentDeadline: () => Promise<any>
     loading: boolean
@@ -180,6 +187,22 @@ export const useFinance = (): UseFinanceReturn => {
         [request]
     )
 
+    const getMonthlySummary = useCallback(
+        async (months: number = 6) => {
+            try {
+                setLocalError(null)
+                const data = await request<{ months: MonthlyFinanceSummary[] }>(`/finance/monthly-summary?months=${months}`, 'GET')
+                return data?.months || []
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to fetch monthly summary')
+                setLocalError(error)
+                console.error('Error fetching monthly summary:', error)
+                return []
+            }
+        },
+        [request]
+    )
+
     const getClosingPeriod = useCallback(
         async () => {
             try {
@@ -207,6 +230,7 @@ export const useFinance = (): UseFinanceReturn => {
         rejectTransaction,
         getPendingApprovals,
         getFinanceBalance,
+        getMonthlySummary,
         getClosingPeriod,
         getPaymentDeadline,
         loading,
