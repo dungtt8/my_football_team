@@ -12,7 +12,7 @@ const VALID_ROLES = ['member', 'co_manager', 'owner'];
 
 const generateZaloLinkCode = async (req, res) => {
     try {
-        const code = generateCode(req.user.user_id);
+        const code = await generateCode(req.user.user_id);
         res.json({ code, expires_in: 600 });
     } catch (error) {
         return handleError(error, req, res, { endpoint: '/api/zalo/link-code' });
@@ -152,6 +152,23 @@ const joinTeam = async (req, res) => {
             await db('team_members').insert({
                 team_id: team.id, user_id: userId, role: 'member', status: 'active', created_at: new Date(),
             });
+        }
+
+        // Backfill assignments for campaigns created before this member joined —
+        // campaign_assignments is otherwise only populated at campaign creation time,
+        // so a member who joins later would never see (or be reminded about) them.
+        const activeCampaigns = await db('campaigns').where({ team_id: team.id, status: 'active' }).select('id');
+        if (activeCampaigns.length > 0) {
+            await db('campaign_assignments')
+                .insert(activeCampaigns.map(c => ({
+                    campaign_id: c.id,
+                    user_id: userId,
+                    status: 'pending_confirmation',
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })))
+                .onConflict(['campaign_id', 'user_id'])
+                .ignore();
         }
 
         const role = existing?.role || 'member';
@@ -628,6 +645,9 @@ const updateSettings = async (req, res) => {
                     const amount = Number(fund.team_fund_amount);
                     if (isNaN(amount) || amount < 0) {
                         throw new ValidationError('Team fund amount must be a non-negative number');
+                    }
+                    if (amount > 0 && amount < 1000) {
+                        throw new ValidationError('Team fund amount looks too small — did you mean to enter it in whole đồng (e.g. 150000 instead of 150)?');
                     }
                     updates.team_fund_amount = amount;
                 }

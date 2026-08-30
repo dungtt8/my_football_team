@@ -56,7 +56,7 @@ const onApprovalPendingLogic = async ({ event, step }) => {
 
   // Step 3: Fetch all co-managers for the team
   const coManagers = await step.run('fetch-co-managers', async () => {
-    return getTeamUsers(team_id, { role: 'co_manager', status: 'active' });
+    return getTeamUsers(team_id, { role: ['owner', 'co_manager'], status: 'active' });
   });
 
   logger.info('Found co-managers for notification', {
@@ -252,12 +252,16 @@ const onApprovalApprovedLogic = async ({ event, step }) => {
     }
   });
 
-  // Step 6: Fetch all team members (except submitter)
+  // Step 6: Fetch team managers (owner + co_manager), except submitter
   const teamMembers = await step.run('fetch-team-members', async () => {
-    return getTeamUsers(team_id, { status: 'active', excludeUserId: submitted_by });
+    return getTeamUsers(team_id, {
+      role: ['owner', 'co_manager'],
+      status: 'active',
+      excludeUserId: submitted_by
+    });
   });
 
-  // Step 7: Send FUND_UPDATED notification to all team members
+  // Step 7: Send FUND_UPDATED notification to team managers
   let fundUpdateNotificationsSent = 0;
   let fundUpdateNotificationsFailed = 0;
 

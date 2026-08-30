@@ -61,6 +61,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          LEGACY_DEFAULT_PASSWORD: ${{ secrets.LEGACY_DEFAULT_PASSWORD }}
 
       - name: Verify all migrations applied
         working-directory: backend

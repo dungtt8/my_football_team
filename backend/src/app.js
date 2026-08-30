@@ -29,15 +29,16 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
     .map(o => o.trim())
     .filter(Boolean);
 
-// Always allow localhost in development
-if (process.env.NODE_ENV !== 'production') {
-    ALLOWED_ORIGINS.push('http://localhost:3000', 'http://127.0.0.1:3000');
-}
+const isDev = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
     origin: (origin, callback) => {
         // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin) return callback(null, true);
+        // Allow any localhost/127.0.0.1 port in development (dev servers pick a free port)
+        if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+            return callback(null, true);
+        }
         if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
             return callback(null, true);
         }
@@ -62,11 +63,17 @@ app.get('/health', (req, res) => {
 });
 
 // Auth routes (no tenancy required)
-const authHandler = require('./handlers/authHandler');
-app.post('/api/auth/zalo/callback', authHandler);
-
-const phoneAuthHandler = require('./handlers/phoneAuthHandler');
-app.post('/api/auth/phone/login', phoneAuthHandler);
+const { phoneLoginHandler, phoneRegisterHandler } = require('./handlers/phoneAuthHandler');
+const {
+    requestPasswordResetHandler,
+    verifyPasswordResetCodeHandler,
+    confirmPasswordResetHandler
+} = require('./handlers/passwordResetHandler');
+app.post('/api/auth/phone/login', phoneLoginHandler);
+app.post('/api/auth/phone/register', phoneRegisterHandler);
+app.post('/api/auth/password-reset/request', requestPasswordResetHandler);
+app.post('/api/auth/password-reset/verify', verifyPasswordResetCodeHandler);
+app.post('/api/auth/password-reset/confirm', confirmPasswordResetHandler);
 
 // Zalo webhook (NO AUTH - verify signature before processing)
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');
@@ -107,6 +114,7 @@ app.patch('/api/finance/transactions/:id/approve', rbacMiddleware(['co_manager',
 app.patch('/api/finance/transactions/:id/reject', rbacMiddleware(['co_manager', 'owner']), financeHandler.rejectTransaction);
 app.get('/api/finance/approvals/pending', rbacMiddleware(['co_manager', 'owner']), financeHandler.getPendingApprovals);
 app.get('/api/finance/balance', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getBalance);
+app.get('/api/finance/monthly-summary', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getMonthlySummary);
 app.get('/api/team/finance/closing-period', rbacMiddleware(['member', 'co_manager', 'owner']), financeHandler.getClosingPeriod);
 
 // Campaign routes
@@ -131,6 +139,12 @@ app.patch('/api/campaigns/:id/assignments/:userId/reject', rbacMiddleware(['co_m
 app.patch('/api/campaigns/:id/assignments/:userId/exempt', rbacMiddleware(['co_manager', 'owner']), campaignHandler.coManagerExempt);
 // Close campaign and finalize
 app.post('/api/campaigns/:id/close', rbacMiddleware(['co_manager', 'owner']), campaignHandler.closeCampaign);
+// Manually remind members who haven't paid yet
+app.post('/api/campaigns/:id/remind', rbacMiddleware(['co_manager', 'owner']), campaignHandler.remindCampaign);
+// List active members who joined after this campaign was created and don't have an assignment yet
+app.get('/api/campaigns/:id/missing-members', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getMissingMembers);
+// Add assignments for the selected members
+app.post('/api/campaigns/:id/sync-assignments', rbacMiddleware(['co_manager', 'owner']), campaignHandler.syncAssignments);
 // Get campaign report (analytics and results)
 app.get('/api/campaigns/:id/report', rbacMiddleware(['co_manager', 'owner']), campaignHandler.getReport);
 
@@ -142,6 +156,7 @@ app.get('/api/attendance/sessions', rbacMiddleware(['member', 'co_manager', 'own
 app.get('/api/attendance/sessions/:id', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getSession);
 app.patch('/api/attendance/sessions/:id', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.updateSession);
 app.post('/api/attendance/sessions/:id/close', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.closeSession);
+app.post('/api/attendance/sessions/:id/remind', rbacMiddleware(['co_manager', 'owner']), attendanceHandler.remindSession);
 app.get('/api/attendance/leaderboard', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getLeaderboard);
 app.get('/api/attendance/leaderboard/:month', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getHistoricalLeaderboard);
 app.get('/api/attendance/stats/:userId', rbacMiddleware(['member', 'co_manager', 'owner']), attendanceHandler.getUserStats);
@@ -154,6 +169,13 @@ app.post('/api/attendance/checkin/:checkInId/respond', rbacMiddleware(['member',
 // Manager confirms/overrides a member's participation on their behalf.
 app.patch('/api/attendance/checkin/:checkInId/confirm', rbacMiddleware(['co_manager', 'owner']), checkinHandler.managerRespondToCheckIn);
 app.get('/api/attendance/sessions/:sessionId/checkin-stats', rbacMiddleware(['member', 'co_manager', 'owner']), checkinHandler.getCheckInStats);
+
+// ── Match performance (goals/assists + result) ───────────────────────────────
+const matchPerformanceHandler = require('./handlers/matchPerformanceHandler');
+app.get('/api/attendance/sessions/:id/performance', rbacMiddleware(['member', 'co_manager', 'owner']), matchPerformanceHandler.listPerformances);
+app.post('/api/attendance/sessions/:id/performance', rbacMiddleware(['member', 'co_manager', 'owner']), matchPerformanceHandler.submitMyPerformance);
+app.patch('/api/attendance/sessions/:id/performance/:userId', rbacMiddleware(['co_manager', 'owner']), matchPerformanceHandler.reviewPerformance);
+app.put('/api/attendance/sessions/:id/result', rbacMiddleware(['co_manager', 'owner']), matchPerformanceHandler.setMatchResult);
 
 // Team management routes (tenancy-scoped)
 app.get('/api/team/members', rbacMiddleware(['member', 'co_manager', 'owner']), teamHandler.listMembers);

@@ -40,6 +40,16 @@ export interface AuthProviderProps {
     children: ReactNode
 }
 
+function isTokenExpired(token: string): boolean {
+    try {
+        const payload = token.split('.')[1]
+        const decoded = JSON.parse(atob(payload))
+        return Boolean(decoded.exp && Date.now() >= decoded.exp * 1000)
+    } catch {
+        return true
+    }
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null)
     const [team, setTeam] = useState<Team | null>(null)
@@ -57,11 +67,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 const storedRole = localStorage.getItem('role')
                 const storedAllTeams = localStorage.getItem('allTeams')
 
-                if (token && storedUser && storedRole) {
+                if (token && storedUser && storedRole && !isTokenExpired(token)) {
+                    // Keep the client state and the proxy's cookie check in sync after a refresh.
+                    setAuthCookie(token)
                     setUser(JSON.parse(storedUser))
                     if (storedTeam) setTeam(JSON.parse(storedTeam))
                     setRole(storedRole as UserRole)
                     if (storedAllTeams) setAllTeams(JSON.parse(storedAllTeams))
+                } else if (token || storedUser || storedTeam || storedRole || storedAllTeams) {
+                    deleteAuthCookie()
+                    localStorage.removeItem('auth_token')
+                    localStorage.removeItem('user')
+                    localStorage.removeItem('team')
+                    localStorage.removeItem('role')
+                    localStorage.removeItem('allTeams')
                 }
             } catch (error) {
                 console.error('Failed to initialize auth:', error)

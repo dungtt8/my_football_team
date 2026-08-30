@@ -70,6 +70,9 @@ export interface UseCampaignReturn {
     coManagerReject: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     coManagerExempt: (campaignId: string, userId: string) => Promise<CampaignAssignment>
     closeCampaign: (id: string) => Promise<Campaign>
+    remindCampaign: (id: string) => Promise<{ successful: number; failed: number; total: number }>
+    getMissingMembers: (id: string) => Promise<{ user_id: string; full_name: string }[]>
+    syncAssignments: (id: string, userIds: string[]) => Promise<{ added: number }>
     getReport: (id: string) => Promise<CampaignReport>
     loading: boolean
     error: Error | null
@@ -249,6 +252,49 @@ export const useCampaign = (): UseCampaignReturn => {
         [request]
     )
 
+    const remindCampaign = useCallback(
+        async (id: string) => {
+            try {
+                setLocalError(null)
+                return await request<{ successful: number; failed: number; total: number }>(`/campaigns/${id}/remind`, 'POST')
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to send reminder')
+                setLocalError(error)
+                throw error
+            }
+        },
+        [request]
+    )
+
+    const getMissingMembers = useCallback(
+        async (id: string) => {
+            try {
+                setLocalError(null)
+                const res = await request<{ members: { user_id: string; full_name: string }[] }>(`/campaigns/${id}/missing-members`, 'GET')
+                return res?.members ?? []
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to fetch missing members')
+                setLocalError(error)
+                throw error
+            }
+        },
+        [request]
+    )
+
+    const syncAssignments = useCallback(
+        async (id: string, userIds: string[]) => {
+            try {
+                setLocalError(null)
+                return await request<{ added: number }>(`/campaigns/${id}/sync-assignments`, 'POST', { user_ids: userIds })
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Failed to sync assignments')
+                setLocalError(error)
+                throw error
+            }
+        },
+        [request]
+    )
+
     const getReport = useCallback(
         async (id: string) => {
             try {
@@ -274,6 +320,9 @@ export const useCampaign = (): UseCampaignReturn => {
         coManagerReject,
         coManagerExempt,
         closeCampaign,
+        remindCampaign,
+        getMissingMembers,
+        syncAssignments,
         getReport,
         loading,
         error: error || localError,

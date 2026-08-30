@@ -222,6 +222,64 @@ const closeSession = async (req, res) => {
     }
 };
 
+// ─── Manual attendance reminder ──────────────────────────────────────────────
+/**
+ * POST /api/attendance/sessions/:id/remind
+ * Sends a Zalo reminder to members who haven't responded (response IS NULL) yet.
+ */
+const remindSession = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const teamId = req.team.id;
+
+        const session = await db('attendance_sessions')
+            .where({ id, team_id: teamId })
+            .first();
+
+        if (!session) throw new NotFoundError('Session not found');
+
+        const pending = await db('attendance_checkins as ac')
+            .join('users as u', 'u.id', 'ac.user_id')
+            .where('ac.session_id', id)
+            .where('ac.team_id', teamId)
+            .whereNull('ac.response')
+            .whereNotNull('u.zalo_user_id')
+            .select('u.zalo_user_id');
+
+        if (pending.length === 0) {
+            return res.json({ successful: 0, failed: 0, total: 0 });
+        }
+
+        const zaloUserIds = pending.map(p => p.zalo_user_id);
+        const sessionDateFormatted = new Date(session.session_date).toLocaleDateString('vi-VN');
+
+        const results = await notificationService.sendBatchNotifications(
+            zaloUserIds,
+            'ATTENDANCE_MANUAL_REMINDER',
+            {
+                session_date: sessionDateFormatted,
+                location: session.location || 'TBD',
+                session_type: session.session_type === 'training' ? 'Training' : 'Match',
+            }
+        );
+
+        logger.info('Attendance manual reminder sent', {
+            session_id: id,
+            team_id: teamId,
+            successful: results.successful.length,
+            failed: results.failed.length,
+        });
+
+        return res.json({
+            successful: results.successful.length,
+            failed: results.failed.length,
+            total: zaloUserIds.length,
+        });
+    } catch (error) {
+        return handleError(error, req, res, { endpoint: 'POST /api/attendance/sessions/:id/remind' });
+    }
+};
+
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 const getLeaderboard = async (req, res) => {
     try {
@@ -307,6 +365,7 @@ module.exports = {
     getSession,
     updateSession,
     closeSession,
+    remindSession,
     getLeaderboard,
     getHistoricalLeaderboard,
     getUserStats,

@@ -17,8 +17,8 @@ const BADGES: [string, string][] = [
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-// update zalo link
 const ZALO_BOT_USERNAME = process.env.NEXT_PUBLIC_ZALO_BOT_USERNAME || ''
+const FEEDBACK_FORM_URL = process.env.NEXT_PUBLIC_FEEDBACK_FORM_URL || ''
 
 export default function MenuPage() {
     const router = useRouter()
@@ -90,6 +90,14 @@ export default function MenuPage() {
         if (!inviteCode) return
         navigator.clipboard.writeText(inviteCode)
         toast('Đã sao chép mã mời', 'success')
+    }
+
+    const handleOpenZaloBot = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        if (isMobile) {
+            e.preventDefault()
+            window.location.href = ZALO_BOT_USERNAME
+        }
     }
 
     const handleGenerateZaloCode = async () => {
@@ -300,6 +308,25 @@ export default function MenuPage() {
                 Bấm nút bên phải để mở Zalo, rồi gửi mã sau (hết hạn sau 10 phút):
                 </p>
 
+                {ZALO_BOT_USERNAME && (
+                <p
+                style={{
+                    margin: "0 0 12px",
+                    fontSize: 13,
+                }}
+                >
+                <a
+                    href={ZALO_BOT_USERNAME}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleOpenZaloBot}
+                    style={{ color: "var(--brand-600)", fontWeight: 600, wordBreak: "break-all" }}
+                >
+                    {ZALO_BOT_USERNAME}
+                </a>
+                </p>
+                )}
+
                 <div
                 style={{
                     fontFamily: "var(--font-head)",
@@ -342,9 +369,9 @@ export default function MenuPage() {
             href={ZALO_BOT_USERNAME}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleOpenZaloBot}
             className="btn btn-primary btn-sm"
             style={{
-                width: 100,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -352,12 +379,38 @@ export default function MenuPage() {
                 whiteSpace: 'nowrap',
             }}
         >
-                Mở Zalo Bot
+            Mở Zalo Bot
         </a>
         )}
         </div>
     </div>
     );
+
+    const feedbackFormEl = (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Đánh giá ứng dụng</div>
+            <div className="card pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14 }}>
+                    Chia sẻ trải nghiệm và những khó khăn bạn gặp phải.
+                </p>
+                {FEEDBACK_FORM_URL ? (
+                    <a
+                        href={FEEDBACK_FORM_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary btn-sm"
+                        style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
+                    >
+                        Điền form đánh giá
+                    </a>
+                ) : (
+                    <button className="btn btn-primary btn-sm" disabled>
+                        Chưa thiết lập đường dẫn
+                    </button>
+                )}
+            </div>
+        </div>
+    )
 
     const settingsListEl = (
         <div className="card">
@@ -398,6 +451,7 @@ export default function MenuPage() {
                     {badgesEl}
                     {inviteCodeEl}
                     {zaloLinkEl}
+                    {feedbackFormEl}
                     {settingsListEl}
                 </div>
             </div>
@@ -418,6 +472,9 @@ export default function MenuPage() {
                 </div>
                 <div style={{ marginTop: 20 }}>
                     {zaloLinkEl}
+                </div>
+                <div style={{ marginTop: 20 }}>
+                    {feedbackFormEl}
                 </div>
             </div>
 

@@ -741,6 +741,169 @@ const closeCampaign = async (req, res) => {
 };
 
 /**
+ * List active team members who don't have an assignment in this campaign yet
+ * (e.g. joined the team after this campaign was created).
+ * GET /api/campaigns/:id/missing-members
+ */
+const getMissingMembers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teamId = req.team.id;
+
+    const campaign = await db('campaigns')
+      .where('id', id)
+      .where('team_id', teamId)
+      .first();
+
+    if (!campaign) {
+      throw new NotFoundError('Campaign', id);
+    }
+
+    const missing = await db('team_members as tm')
+      .join('users as u', 'u.id', 'tm.user_id')
+      .leftJoin('campaign_assignments as ca', function () {
+        this.on('ca.user_id', '=', 'tm.user_id').andOn('ca.campaign_id', '=', db.raw('?', [id]));
+      })
+      .where('tm.team_id', teamId)
+      .where('tm.status', 'active')
+      .whereNull('ca.id')
+      .select('tm.user_id', 'u.full_name');
+
+    return res.json({ members: missing });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/api/campaigns/:id/missing-members',
+      method: 'GET'
+    });
+  }
+};
+
+/**
+ * Add assignments for the selected active team members who don't have one yet.
+ * POST /api/campaigns/:id/sync-assignments
+ * Body: { user_ids: string[] }
+ */
+const syncAssignments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teamId = req.team.id;
+    const { user_ids } = req.body;
+
+    if (!Array.isArray(user_ids) || user_ids.length === 0) {
+      throw new ValidationError('user_ids is required and must be a non-empty array');
+    }
+
+    const campaign = await db('campaigns')
+      .where('id', id)
+      .where('team_id', teamId)
+      .first();
+
+    if (!campaign) {
+      throw new NotFoundError('Campaign', id);
+    }
+
+    // Only allow adding users who are actually active members of this team —
+    // ignore anything else the client might send.
+    const members = await db('team_members')
+      .where('team_id', teamId)
+      .where('status', 'active')
+      .whereIn('user_id', user_ids)
+      .select('user_id');
+
+    let added = 0;
+    if (members.length > 0) {
+      const inserted = await db('campaign_assignments')
+        .insert(members.map(m => ({
+          campaign_id: id,
+          user_id: m.user_id,
+          status: 'pending_confirmation',
+          created_at: new Date(),
+          updated_at: new Date()
+        })))
+        .onConflict(['campaign_id', 'user_id'])
+        .ignore()
+        .returning('id');
+      added = inserted.length;
+    }
+
+    logger.info('Campaign assignments synced', {
+      campaign_id: id,
+      team_id: teamId,
+      requested: user_ids.length,
+      added
+    });
+
+    return res.json({ added });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/api/campaigns/:id/sync-assignments',
+      method: 'POST'
+    });
+  }
+};
+
+/**
+ * Send a manual Zalo reminder to members who haven't paid yet
+ * POST /api/campaigns/:id/remind
+ */
+const remindCampaign = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teamId = req.team.id;
+
+    const campaign = await db('campaigns')
+      .where('id', id)
+      .where('team_id', teamId)
+      .first();
+
+    if (!campaign) {
+      throw new NotFoundError('Campaign', id);
+    }
+
+    const pending = await db('campaign_assignments as ca')
+      .join('users as u', 'u.id', 'ca.user_id')
+      .where('ca.campaign_id', id)
+      .where('ca.status', 'pending_confirmation')
+      .whereNotNull('u.zalo_user_id')
+      .select('u.zalo_user_id');
+
+    if (pending.length === 0) {
+      return res.json({ successful: 0, failed: 0, total: 0 });
+    }
+
+    const zaloUserIds = pending.map(p => p.zalo_user_id);
+
+    const results = await notificationService.sendBatchNotifications(
+      zaloUserIds,
+      'CAMPAIGN_PAYMENT_REMINDER',
+      {
+        campaign_name: campaign.name,
+        amount_per_member: campaign.amount_per_member,
+        deadline: campaign.deadline ? new Date(campaign.deadline).toLocaleDateString('vi-VN') : 'Không có hạn',
+      }
+    );
+
+    logger.info('Campaign payment reminder sent', {
+      campaign_id: id,
+      team_id: teamId,
+      successful: results.successful.length,
+      failed: results.failed.length
+    });
+
+    return res.json({
+      successful: results.successful.length,
+      failed: results.failed.length,
+      total: zaloUserIds.length
+    });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/api/campaigns/:id/remind',
+      method: 'POST'
+    });
+  }
+};
+
+/**
  * Get campaign report with statistics
  * GET /api/campaigns/:id/report
  */
@@ -869,6 +1032,9 @@ module.exports = {
   coManagerReject,
   coManagerExempt,
   closeCampaign,
+  remindCampaign,
+  getMissingMembers,
+  syncAssignments,
   getReport,
   uploadBillImage
 };

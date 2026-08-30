@@ -142,7 +142,7 @@ const onCampaignMemberConfirmedLogic = async ({ event, step }) => {
 
   // Step 2: Fetch all co-managers for the team
   const coManagers = await step.run('fetch-co-managers', async () => {
-    return getTeamUsers(team_id, { role: 'co_manager', status: 'active' });
+    return getTeamUsers(team_id, { role: ['owner', 'co_manager'], status: 'active' });
   });
 
   logger.info('Found co-managers for notification', {

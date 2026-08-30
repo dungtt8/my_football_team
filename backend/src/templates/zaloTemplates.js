@@ -62,6 +62,23 @@ const templates = {
     FUND_MONTHLY_REMINDER: (p) =>
     `Nhắc nợ quỹ tháng ${p.month}\n\n` +
     `Vui lòng thanh toán trước hết hạn.\n${p.link}`,
+
+    ATTENDANCE_MANUAL_REMINDER: (p) =>
+    `NHẮC ĐIỂM DANH\n` +
+    `Buổi ${p.session_type === 'Training' ? 'tập' : 'thi đấu'} ngày ${p.session_date}\n` +
+    `Địa điểm: ${p.location}\n\n` +
+    `Bạn chưa phản hồi tham gia. Trả lời "1" nếu THAM GIA, "2" nếu KHÔNG THAM GIA`,
+
+    CAMPAIGN_PAYMENT_REMINDER: (p) =>
+    `NHẮC ĐÓNG QUỸ\n` +
+    `Quỹ: ${p.campaign_name}\n` +
+    `Số tiền: ${p.amount_per_member}đ/người\n` +
+    `Hạn đóng: ${p.deadline}\n\n` +
+    `Bạn chưa đóng quỹ này, vui lòng thanh toán sớm.`,
+
+    PASSWORD_RESET_OTP: (p) =>
+      `${p.code} là mã đặt lại mật khẩu của bạn \n\n` +
+      `KHÔNG CHIA SẺ MÃ NÀY VỚI BẤT KỲ AI.`,
 };
 
 function buildTextFromTemplate(templateId, params) {

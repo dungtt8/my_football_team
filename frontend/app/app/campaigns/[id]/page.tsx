@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCampaign, Campaign, CampaignReport } from '@/hooks/useCampaign'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/useToast'
-import { ArrowLeft } from 'phosphor-react'
+import { ArrowLeft, ArrowClockwise } from 'phosphor-react'
 
 export default function CampaignDetailPage() {
     const router = useRouter()
@@ -24,6 +24,9 @@ export default function CampaignDetailPage() {
         coManagerReject,
         coManagerExempt,
         closeCampaign,
+        remindCampaign,
+        getMissingMembers,
+        syncAssignments,
         getReport,
     } = useCampaign()
     const { request } = useApi()
@@ -37,6 +40,13 @@ export default function CampaignDetailPage() {
     const [billFile, setBillFile] = useState<File | null>(null)
     const [billPreview, setBillPreview] = useState<string | null>(null)
     const [isUploading, setIsUploading] = useState(false)
+    // "Add missing members" modal — lists active team members without an
+    // assignment yet (e.g. joined after this campaign was created).
+    const [showAddMembersModal, setShowAddMembersModal] = useState(false)
+    const [missingMembers, setMissingMembers] = useState<{ user_id: string; full_name: string }[]>([])
+    const [selectedMissingIds, setSelectedMissingIds] = useState<Set<string>>(new Set())
+    const [isLoadingMissing, setIsLoadingMissing] = useState(false)
+    const [isAddingMembers, setIsAddingMembers] = useState(false)
     // Team's payment QR code, shown next to the payment request so members
     // can scan-and-pay without leaving the confirmation card.
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -95,6 +105,60 @@ export default function CampaignDetailPage() {
 
     const getApproveAmount = (userId: string) =>
         approveAmounts[userId] ?? String(campaign?.amount_per_member ?? '')
+
+    const handleOpenAddMembersModal = async () => {
+        setShowAddMembersModal(true)
+        setIsLoadingMissing(true)
+        try {
+            const members = await getMissingMembers(id)
+            setMissingMembers(members)
+            setSelectedMissingIds(new Set(members.map(m => m.user_id)))
+        } catch (e: any) {
+            toast(e?.message || 'Không thể tải danh sách thành viên', 'error')
+            setShowAddMembersModal(false)
+        } finally {
+            setIsLoadingMissing(false)
+        }
+    }
+
+    const toggleMissingMember = (userId: string) => {
+        setSelectedMissingIds(prev => {
+            const next = new Set(prev)
+            if (next.has(userId)) next.delete(userId)
+            else next.add(userId)
+            return next
+        })
+    }
+
+    const handleConfirmAddMembers = async () => {
+        if (selectedMissingIds.size === 0) {
+            toast('Chọn ít nhất 1 thành viên', 'error')
+            return
+        }
+        setIsAddingMembers(true)
+        try {
+            const res = await syncAssignments(id, Array.from(selectedMissingIds))
+            setShowAddMembersModal(false)
+            await loadData()
+            toast(`Đã thêm ${res.added} thành viên vào danh sách phân công`, 'success')
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi thêm thành viên', 'error')
+        } finally {
+            setIsAddingMembers(false)
+        }
+    }
+
+    const handleRemindCampaign = async () => {
+        setIsActing(true)
+        try {
+            const res = await remindCampaign(id)
+            toast(`Đã nhắc ${res?.successful ?? 0}/${res?.total ?? 0} thành viên chưa đóng quỹ`, 'success')
+        } catch (e: any) {
+            toast(e?.message || 'Lỗi', 'error')
+        } finally {
+            setIsActing(false)
+        }
+    }
 
     const handleApprove = (userId: string) => {
         const raw = getApproveAmount(userId)
@@ -324,32 +388,47 @@ export default function CampaignDetailPage() {
             {/* Assignments list — manager only */}
             {isManager && campaign.assignments && campaign.assignments.length > 0 && (
                 <div>
-                    <div className="sec-title" style={{ marginBottom: 12 }}>Danh sách phân công</div>
+                    <div className="sec-title" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Danh sách phân công
+                        <button
+                            onClick={handleOpenAddMembersModal}
+                            title="Thêm thành viên chưa có trong danh sách"
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 26, height: 26, borderRadius: 8, border: 'none', background: 'transparent',
+                                cursor: 'pointer', color: 'var(--ink-3)', padding: 0,
+                            }}
+                        >
+                            <ArrowClockwise size={16} weight="bold" />
+                        </button>
+                    </div>
                     <div className="card">
                         {campaign.assignments.map((a) => (
-                            <div key={a.user_id} className="row">
-                                <div className="lead" style={{ background: 'var(--brand-050)', color: 'var(--brand-700)', fontSize: 14, fontWeight: 700 }}>
-                                    {initials(a.full_name)}
-                                </div>
-                                <div className="rc">
-                                    <b>{a.full_name || a.user_id}</b>
-                                    <small>
-                                        <span className={assignmentBadgeClass(a.status)}>{assignmentLabel(a.status)}</span>
-                                        {a.status === 'approved' && a.approved_amount != null && (
-                                            <span style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 700 }}>
-                                                {fmtMoney(a.approved_amount)}
-                                            </span>
-                                        )}
-                                        {a.bill_image_url && (
-                                            <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
-                                                style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 600 }}>
-                                                Xem hoá đơn
-                                            </a>
-                                        )}
-                                    </small>
+                            <div key={a.user_id} className="row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                                    <div className="lead" style={{ background: 'var(--brand-050)', color: 'var(--brand-700)', fontSize: 14, fontWeight: 700 }}>
+                                        {initials(a.full_name)}
+                                    </div>
+                                    <div className="rc">
+                                        <b>{a.full_name || a.user_id}</b>
+                                        <small>
+                                            <span className={assignmentBadgeClass(a.status)}>{assignmentLabel(a.status)}</span>
+                                            {a.status === 'approved' && a.approved_amount != null && (
+                                                <span style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 700 }}>
+                                                    {fmtMoney(a.approved_amount)}
+                                                </span>
+                                            )}
+                                            {a.bill_image_url && (
+                                                <a href={a.bill_image_url} target="_blank" rel="noopener noreferrer"
+                                                    style={{ marginLeft: 8, color: 'var(--brand-600)', fontWeight: 600 }}>
+                                                    Xem hoá đơn
+                                                </a>
+                                            )}
+                                        </small>
+                                    </div>
                                 </div>
                                 {a.status === 'pending_approval' && (
-                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
                                         <input
                                             type="number"
                                             min="0"
@@ -370,8 +449,10 @@ export default function CampaignDetailPage() {
                                     </div>
                                 )}
                                 {a.status === 'pending_confirmation' && (
-                                    <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
-                                        className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>Miễn</button>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button disabled={isActing} onClick={() => act(() => coManagerExempt(id, a.user_id), 'Đã miễn')}
+                                            className="btn btn-ghost btn-sm">Miễn</button>
+                                    </div>
                                 )}
                             </div>
                         ))}
@@ -379,11 +460,82 @@ export default function CampaignDetailPage() {
                 </div>
             )}
 
+            {isManager && campaign.status === 'active' && (breakdown?.pending_confirmation ?? 0) > 0 && (
+                <button disabled={isActing} onClick={handleRemindCampaign}
+                    className="btn btn-ghost btn-block">
+                    🔔 Nhắc đóng quỹ ({breakdown?.pending_confirmation} chưa đóng)
+                </button>
+            )}
+
             {isManager && campaign.status === 'active' && (
                 <button disabled={isActing} onClick={() => act(closeCampaign.bind(null, id), 'Đã đóng khoản thu')}
                     className="btn btn-ghost btn-block" style={{ color: 'var(--danger)', borderColor: 'var(--danger-050)' }}>
                     Đóng khoản thu
                 </button>
+            )}
+
+            {/* Add missing members modal */}
+            {showAddMembersModal && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20,
+                    }}
+                    onClick={() => !isAddingMembers && setShowAddMembersModal(false)}
+                >
+                    <div
+                        className="card pad"
+                        style={{ width: '100%', maxWidth: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Thêm thành viên</h2>
+                            <button onClick={() => setShowAddMembersModal(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>✕</button>
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 14 }}>
+                            Thành viên active trong đội nhưng chưa có trong danh sách phân công của khoản thu này.
+                        </p>
+
+                        {isLoadingMissing ? (
+                            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Đang tải...</div>
+                        ) : missingMembers.length === 0 ? (
+                            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+                                Không có thành viên nào thiếu — danh sách đã đầy đủ.
+                            </div>
+                        ) : (
+                            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                                {missingMembers.map((m) => (
+                                    <label
+                                        key={m.user_id}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                                            border: '1px solid var(--line)', borderRadius: 10, cursor: 'pointer',
+                                            background: selectedMissingIds.has(m.user_id) ? 'var(--brand-050)' : 'transparent',
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedMissingIds.has(m.user_id)}
+                                            onChange={() => toggleMissingMember(m.user_id)}
+                                        />
+                                        <span style={{ fontSize: 14, fontWeight: 600 }}>{m.full_name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        {missingMembers.length > 0 && (
+                            <button
+                                disabled={isAddingMembers || selectedMissingIds.size === 0}
+                                onClick={handleConfirmAddMembers}
+                                className="btn btn-primary btn-block"
+                                style={{ opacity: (isAddingMembers || selectedMissingIds.size === 0) ? 0.6 : 1 }}
+                            >
+                                {isAddingMembers ? 'Đang thêm...' : `Thêm ${selectedMissingIds.size} thành viên đã chọn`}
+                            </button>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     )

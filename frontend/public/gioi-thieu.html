@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Football Team — Giới thiệu</title>
+<meta name="description" content="Giới thiệu tính năng, hướng dẫn dùng lần đầu và định hướng phát triển của My Football Team.">
+<style>
+  @font-face {
+    font-family: 'Rounded Sporty';
+    src: local('SF Pro Rounded'), local('ui-rounded');
+    font-weight: 400 800;
+  }
+
+  :root {
+    --paper: #F6F5F0;
+    --paper-raised: #FFFFFF;
+    --ink: #142019;
+    --ink-soft: #4A5750;
+    --line: #DEDCD1;
+    --accent: #0E9F5C;
+    --accent-ink: #06371F;
+    --accent-soft: #E4F5EB;
+    --gold: #C9962F;
+    --shadow: rgba(20, 32, 25, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0E1712;
+      --paper-raised: #16211B;
+      --ink: #EAF2ED;
+      --ink-soft: #9AABA2;
+      --line: #29362F;
+      --accent: #34D399;
+      --accent-ink: #CFF9E4;
+      --accent-soft: #16342A;
+      --gold: #E0B85B;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E1712;
+    --paper-raised: #16211B;
+    --ink: #EAF2ED;
+    --ink-soft: #9AABA2;
+    --line: #29362F;
+    --accent: #34D399;
+    --accent-ink: #CFF9E4;
+    --accent-soft: #16342A;
+    --gold: #E0B85B;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
+    --paper: #F6F5F0;
+    --paper-raised: #FFFFFF;
+    --ink: #142019;
+    --ink-soft: #4A5750;
+    --line: #DEDCD1;
+    --accent: #0E9F5C;
+    --accent-ink: #06371F;
+    --accent-soft: #E4F5EB;
+    --gold: #C9962F;
+    --shadow: rgba(20, 32, 25, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  /* ---------- Header ---------- */
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+  }
+  .crest {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: linear-gradient(155deg, var(--accent) 0%, var(--accent-ink) 130%);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px var(--shadow);
+  }
+  .masthead-text .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    color: var(--accent);
+  }
+  .masthead-text h1 {
+    margin: 2px 0 0;
+    font-family: "Rounded Sporty", ui-rounded, -apple-system, "Segoe UI", sans-serif;
+    font-size: clamp(24px, 4vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Intro ---------- */
+  .lede {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    text-wrap: pretty;
+    margin: 0 0 36px;
+  }
+  .lede strong { color: var(--ink); font-weight: 650; }
+
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 56px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-radius: 11px;
+    font-weight: 650;
+    font-size: 14.5px;
+    text-decoration: none;
+    border: 1.5px solid transparent;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--accent);
+    color: #04140C;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+
+  /* ---------- Section heading ---------- */
+  section { margin-bottom: 52px; }
+  .sec-head { margin-bottom: 20px; }
+  .sec-eyebrow {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .sec-head h2 {
+    margin: 0;
+    font-family: "Rounded Sporty", ui-rounded, -apple-system, "Segoe UI", sans-serif;
+    font-size: 22px;
+    font-weight: 750;
+    text-wrap: balance;
+  }
+  .sec-sub {
+    margin: 8px 0 0;
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 60ch;
+  }
+
+  /* ---------- Feature grid ---------- */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .feature {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px 20px;
+  }
+  .feature .ic {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+    margin-bottom: 12px;
+  }
+  .feature h3 {
+    margin: 0 0 5px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .feature p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- Steps ---------- */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--paper-raised);
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    padding: 22px 22px;
+  }
+  .step + .step { border-top: 1px solid var(--line); }
+  .step-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    display: grid;
+    place-items: center;
+    font-weight: 750;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .step h3 {
+    margin: 2px 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .step p {
+    margin: 0 0 8px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+  .step p:last-child { margin-bottom: 0; }
+  .step code {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 650;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .step a { color: var(--accent-ink); font-weight: 650; }
+  .mini-list { margin: 8px 0 0; padding-left: 18px; }
+  .mini-list li { margin-bottom: 4px; font-size: 14.5px; color: var(--ink-soft); }
+  .mini-list b { color: var(--ink); }
+
+  /* ---------- Roadmap ---------- */
+  .roadmap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .rm-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 16px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    padding: 16px 18px;
+  }
+  .rm-item h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .rm-item p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    max-width: 52ch;
+  }
+  .rm-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 5px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .rm-tag.high { background: var(--accent-soft); color: var(--accent-ink); }
+  .rm-tag.mid { background: rgba(201, 150, 47, 0.16); color: var(--gold); }
+  .rm-tag.later { background: var(--line); color: var(--ink-soft); }
+  @media (max-width: 560px) {
+    .rm-item { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Join card ---------- */
+  .join-card {
+    background: linear-gradient(160deg, var(--accent-ink) 0%, var(--accent) 150%);
+    border-radius: 18px;
+    padding: 28px 26px;
+    color: #EFFDF6;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+  }
+  .join-card .jc-text .sec-eyebrow { color: #CFF4D8; }
+  .join-card h2 { color: #FFFFFF; }
+  .join-card-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.28);
+    padding: 10px 18px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .join-card .btn-primary {
+    background: #FFFFFF;
+    color: var(--accent-ink);
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 560px) {
+    .features { grid-template-columns: 1fr; }
+    .step { grid-template-columns: 30px 1fr; padding: 18px; }
+    .join-card { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="crest">⚽</div>
+    <div class="masthead-text">
+      <div class="eyebrow">Tài liệu giới thiệu</div>
+      <h1>My Football Team</h1>
+    </div>
+  </div>
+
+  <p class="lede">
+    Nơi cả đội quản lý <strong>quỹ đội</strong>, <strong>điểm danh</strong> và
+    <strong>các khoản thu theo chiến dịch</strong> — không cần group chat rối,
+    không cần bảng tính Excel. Mọi khoản đóng góp minh bạch, mọi thông báo
+    đến thẳng Zalo cá nhân.
+  </p>
+
+  <div class="cta-row">
+    <a class="btn btn-primary" href="/app/home">Vào trang chủ ↗</a>
+    <a class="btn btn-ghost" href="/onboarding/join?code=6GUKV2Y">Tham gia đội ↗</a>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-eyebrow">Tính năng chính</div>
+      <h2>Một hệ thống, thay cho ba bốn công cụ rời rạc</h2>
+      <p class="sec-sub">Bốn mảng việc đội bóng nào cũng đau đầu, nay gói gọn trong một app.</p>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="ic">💰</div>
+        <h3>Quỹ đội</h3>
+        <p>Theo dõi số dư, lịch sử thu chi theo thời gian thực. Mọi khoản chi đều có người duyệt.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🧾</div>
+        <h3>Đóng quỹ bằng bill</h3>
+        <p>Chuyển khoản xong, chụp bill upload thẳng lên hệ thống — không cần báo miệng.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">📣</div>
+        <h3>Chiến dịch thu quỹ</h3>
+        <p>Thu tiền giải đấu, đồng phục, liên hoan... theo từng đợt, biết ngay ai đã đóng, ai chưa.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🔔</div>
+        <h3>Thông báo qua Zalo</h3>
+        <p>Xác nhận đóng quỹ, kết quả duyệt, nhắc lịch — gửi thẳng vào Zalo, không bỏ lỡ.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-eyebrow">Bắt đầu — 4 bước</div>
+      <h2>Hướng dẫn cho người dùng lần đầu</h2>
+      <p class="sec-sub">Làm đúng thứ tự bên dưới — bước 3 chỉ cần làm một lần duy nhất.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Đăng nhập</h3>
+          <p>
+            Truy cập <a href="/app/home">myteam.revonexus.net</a>,
+            đăng nhập bằng <b>số điện thoại Zalo</b> của bạn.
+          </p>
+          <p>Mật khẩu mặc định: <code>12345678</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Tham gia đội</h3>
+          <p>
+            Bấm vào link mời, hoặc mở app rồi nhập mã đội thủ công nếu link không hoạt động.
+          </p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Liên kết Zalo <span style="color:var(--ink-soft); font-weight:500;">— chỉ 1 lần</span></h3>
+          <p>Để nhận thông báo tự động, thực hiện một lần duy nhất:</p>
+          <ol class="mini-list">
+            <li>Vào <b>Hồ sơ</b> → kéo xuống → chọn <b>Liên kết Zalo</b></li>
+            <li>Bấm <b>Copy mã</b></li>
+            <li>Bấm <b>Mở Zalo Bot</b></li>
+            <li>Dán mã và gửi cho bot</li>
+          </ol>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>Đóng quỹ</h3>
+          <p>
+            Tại <b>Trang chủ</b>, chọn khoản thu cần đóng, chuyển khoản rồi upload ảnh bill.
+            Ban quản lý duyệt xong, bạn nhận thông báo Zalo ngay.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-eyebrow">Định hướng phát triển</div>
+      <h2>Những tính năng có thể bổ sung tiếp theo</h2>
+      <p class="sec-sub">Chưa làm, nhưng là hướng hợp lý để đi tiếp dựa trên những gì hệ thống đang thiếu.</p>
+    </div>
+    <div class="roadmap">
+      <div class="rm-item">
+        <div>
+          <h3>Xác nhận thanh toán tự động</h3>
+          <p>Quét mã QR ngân hàng và đối soát tự động, thay vì quản lý phải tự nhìn ảnh bill rồi duyệt tay từng khoản.</p>
+        </div>
+        <span class="rm-tag high">Ưu tiên cao</span>
+      </div>
+      <div class="rm-item">
+        <div>
+          <h3>Xuất báo cáo quỹ theo tháng</h3>
+          <p>Tải file Excel/PDF tổng hợp thu chi để lưu trữ hoặc báo cáo cho cả đội, không cần lọc thủ công trên màn hình.</p>
+        </div>
+        <span class="rm-tag high">Ưu tiên cao</span>
+      </div>
+      <div class="rm-item">
+        <div>
+          <h3>Thống kê phong độ cầu thủ</h3>
+          <p>Bàn thắng, kiến tạo, đánh giá sau trận — đi xa hơn bảng xếp hạng điểm danh hiện tại.</p>
+        </div>
+        <span class="rm-tag later">Dài hạn</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="sec-eyebrow">Kết nối giữa các đội</div>
+      <h2>Từ quản lý nội bộ sang tương tác giữa các đội</h2>
+      <p class="sec-sub">Tận dụng việc một tài khoản đã có thể tham gia nhiều đội, để các đội trên hệ thống biết và đánh giá lẫn nhau.</p>
+    </div>
+    <div class="roadmap">
+      <div class="rm-item">
+        <div>
+          <h3>Lưu kết quả trận đấu</h3>
+          <p>Tỷ số, đối thủ, ngày giờ, sân bãi — gắn vào lịch thi đấu để có lịch sử đối đầu, tra lại trận cũ bất cứ lúc nào.</p>
+        </div>
+        <span class="rm-tag later">Dài hạn</span>
+      </div>
+      <div class="rm-item">
+        <div>
+          <h3>Đánh giá đội đối thủ</h3>
+          <p>Sau trận, chấm điểm đối thủ (trình độ, thái độ, tổ chức...) để các đội khác tham khảo trước khi nhận lời mời đá giao hữu.</p>
+        </div>
+        <span class="rm-tag later">Dài hạn</span>
+      </div>
+      <div class="rm-item">
+        <div>
+          <h3>Chấm điểm fair-play</h3>
+          <p>Ghi nhận tinh thần thi đấu sau mỗi trận, tích luỹ thành điểm uy tín của đội — giúp đội đá đẹp dễ được mời đấu hơn.</p>
+        </div>
+        <span class="rm-tag later">Dài hạn</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 0;">
+    <div class="join-card">
+      <div class="jc-text">
+        <div class="sec-eyebrow">Mã tham gia đội</div>
+        <h2 style="font-family:'Rounded Sporty', ui-rounded, sans-serif; font-size:20px; font-weight:750; margin:4px 0 0;">Chưa vào được đội?</h2>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div class="join-card-code">6GUKV2Y</div>
+        <a class="btn btn-primary" href="/onboarding/join?code=6GUKV2Y">Dùng link tham gia ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>My Football Team</span>
+    <span>myteam.revonexus.net</span>
+  </footer>
+
+</div>
+</body>
+</html>

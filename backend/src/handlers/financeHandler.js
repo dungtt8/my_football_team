@@ -340,7 +340,7 @@ const getPendingApprovals = async (req, res) => {
 };
 
 /**
- * Get team's fund balance (sum of approved transactions)
+ * Get team's fund balance (all-time) plus current-month income/expense.
  * GET /finance/balance
  */
 const getBalance = async (req, res) => {
@@ -351,8 +351,8 @@ const getBalance = async (req, res) => {
       team_id: teamId
     });
 
-    // Balance = SUM(income) - SUM(expense) từ các transaction đã approved
-    const result = await db('fund_transactions')
+    // All-time balance = SUM(income) - SUM(expense) từ các transaction đã approved
+    const allTime = await db('fund_transactions')
       .where('team_id', teamId)
       .where('status', 'approved')
       .select(
@@ -361,20 +361,84 @@ const getBalance = async (req, res) => {
       )
       .first();
 
-    const totalIncome = parseFloat(result.total_income) || 0;
-    const totalExpense = parseFloat(result.total_expense) || 0;
-    const balance = totalIncome - totalExpense;
+    // "Thu/Chi tháng này" cards are scoped to the current calendar month only,
+    // separate from the all-time balance above.
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const thisMonth = await db('fund_transactions')
+      .where('team_id', teamId)
+      .where('status', 'approved')
+      .where('transaction_date', '>=', monthStart)
+      .where('transaction_date', '<', monthEnd)
+      .select(
+        db.raw(`SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as total_income`),
+        db.raw(`SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as total_expense`)
+      )
+      .first();
+
+    const allTimeIncome = parseFloat(allTime.total_income) || 0;
+    const allTimeExpense = parseFloat(allTime.total_expense) || 0;
+    const balance = allTimeIncome - allTimeExpense;
 
     return res.json({
       team_id: teamId,
       total_balance: balance,
-      total_income: totalIncome,
-      total_expense: totalExpense,
+      total_income: parseFloat(thisMonth.total_income) || 0,
+      total_expense: parseFloat(thisMonth.total_expense) || 0,
       currency: 'VND'
     });
   } catch (error) {
     return handleError(error, req, res, {
       endpoint: '/finance/balance',
+      method: 'GET'
+    });
+  }
+};
+
+/**
+ * Monthly income/expense breakdown for the last N months (for the finance
+ * dashboard chart), oldest first. Months with no approved transactions are
+ * filled in with zeros so the chart always shows a full, evenly-spaced range.
+ * GET /finance/monthly-summary?months=6
+ */
+const getMonthlySummary = async (req, res) => {
+  try {
+    const teamId = req.team.id;
+    const months = Math.min(24, Math.max(1, parseInt(req.query.months, 10) || 6));
+
+    const now = new Date();
+    const rangeStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+    const rows = await db('fund_transactions')
+      .where('team_id', teamId)
+      .where('status', 'approved')
+      .where('transaction_date', '>=', rangeStart)
+      .select(
+        db.raw(`TO_CHAR(transaction_date, 'YYYY-MM') as month`),
+        db.raw(`SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) as income`),
+        db.raw(`SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) as expense`)
+      )
+      .groupBy('month');
+
+    const byMonth = new Map(rows.map(r => [r.month, r]));
+
+    const summary = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const row = byMonth.get(key);
+      summary.push({
+        month: key,
+        income: parseFloat(row?.income) || 0,
+        expense: parseFloat(row?.expense) || 0,
+      });
+    }
+
+    return res.json({ team_id: teamId, months: summary });
+  } catch (error) {
+    return handleError(error, req, res, {
+      endpoint: '/finance/monthly-summary',
       method: 'GET'
     });
   }
@@ -410,5 +474,6 @@ module.exports = {
   rejectTransaction,
   getPendingApprovals,
   getBalance,
+  getMonthlySummary,
   getClosingPeriod
 };

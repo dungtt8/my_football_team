@@ -146,45 +146,45 @@ export default function TeamMembersPage() {
                         const isMe = m.id === (user as any)?.id
                         return (
                             <div key={m.id} style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                                display: 'flex', flexDirection: 'column', gap: '10px',
                                 padding: '14px 16px', background: isMe ? G.accentDim : G.glass,
                                 border: `1px solid ${isMe ? 'rgba(18,183,106,0.20)' : G.glassBorder}`,
                                 borderRadius: '16px', backdropFilter: 'blur(12px)',
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                                    <div style={{
-                                        width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
-                                        background: m.role === 'owner' ? 'linear-gradient(135deg, #12B76A, #039855)' : m.role === 'co_manager' ? 'linear-gradient(135deg, #2E7CF6, #1D4ED8)' : '#E7ECF3',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '14px', fontWeight: 700, color: m.role === 'member' ? G.t2 : '#FFFFFF',
-                                    }}>{initials(m.full_name || 'U')}</div>
-                                    <div style={{ minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {m.full_name}{isMe ? ' (tôi)' : ''}
-                                        </p>
-                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {m.phone || m.email}
-                                        </p>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                        <div style={{
+                                            width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
+                                            background: m.role === 'owner' ? 'linear-gradient(135deg, #12B76A, #039855)' : m.role === 'co_manager' ? 'linear-gradient(135deg, #2E7CF6, #1D4ED8)' : '#E7ECF3',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '14px', fontWeight: 700, color: m.role === 'member' ? G.t2 : '#FFFFFF',
+                                        }}>{initials(m.full_name || 'U')}</div>
+                                        <div style={{ minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: G.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {m.full_name}{isMe ? ' (tôi)' : ''}
+                                            </p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: G.t3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {m.phone || m.email}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: roleBg(m.role), color: roleColor(m.role), border: `1px solid ${roleBorder(m.role)}` }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', background: roleBg(m.role), color: roleColor(m.role), border: `1px solid ${roleBorder(m.role)}`, flexShrink: 0 }}>
                                         {ROLE_LABELS[m.role] || m.role}
                                     </span>
-                                    {isOwner && !isMe && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <button onClick={() => openEdit(m)} style={{ padding: '6px 10px', borderRadius: '8px', background: '#F3F6FA', border: `1px solid ${G.glassBorder}`, color: G.t2, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = G.blue; (e.currentTarget as any).color = '#FFFFFF' }} onMouseLeave={(e) => { (e.currentTarget as any).background = '#F3F6FA'; (e.currentTarget as any).color = G.t2 }}>
-                                                Sửa
-                                            </button>
-                                            <button onClick={() => setConfirmAction({ type: 'deactivate', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,122,26,0.1)', border: `1px solid rgba(255,122,26,0.2)`, color: '#FF7A1A', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(255,122,26,0.2)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = 'rgba(255,122,26,0.1)' }}>
-                                                Tạm dừng
-                                            </button>
-                                            <button onClick={() => setConfirmAction({ type: 'kick', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: G.redDim, border: `1px solid rgba(240,68,56,0.2)`, color: G.red, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(240,68,56,0.25)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = G.redDim }}>
-                                                Loại
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
+                                {isOwner && !isMe && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                        <button onClick={() => openEdit(m)} style={{ padding: '6px 10px', borderRadius: '8px', background: '#F3F6FA', border: `1px solid ${G.glassBorder}`, color: G.t2, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = G.blue; (e.currentTarget as any).color = '#FFFFFF' }} onMouseLeave={(e) => { (e.currentTarget as any).background = '#F3F6FA'; (e.currentTarget as any).color = G.t2 }}>
+                                            Sửa
+                                        </button>
+                                        <button onClick={() => setConfirmAction({ type: 'deactivate', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,122,26,0.1)', border: `1px solid rgba(255,122,26,0.2)`, color: '#FF7A1A', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(255,122,26,0.2)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = 'rgba(255,122,26,0.1)' }}>
+                                            Tạm dừng
+                                        </button>
+                                        <button onClick={() => setConfirmAction({ type: 'kick', memberId: m.id, memberName: m.full_name })} style={{ padding: '6px 10px', borderRadius: '8px', background: G.redDim, border: `1px solid rgba(240,68,56,0.2)`, color: G.red, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }} onMouseEnter={(e) => { (e.currentTarget as any).background = 'rgba(240,68,56,0.25)' }} onMouseLeave={(e) => { (e.currentTarget as any).background = G.redDim }}>
+                                            Loại
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )
                     })}
