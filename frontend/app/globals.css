@@ -222,10 +222,13 @@ input:focus, textarea:focus, select:focus { border-color: var(--brand); }
 
 /* buttons */
 .btn{border:none;border-radius:14px;font:700 15px var(--font-body);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.15s}
-.btn:active{transform:scale(.98)}
 .btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand-600));color:#fff;box-shadow:var(--sh-brand)}
+.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,var(--brand-600),var(--brand-700));box-shadow:0 10px 24px rgba(3,152,85,.28);transform:translateY(-1px)}
 .btn-block{width:100%;padding:15px}
 .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink);box-shadow:var(--sh-1)}
+.btn-ghost:hover:not(:disabled){background:var(--brand-050);border-color:var(--brand-100);color:var(--brand-700);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{cursor:not-allowed}
 .btn-sm{padding:10px 16px;font-size:13px;border-radius:12px}
 
 /* progress / level */
