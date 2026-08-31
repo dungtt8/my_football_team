@@ -18,6 +18,7 @@ const {
   onCampaignChargedHandler,
   onCampaignClosedHandler,
 } = require('./handlers/campaignEvents');
+const { onPasswordResetRequestedHandler } = require('./handlers/passwordResetEvents');
 
 // Event definitions
 const events = {
@@ -38,7 +39,10 @@ const events = {
   ATTENDANCE_SESSION_CLOSED: 'attendance.session-closed',
 
   // Zalo events
-  ZALO_MESSAGE_FAILED: 'zalo.message-failed'
+  ZALO_MESSAGE_FAILED: 'zalo.message-failed',
+
+  // Authentication events
+  PASSWORD_RESET_REQUESTED: 'auth.password-reset-requested'
 };
 
 // ============================================================================
@@ -211,6 +215,7 @@ module.exports = {
   onAttendanceSessionCreatedHandler,
   onAttendanceCheckInHandler,
   onAttendanceSessionClosedHandler,
+  onPasswordResetRequestedHandler,
   autoCreateSessionsScheduledJob,
   financeClosingCheckScheduledJob,
   checkInNotificationScheduledJob,

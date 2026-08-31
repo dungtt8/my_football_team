@@ -18,6 +18,7 @@ const BADGES: [string, string][] = [
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 const ZALO_BOT_USERNAME = process.env.NEXT_PUBLIC_ZALO_BOT_USERNAME || ''
+const FEEDBACK_FORM_URL = process.env.NEXT_PUBLIC_FEEDBACK_FORM_URL || ''
 
 export default function MenuPage() {
     const router = useRouter()
@@ -385,6 +386,32 @@ export default function MenuPage() {
     </div>
     );
 
+    const feedbackFormEl = (
+        <div>
+            <div className="sec-title" style={{ marginBottom: 12 }}>Đánh giá ứng dụng</div>
+            <div className="card pad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14 }}>
+                    Chia sẻ trải nghiệm và những khó khăn bạn gặp phải.
+                </p>
+                {FEEDBACK_FORM_URL ? (
+                    <a
+                        href={FEEDBACK_FORM_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary btn-sm"
+                        style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}
+                    >
+                        Điền form đánh giá
+                    </a>
+                ) : (
+                    <button className="btn btn-primary btn-sm" disabled>
+                        Chưa thiết lập đường dẫn
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+
     const settingsListEl = (
         <div className="card">
             {menuItems.map((item, i) => (
@@ -424,6 +451,7 @@ export default function MenuPage() {
                     {badgesEl}
                     {inviteCodeEl}
                     {zaloLinkEl}
+                    {feedbackFormEl}
                     {settingsListEl}
                 </div>
             </div>
@@ -444,6 +472,9 @@ export default function MenuPage() {
                 </div>
                 <div style={{ marginTop: 20 }}>
                     {zaloLinkEl}
+                </div>
+                <div style={{ marginTop: 20 }}>
+                    {feedbackFormEl}
                 </div>
             </div>
 

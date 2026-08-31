@@ -64,8 +64,16 @@ app.get('/health', (req, res) => {
 
 // Auth routes (no tenancy required)
 const { phoneLoginHandler, phoneRegisterHandler } = require('./handlers/phoneAuthHandler');
+const {
+    requestPasswordResetHandler,
+    verifyPasswordResetCodeHandler,
+    confirmPasswordResetHandler
+} = require('./handlers/passwordResetHandler');
 app.post('/api/auth/phone/login', phoneLoginHandler);
 app.post('/api/auth/phone/register', phoneRegisterHandler);
+app.post('/api/auth/password-reset/request', requestPasswordResetHandler);
+app.post('/api/auth/password-reset/verify', verifyPasswordResetCodeHandler);
+app.post('/api/auth/password-reset/confirm', confirmPasswordResetHandler);
 
 // Zalo webhook (NO AUTH - verify signature before processing)
 const zaloWebhookHandler = require('./handlers/zaloWebhookHandler');

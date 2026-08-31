@@ -234,6 +234,12 @@ function LoginFormContent() {
                         </div>
                     </div>
 
+                    <div style={{ textAlign: 'right', marginTop: '-8px' }}>
+                        <Link href="/forgot-password" className="text-sm" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
+                            Quên mật khẩu?
+                        </Link>
+                    </div>
+
                     {/* Submit */}
                     <button
                         type="submit"

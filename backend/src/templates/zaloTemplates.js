@@ -75,6 +75,10 @@ const templates = {
     `Số tiền: ${p.amount_per_member}đ/người\n` +
     `Hạn đóng: ${p.deadline}\n\n` +
     `Bạn chưa đóng quỹ này, vui lòng thanh toán sớm.`,
+
+    PASSWORD_RESET_OTP: (p) =>
+      `${p.code} là mã đặt lại mật khẩu của bạn \n\n` +
+      `KHÔNG CHIA SẺ MÃ NÀY VỚI BẤT KỲ AI.`,
 };
 
 function buildTextFromTemplate(templateId, params) {

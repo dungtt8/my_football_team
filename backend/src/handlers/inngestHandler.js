@@ -20,6 +20,7 @@ const {
   onCampaignMemberRejectedHandler,
   onCampaignChargedHandler,
   onCampaignClosedHandler,
+  onPasswordResetRequestedHandler,
 } = require('../inngest/events');
 
 // Register all functions
@@ -45,6 +46,7 @@ const functions = [
   onCampaignMemberRejectedHandler,
   onCampaignChargedHandler,
   onCampaignClosedHandler,
+  onPasswordResetRequestedHandler,
 ];
 
 logger.info('Inngest functions registered', {
