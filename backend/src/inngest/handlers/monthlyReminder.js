@@ -213,7 +213,7 @@ const autoCreateTeamFundLogic = async ({ step }) => {
       .whereNull('deleted_at')
       .whereNotNull('team_fund_amount')
       .where('team_fund_amount', '>', 0)
-      .select('id', 'name', 'team_fund_amount', 'finance_payment_start_day', 'finance_payment_end_day');
+      .select('id', 'name', 'owner_id', 'team_fund_amount', 'finance_payment_start_day', 'finance_payment_end_day');
   });
 
   logger.info('Teams eligible for team fund', { count: teams.length });
@@ -256,7 +256,7 @@ const autoCreateTeamFundLogic = async ({ step }) => {
       const { campaignId, activeMembers } = await db.transaction(async (trx) => {
         const [insertedCampaign] = await trx('campaigns').insert({
           team_id: team.id,
-          created_by: null, // system-created
+          created_by: team.owner_id, // auto-created on behalf of the team owner
           name: `Quỹ đội tháng ${currentMonth}`,
           amount_per_member: team.team_fund_amount,
           campaign_type: 'team_fund',
