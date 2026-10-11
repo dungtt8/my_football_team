@@ -58,4 +58,9 @@ export class PrismaService
   raw<T = any>(sql: string, ...params: any[]): Promise<T> {
     return (this as any).$queryRawUnsafe(sql, ...params);
   }
+
+  /** Raw write helper (INSERT/UPDATE/DELETE without RETURNING); resolves to affected rows. */
+  exec(sql: string, ...params: any[]): Promise<number> {
+    return (this as any).$executeRawUnsafe(sql, ...params);
+  }
 }

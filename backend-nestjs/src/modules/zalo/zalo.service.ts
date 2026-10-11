@@ -3,78 +3,55 @@ import axios from 'axios';
 import logger from '../../common/utils/logger';
 
 /**
- * Port of backend/src/services/zaloService.js.
+ * Port of backend/src/services/zaloService.js (Zalo Bot API).
+ * `zalo_user_id` stored on users is the bot chat_id.
  */
 @Injectable()
 export class ZaloService {
-  private get oaAccountId() {
-    return process.env.ZALO_OA_ACCOUNT_ID;
-  }
-  private get accessToken() {
-    return process.env.ZALO_OA_ACCESS_TOKEN;
+  private get baseUrl() {
+    // Token has the form "botId:accessToken" from bot.zapps.me
+    return `https://bot-api.zaloplatforms.com/bot${process.env.ZALO_BOT_TOKEN}`;
   }
 
-  async sendUtilityMessage(zaloUserId: string, message: string): Promise<any> {
+  constructor() {
+    if (!process.env.ZALO_BOT_TOKEN) {
+      logger.error('ZALO_BOT_TOKEN is not set — Zalo bot messages will fail');
+    }
+  }
+
+  async sendMessage(chatId: string, text: string): Promise<any> {
     try {
-      const response = await axios.post(
-        'https://openapi.zalo.me/v3.0/oa/message/send',
-        {
-          recipient: { user_id: zaloUserId },
-          message: { text: message },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-      logger.info('Zalo utility message sent', {
-        zalo_user_id: zaloUserId,
-        message_length: message.length,
+      const response = await axios.post(`${this.baseUrl}/sendMessage`, {
+        chat_id: chatId,
+        text,
+      });
+      // Zalo can return HTTP 200 with { ok: false } on failure.
+      if (response.data && response.data.ok === false) {
+        logger.error('Zalo bot API rejected sendMessage', {
+          chat_id: chatId,
+          response: response.data,
+        });
+        throw new Error(
+          `Zalo sendMessage failed: ${response.data.description || 'unknown error'}`,
+        );
+      }
+      logger.info('Zalo bot message sent', {
+        chat_id: chatId,
+        message_length: text.length,
       });
       return response.data;
     } catch (error: any) {
-      logger.error('Failed to send Zalo message', {
-        zalo_user_id: zaloUserId,
+      logger.error('Failed to send Zalo bot message', {
+        chat_id: chatId,
         error: error.message,
+        response: error.response?.data,
       });
       throw error;
     }
   }
 
-  async sendZNS(
-    zaloUserId: string,
-    templateId: string,
-    templateData: any,
-  ): Promise<any> {
-    try {
-      const response = await axios.post(
-        'https://openapi.zalo.me/v3.0/oa/message/zns/send',
-        {
-          recipient: { user_id: zaloUserId },
-          template_id: templateId,
-          template_data: templateData,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-      logger.info('Zalo ZNS message sent', {
-        zalo_user_id: zaloUserId,
-        template_id: templateId,
-      });
-      return response.data;
-    } catch (error: any) {
-      logger.error('Failed to send ZNS message', {
-        zalo_user_id: zaloUserId,
-        template_id: templateId,
-        error: error.message,
-      });
-      throw error;
-    }
+  /** Kept for existing callers (scheduled tasks). */
+  sendUtilityMessage(chatId: string, message: string): Promise<any> {
+    return this.sendMessage(chatId, message);
   }
 }

@@ -3,7 +3,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ZaloService } from '../zalo/zalo.service';
 import { TeamUsersService } from '../../common/services/team-users.service';
 import logger from '../../common/utils/logger';
-import { bi, toNum } from '../../common/utils/helpers';
+import { bi, toNum, currentMonthString } from '../../common/utils/helpers';
+import { buildTextFromTemplate } from '../../common/utils/zalo-templates';
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Port of backend/src/services/notificationService.js.
@@ -30,6 +33,13 @@ export class NotificationService {
     params: any,
   ): Promise<any> {
     try {
+      if (!zaloUserId) {
+        logger.warn('Zalo message send skipped', {
+          template_id: templateId,
+          reason: 'zaloUserId is required (received null/undefined)',
+        });
+        throw new Error('zaloUserId is required (received null/undefined)');
+      }
       const user = await this.prisma.users.findFirst({
         where: { zalo_user_id: zaloUserId },
       });
@@ -42,7 +52,8 @@ export class NotificationService {
         });
         throw new Error(err);
       }
-      const response = await this.zalo.sendZNS(zaloUserId, templateId, params);
+      const text = buildTextFromTemplate(templateId, params);
+      const response = await this.zalo.sendMessage(zaloUserId, text);
       logger.info('Zalo message queued successfully', {
         zalo_user_id: zaloUserId,
         template_id: templateId,
@@ -57,6 +68,44 @@ export class NotificationService {
       });
       throw error;
     }
+  }
+
+  /** Send a templated Zalo message to many chat ids (rate-limited). */
+  async sendBatchNotifications(
+    zaloUserIds: string[],
+    templateId: string,
+    params: any,
+  ): Promise<{ successful: any[]; failed: any[] }> {
+    const results: { successful: any[]; failed: any[] } = {
+      successful: [],
+      failed: [],
+    };
+    const users = await this.prisma.users.findMany({
+      where: { zalo_user_id: { in: zaloUserIds } },
+      select: { zalo_user_id: true },
+    });
+    const found = new Set(users.map((u: any) => u.zalo_user_id));
+    const text = buildTextFromTemplate(templateId, params);
+
+    for (const zaloUserId of zaloUserIds) {
+      if (!found.has(zaloUserId)) {
+        results.failed.push({ zalo_user_id: zaloUserId, error: 'User not found' });
+        continue;
+      }
+      try {
+        const response = await this.zalo.sendMessage(zaloUserId, text);
+        results.successful.push({ zalo_user_id: zaloUserId, response });
+        await sleep(150); // stay under Zalo's per-minute message limit
+      } catch (error: any) {
+        results.failed.push({ zalo_user_id: zaloUserId, error: error.message });
+        logger.error('Failed to send batch notification to user', {
+          zalo_user_id: zaloUserId,
+          template_id: templateId,
+          error: error.message,
+        });
+      }
+    }
+    return results;
   }
 
   async sendInternalNotification(
@@ -126,23 +175,26 @@ export class NotificationService {
     const members = await this.teamUsers.getTeamUsers(team_id, {
       status: 'active',
     });
-    for (const member of members) {
-      try {
-        await this.sendInternalNotification(
-          member.id,
-          title ? `${title}: ${message}` : message,
-          data || {},
-          team_id,
-        );
-        results.successful++;
-      } catch (error: any) {
-        results.failed++;
-        logger.error('Failed to broadcast notification to member', {
-          team_id,
+    if (members.length === 0) return results;
+
+    const finalMessage = title ? `${title}: ${message}` : message;
+    try {
+      await this.prisma.notifications.createMany({
+        data: members.map((member: any) => ({
           user_id: member.id,
-          error: error.message,
-        });
-      }
+          team_id: bi(team_id),
+          message: finalMessage,
+          metadata: data || {},
+          is_read: false,
+        })),
+      });
+      results.successful = members.length;
+    } catch (error: any) {
+      results.failed = members.length;
+      logger.error('Failed to broadcast notification', {
+        team_id,
+        error: error.message,
+      });
     }
     logger.info('Broadcast notification completed', {
       team_id,
@@ -217,7 +269,7 @@ export class NotificationService {
     if (!submitter) throw new Error(`Submitter ${submitterId} not found`);
 
     const coManagers = await this.teamUsers.getTeamUsers(team_id, {
-      role: 'co_manager',
+      role: ['owner', 'co_manager'],
       status: 'active',
     });
     for (const coManager of coManagers) {
@@ -308,8 +360,9 @@ export class NotificationService {
       });
     }
 
-    // FUND_UPDATED to everyone else
+    // FUND_UPDATED to team managers (owner + co_manager) except the submitter
     const members = await this.teamUsers.getTeamUsers(team_id, {
+      role: ['owner', 'co_manager'],
       status: 'active',
       excludeUserId: submitterId,
     });
@@ -404,7 +457,7 @@ export class NotificationService {
     if (!campaign) throw new Error(`Campaign ${campaign_id} not found`);
 
     const coManagers = await this.teamUsers.getTeamUsers(team_id, {
-      role: 'co_manager',
+      role: ['owner', 'co_manager'],
       status: 'active',
     });
     for (const coManager of coManagers) {
@@ -520,16 +573,70 @@ export class NotificationService {
   }
 
   /**
-   * The original Inngest onSessionClosed handler read from an `attendance_records`
-   * table that does not exist in any migration, so it errored out before doing
-   * anything (fire-and-forget, so the error was swallowed). Point awarding for a
-   * closed session is handled synchronously in AttendanceService.closeSession via
-   * CheckinService.awardPointsForSession. This is therefore a safe no-op.
+   * Port of onSessionClosedHandler: members who did not answer 'yes' are
+   * marked absent ('no') with a -5 point penalty, then everyone gets a summary.
    */
   private async onSessionClosed(data: any): Promise<void> {
-    logger.info('attendance.session_closed event received (no-op)', {
-      session_id: data?.session_id,
-      team_id: data?.team_id,
+    const { session_id, team_id } = data;
+    const session = await this.prisma.attendance_sessions.findFirst({
+      where: { id: bi(session_id), team_id: bi(team_id) },
     });
+    if (!session) throw new Error(`Session ${session_id} not found`);
+
+    const members = await this.teamUsers.getTeamUsers(team_id, {
+      status: 'active',
+    });
+    const records = await this.prisma.attendance_checkins.findMany({
+      where: { session_id: bi(session_id) },
+      select: { user_id: true, response: true },
+    });
+    const attended = new Set(
+      records.filter((r: any) => r.response === 'yes').map((r: any) => String(r.user_id)),
+    );
+
+    const month = currentMonthString();
+    const now = new Date();
+    const absentees = members.filter((m: any) => !attended.has(String(m.id)));
+    if (absentees.length > 0) {
+      const ids = absentees.map((m: any) => bi(m.id));
+      await this.prisma.attendance_checkins.updateMany({
+        where: { session_id: bi(session_id), user_id: { in: ids } },
+        data: { response: 'no', responded_at: now, updated_at: now },
+      });
+      await this.prisma.user_points.createMany({
+        data: ids.map((id: any) => ({
+          user_id: id,
+          team_id: bi(team_id),
+          points: -5,
+          reason: 'absence_penalty',
+          month,
+          created_at: now,
+        })),
+      });
+    }
+
+    const stats = {
+      attended_count: attended.size,
+      absent_count: absentees.length,
+      total_members: members.length,
+    };
+    for (const member of members) {
+      try {
+        await this.sendZaloMessage(member.zalo_user_id, 'SESSION_CLOSED_SUMMARY', {
+          session_type: session.session_type === 'training' ? 'Training' : 'Match',
+          attended_count: stats.attended_count.toString(),
+          absent_count: stats.absent_count.toString(),
+          total_members: stats.total_members.toString(),
+          user_status: attended.has(String(member.id)) ? 'attended' : 'absent',
+        });
+      } catch (error: any) {
+        logger.error('Failed to send session closed summary', {
+          member_id: member.id,
+          team_id,
+          session_id,
+          error: error.message,
+        });
+      }
+    }
   }
 }

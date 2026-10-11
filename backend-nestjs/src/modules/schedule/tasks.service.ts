@@ -6,7 +6,6 @@ import { CheckinService } from '../attendance/checkin.service';
 import { SessionSchedulingService } from '../attendance/session-scheduling.service';
 import { FinanceClosingService } from '../finance/finance-closing.service';
 import { NotificationService } from '../notification/notification.service';
-import { ZaloService } from '../zalo/zalo.service';
 import { TeamUsersService } from '../../common/services/team-users.service';
 import { bi } from '../../common/utils/helpers';
 import logger from '../../common/utils/logger';
@@ -27,7 +26,6 @@ export class TasksService {
     private readonly sessionScheduling: SessionSchedulingService,
     private readonly financeClosing: FinanceClosingService,
     private readonly notification: NotificationService,
-    private readonly zalo: ZaloService,
     private readonly teamUsers: TeamUsersService,
   ) {}
 
@@ -144,11 +142,16 @@ export class TasksService {
           columns: ['u.id', 'u.zalo_user_id', 'u.full_name'],
         });
 
-        for (const member of activeMembers) {
+        const linkedMembers = activeMembers.filter((m: any) => m.zalo_user_id);
+
+        for (const member of linkedMembers) {
           try {
-            if (topThreeUsers.length > 0 && member.zalo_user_id) {
-              const msg = this.formatLeaderboardMessage(topThreeUsers);
-              await this.zalo.sendUtilityMessage(member.zalo_user_id, msg);
+            if (topThreeUsers.length > 0) {
+              await this.notification.sendZaloMessage(
+                member.zalo_user_id,
+                'LEADERBOARD_SUMMARY',
+                { topUsers: topThreeUsers },
+              );
               totalNotifications++;
             }
           } catch (error: any) {
@@ -160,14 +163,20 @@ export class TasksService {
           }
         }
 
-        for (const member of activeMembers) {
+        const currentMonthDisplay = new Date().toLocaleString('vi-VN', {
+          month: 'long',
+          year: 'numeric',
+        });
+        for (const member of linkedMembers) {
           try {
-            const currentMonthDisplay = new Date().toLocaleString('vi-VN', {
-              month: 'long',
-              year: 'numeric',
-            });
-            const fundMessage = `📢 Nhắc nợ quỹ tháng ${currentMonthDisplay}\n\nVui lòng thanh toán trước hết hạn.\nhttps://myteam.revonexus.net/fund`;
-            await this.zalo.sendUtilityMessage(member.zalo_user_id, fundMessage);
+            await this.notification.sendZaloMessage(
+              member.zalo_user_id,
+              'FUND_MONTHLY_REMINDER',
+              {
+                month: currentMonthDisplay,
+                link: 'https://myteam.revonexus.net/fund',
+              },
+            );
             totalNotifications++;
           } catch (error: any) {
             logger.error('Failed to send fund reminder', {
@@ -192,18 +201,32 @@ export class TasksService {
     });
   }
 
-  // ── fund.auto-create-team-fund — 1st of month 01:30 UTC ────────────────────
-  @Cron('30 1 1 * *', UTC)
+  // ── fund.auto-create-team-fund — daily 17:00 UTC ───────────────────────────
+  // Running daily (not just on the 1st) makes this self-healing: a missed run
+  // catches up on a later day inside the team's payment window, and the
+  // fund_month check below prevents duplicates.
+  @Cron('0 17 * * *', UTC)
   async autoCreateTeamFund(): Promise<void> {
     const currentMonth = this.getCurrentMonth();
-    logger.info('Auto-create team fund job started', { month: currentMonth });
+    const currentDay = new Date().getDate();
+    logger.info('Auto-create team fund job started', {
+      month: currentMonth,
+      day: currentDay,
+    });
 
     const teams = await this.prisma.teams.findMany({
       where: {
         deleted_at: null,
         team_fund_amount: { not: null, gt: 0 },
       },
-      select: { id: true, name: true, team_fund_amount: true, owner_id: true },
+      select: {
+        id: true,
+        name: true,
+        team_fund_amount: true,
+        owner_id: true,
+        finance_payment_start_day: true,
+        finance_payment_end_day: true,
+      },
     });
     logger.info('Teams eligible for team fund', { count: teams.length });
 
@@ -212,6 +235,19 @@ export class TasksService {
 
     for (const team of teams) {
       try {
+        // Only inside the configured payment window (teams without one are
+        // always eligible).
+        const startDay = team.finance_payment_start_day;
+        const endDay = team.finance_payment_end_day;
+        if (startDay && endDay && (currentDay < startDay || currentDay > endDay)) {
+          logger.info('Outside configured payment window, skipping for now', {
+            team_id: team.id,
+            day: currentDay,
+            window: [startDay, endDay],
+          });
+          continue;
+        }
+
         const existing = await this.prisma.campaigns.findFirst({
           where: {
             team_id: team.id,

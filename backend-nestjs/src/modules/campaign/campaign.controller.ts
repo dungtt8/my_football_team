@@ -659,4 +659,125 @@ export class CampaignController {
     });
     return report;
   }
+
+  @Post(':id/remind')
+  @Roles('co_manager', 'owner')
+  @HttpCode(200)
+  async remindCampaign(@Param('id') id: string, @CurrentTeam() team: any) {
+    const campaign = await this.prisma.campaigns.findFirst({
+      where: { id: bi(id), team_id: bi(team.id) },
+    });
+    if (!campaign) throw new NotFoundError('Campaign', id);
+
+    const pending = await this.prisma.raw<any[]>(
+      `SELECT u.zalo_user_id
+       FROM campaign_assignments ca
+       JOIN users u ON u.id = ca.user_id
+       WHERE ca.campaign_id = $1 AND ca.status = 'pending_confirmation'
+         AND u.zalo_user_id IS NOT NULL`,
+      bi(id),
+    );
+    if (pending.length === 0) return { successful: 0, failed: 0, total: 0 };
+
+    const zaloUserIds = pending.map((p) => p.zalo_user_id);
+    const results = await this.notification.sendBatchNotifications(
+      zaloUserIds,
+      'CAMPAIGN_PAYMENT_REMINDER',
+      {
+        campaign_name: campaign.name,
+        amount_per_member: campaign.amount_per_member,
+        deadline: campaign.deadline
+          ? new Date(campaign.deadline).toLocaleDateString('vi-VN')
+          : 'Không có hạn',
+      },
+    );
+
+    logger.info('Campaign payment reminder sent', {
+      campaign_id: id,
+      team_id: team.id,
+      successful: results.successful.length,
+      failed: results.failed.length,
+    });
+    return {
+      successful: results.successful.length,
+      failed: results.failed.length,
+      total: zaloUserIds.length,
+    };
+  }
+
+  /** Active members who have no assignment in this campaign yet. */
+  @Get(':id/missing-members')
+  @Roles('co_manager', 'owner')
+  async getMissingMembers(@Param('id') id: string, @CurrentTeam() team: any) {
+    const campaign = await this.prisma.campaigns.findFirst({
+      where: { id: bi(id), team_id: bi(team.id) },
+    });
+    if (!campaign) throw new NotFoundError('Campaign', id);
+
+    const members = await this.prisma.raw<any[]>(
+      `SELECT tm.user_id, u.full_name
+       FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       LEFT JOIN campaign_assignments ca
+         ON ca.user_id = tm.user_id AND ca.campaign_id = $1
+       WHERE tm.team_id = $2 AND tm.status = 'active' AND ca.id IS NULL`,
+      bi(id),
+      bi(team.id),
+    );
+    return { members };
+  }
+
+  /** Add assignments for selected active members who don't have one yet. */
+  @Post(':id/sync-assignments')
+  @Roles('co_manager', 'owner')
+  @HttpCode(200)
+  async syncAssignments(
+    @Param('id') id: string,
+    @Body() body: any,
+    @CurrentTeam() team: any,
+  ) {
+    const userIds = body?.user_ids;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      throw new ValidationError('user_ids is required and must be a non-empty array');
+    }
+
+    const campaign = await this.prisma.campaigns.findFirst({
+      where: { id: bi(id), team_id: bi(team.id) },
+    });
+    if (!campaign) throw new NotFoundError('Campaign', id);
+
+    // Only active members of this team; ignore anything else the client sends.
+    const members = await this.prisma.team_members.findMany({
+      where: {
+        team_id: bi(team.id),
+        status: 'active',
+        user_id: { in: userIds.map((u: any) => bi(u)) },
+      },
+      select: { user_id: true },
+    });
+
+    let added = 0;
+    if (members.length > 0) {
+      const now = new Date();
+      const result = await this.prisma.campaign_assignments.createMany({
+        data: members.map((m: any) => ({
+          campaign_id: bi(id),
+          user_id: m.user_id,
+          status: 'pending_confirmation',
+          created_at: now,
+          updated_at: now,
+        })),
+        skipDuplicates: true,
+      });
+      added = result.count;
+    }
+
+    logger.info('Campaign assignments synced', {
+      campaign_id: id,
+      team_id: team.id,
+      requested: userIds.length,
+      added,
+    });
+    return { added };
+  }
 }

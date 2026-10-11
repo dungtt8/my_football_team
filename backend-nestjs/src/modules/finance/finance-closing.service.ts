@@ -100,7 +100,13 @@ export class FinanceClosingService {
             },
           };
 
-          await this.notification.broadcastNotification(notification);
+          const result = await this.notification.broadcastNotification(notification);
+          if (result.successful === 0) {
+            logger.warn(
+              `No active members notified in team ${team.id} for payment deadline notification`,
+            );
+            continue;
+          }
 
           await this.prisma.teams.update({
             where: { id: team.id },

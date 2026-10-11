@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
 import { bi } from '../../common/utils/helpers';
+import { NotFoundError, ValidationError } from '../../common/errors/business-errors';
 import logger from '../../common/utils/logger';
 
 const POINTS_YES = 10;
@@ -114,6 +115,47 @@ export class CheckinService {
     });
   }
 
+  /** Manager confirms/overrides a member's response on their behalf. */
+  async respondToCheckinAsManager(
+    checkinId: number | string | bigint,
+    teamId: number | string | bigint,
+    response: string,
+  ): Promise<any> {
+    if (!['yes', 'no'].includes(response)) {
+      throw new ValidationError('Response must be "yes" or "no"');
+    }
+
+    return this.prisma.$transaction(async (tx: any) => {
+      const checkin = await tx.attendance_checkins.findFirst({
+        where: { id: bi(checkinId), team_id: bi(teamId) },
+      });
+      if (!checkin) throw new NotFoundError('Checkin', String(checkinId));
+
+      // Lock the session row so this can't race a concurrent close.
+      const sessions = await tx.$queryRawUnsafe(
+        `SELECT id FROM attendance_sessions
+         WHERE id = $1 AND team_id = $2 AND status = 'active' FOR UPDATE`,
+        checkin.session_id,
+        bi(teamId),
+      );
+      if (!sessions[0]) throw new ValidationError('Session already closed');
+
+      const now = new Date();
+      await tx.attendance_checkins.update({
+        where: { id: bi(checkinId) },
+        data: { response, responded_at: now, updated_at: now },
+      });
+
+      const rows = await tx.$queryRawUnsafe(
+        `SELECT ac.*, u.full_name, u.email
+         FROM attendance_checkins ac JOIN users u ON u.id = ac.user_id
+         WHERE ac.id = $1`,
+        bi(checkinId),
+      );
+      return rows[0];
+    });
+  }
+
   async getSessionCheckins(
     sessionId: number | string | bigint,
     teamId: number | string | bigint,
@@ -222,31 +264,46 @@ export class CheckinService {
         },
       });
 
-      for (const session of activeSessions) {
-        sessionsChecked++;
-        const pending = await this.prisma.attendance_checkins.findMany({
-          where: { session_id: session.id, response: null },
-          select: { user_id: true },
+      if (activeSessions.length === 0) continue;
+      sessionsChecked += activeSessions.length;
+      const sessionById = new Map(
+        activeSessions.map((x: any) => [x.id.toString(), x]),
+      );
+
+      // One query for every session's pending checkins.
+      const pending = await this.prisma.attendance_checkins.findMany({
+        where: {
+          session_id: { in: activeSessions.map((x: any) => x.id) },
+          response: null,
+        },
+        select: { session_id: true, user_id: true },
+      });
+      if (pending.length === 0) continue;
+
+      const now = new Date();
+      const rows = pending.map((c: any) => {
+        const session: any = sessionById.get(c.session_id.toString());
+        return {
+          user_id: c.user_id,
+          team_id: team.id,
+          message: `Nhắc điểm danh: vui lòng phản hồi buổi ${
+            session.session_type === 'match' ? 'thi đấu' : 'tập'
+          } ngày ${new Date(session.session_date).toLocaleDateString('vi-VN')}`,
+          metadata: { session_id: session.id.toString() },
+          is_read: false,
+          created_at: now,
+        };
+      });
+
+      try {
+        await this.prisma.notifications.createMany({ data: rows });
+        notificationsSent += rows.length;
+      } catch (error: any) {
+        logger.warn('Failed to send checkin reminders batch', {
+          team_id: team.id,
+          count: rows.length,
+          error: error.message,
         });
-        for (const checkin of pending) {
-          try {
-            await this.notification.sendInternalNotification(
-              checkin.user_id,
-              `Nhắc điểm danh: vui lòng phản hồi buổi ${
-                session.session_type === 'match' ? 'thi đấu' : 'tập'
-              } ngày ${new Date(session.session_date).toLocaleDateString('vi-VN')}`,
-              { session_id: session.id },
-              team.id,
-            );
-            notificationsSent++;
-          } catch (error: any) {
-            logger.warn('Failed to send checkin reminder', {
-              session_id: session.id,
-              user_id: checkin.user_id,
-              error: error.message,
-            });
-          }
-        }
       }
     }
 

@@ -326,4 +326,49 @@ export class AttendanceController {
 
     return { user_id: userId, month: targetMonth, history };
   }
+
+  @Post('sessions/:id/remind')
+  @Roles('co_manager', 'owner')
+  @HttpCode(200)
+  async remindSession(@Param('id') id: string, @CurrentTeam() team: any) {
+    const teamId = team.id;
+    const session = await this.prisma.attendance_sessions.findFirst({
+      where: { id: bi(id), team_id: bi(teamId) },
+    });
+    if (!session) throw new NotFoundError('Session not found');
+
+    const pending = await this.prisma.raw<any[]>(
+      `SELECT u.zalo_user_id
+       FROM attendance_checkins ac
+       JOIN users u ON u.id = ac.user_id
+       WHERE ac.session_id = $1 AND ac.team_id = $2
+         AND ac.response IS NULL AND u.zalo_user_id IS NOT NULL`,
+      bi(id),
+      bi(teamId),
+    );
+    if (pending.length === 0) return { successful: 0, failed: 0, total: 0 };
+
+    const zaloUserIds = pending.map((p) => p.zalo_user_id);
+    const results = await this.notification.sendBatchNotifications(
+      zaloUserIds,
+      'ATTENDANCE_MANUAL_REMINDER',
+      {
+        session_date: new Date(session.session_date).toLocaleDateString('vi-VN'),
+        location: session.location || 'TBD',
+        session_type: session.session_type === 'training' ? 'Training' : 'Match',
+      },
+    );
+
+    logger.info('Attendance manual reminder sent', {
+      session_id: id,
+      team_id: teamId,
+      successful: results.successful.length,
+      failed: results.failed.length,
+    });
+    return {
+      successful: results.successful.length,
+      failed: results.failed.length,
+      total: zaloUserIds.length,
+    };
+  }
 }

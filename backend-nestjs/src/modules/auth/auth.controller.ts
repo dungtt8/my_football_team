@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { TeamService } from '../team/team.service';
 import { Public } from '../../common/decorators/public.decorator';
-import { ValidationError } from '../../common/errors/business-errors';
+import { AuthenticationError, ValidationError } from '../../common/errors/business-errors';
 import logger from '../../common/utils/logger';
 
 /**
@@ -46,97 +46,102 @@ export class AuthController {
       zalo_user_id: zaloUserData.zalo_user_id,
     });
 
-    let user: any = null;
-    try {
-      user = await this.prisma.users.findFirst({
-        where: { zalo_user_id: zaloUserData.zalo_user_id },
-      });
-    } catch (dbError: any) {
-      logger.warn('Database query failed, proceeding with new user creation', {
-        error: dbError.message,
-      });
-    }
-
-    if (!user) {
-      logger.info('New user detected, creating team and user', {
+    const user: any = await this.prisma.users.findFirst({
+      where: {
         zalo_user_id: zaloUserData.zalo_user_id,
-        email: zaloUserData.email,
-      });
-      // NOTE: preserved from the Express handler — a mock user object is
-      // returned rather than persisted.
-      user = {
-        id: 1,
-        team_id: 1,
-        email: zaloUserData.email,
-        full_name: zaloUserData.full_name,
-        zalo_user_id: zaloUserData.zalo_user_id,
-        role: 'owner',
         status: 'active',
-      };
-    } else {
-      logger.info('Existing user found, updating last login');
-      user.last_login_at = new Date();
+        deleted_at: null,
+      },
+    });
+    // Never mint a token for an unknown identity; Zalo accounts must be
+    // linked to an existing user first.
+    if (!user) {
+      throw new AuthenticationError('Tài khoản Zalo chưa được liên kết');
     }
 
-    const token = this.auth.generateJWT(user);
-    logger.info('User authenticated successfully', {
-      user_id: user.id,
-      team_id: user.team_id,
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { last_login_at: new Date() },
     });
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.role,
-        team_id: user.team_id,
-      },
-    };
+    return this.buildAuthResponse(user, false);
   }
 
   @Post('phone/login')
   @Public()
   @HttpCode(200)
   async phoneLogin(@Body() body: any) {
-    const { phone, full_name } = body;
-    if (!phone) throw new ValidationError('Phone number is required');
-    if (!full_name) throw new ValidationError('Full name is required');
+    const { phone, password } = body;
+    this.validatePhoneAndPassword(phone, password);
 
-    const phoneRegex = /^[0-9+\-\s()]{10,}$/;
-    if (!phoneRegex.test(phone)) {
-      throw new ValidationError('Invalid phone number format');
-    }
-
-    logger.info('Phone auth initiated', {
+    logger.info('Phone login initiated', {
       phone: phone.substring(0, 7) + '****',
     });
 
-    let user: any = await this.prisma.users.findFirst({ where: { phone } });
+    const user: any = await this.prisma.users.findFirst({
+      where: { phone, deleted_at: null },
+    });
     if (!user) {
-      const email = `phone_${phone.replace(/\D/g, '')}@football-team.local`;
-      user = await this.prisma.users.create({
-        data: { phone, full_name, email, status: 'active', created_at: new Date() },
-      });
-      logger.info('New user created via phone', { user_id: user.id });
-    } else {
-      await this.prisma.users.update({
-        where: { id: user.id },
-        data: { full_name, last_login_at: new Date() },
-      });
-      user = { ...user, full_name };
+      throw new AuthenticationError(
+        'Số điện thoại chưa có tài khoản, vui lòng đăng ký',
+      );
     }
 
+    const ok = await this.team.verifyPassword(password, user.password_hash || '');
+    if (!ok) throw new AuthenticationError('Invalid phone number or password');
+
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { last_login_at: new Date() },
+    });
+    return this.buildAuthResponse(user, false);
+  }
+
+  @Post('phone/register')
+  @Public()
+  @HttpCode(200)
+  async phoneRegister(@Body() body: any) {
+    const { phone, full_name, password } = body;
+    this.validatePhoneAndPassword(phone, password);
+    if (!full_name) throw new ValidationError('Full name is required');
+
+    const existing = await this.prisma.users.findFirst({ where: { phone } });
+    if (existing) {
+      throw new ValidationError('Số điện thoại đã có tài khoản, vui lòng đăng nhập');
+    }
+
+    const password_hash = await this.team.hashPassword(password);
+    const email = `phone_${phone.replace(/\D/g, '')}@football-team.local`;
+    const user: any = await this.prisma.users.create({
+      data: {
+        phone,
+        full_name,
+        email,
+        password_hash,
+        status: 'active',
+        created_at: new Date(),
+      },
+    });
+    logger.info('New user registered via phone', { user_id: user.id });
+    return this.buildAuthResponse(user, true);
+  }
+
+  private validatePhoneAndPassword(phone: any, password: any) {
+    if (!phone) throw new ValidationError('Phone number is required');
+    if (!password) throw new ValidationError('Password is required');
+    if (typeof password !== 'string' || password.length < 8) {
+      throw new ValidationError('Password must be at least 8 characters');
+    }
+    if (typeof phone !== 'string' || !/^[0-9+\-\s()]{10,}$/.test(phone)) {
+      throw new ValidationError('Invalid phone number format');
+    }
+  }
+
+  // Builds the JWT + response payload shared by login, register and Zalo.
+  private async buildAuthResponse(user: any, isNewUser: boolean) {
     const allTeams = await this.team.getUserTeams(user.id);
-
-    let currentTeam: any = null;
-    let currentRole = 'member';
-    if (allTeams.length > 0) {
-      const firstTeam = allTeams[0];
-      currentTeam = { id: firstTeam.id, name: firstTeam.name };
-      currentRole = firstTeam.role;
-    }
+    const firstTeam = allTeams[0];
+    const currentTeam = firstTeam ? { id: firstTeam.id, name: firstTeam.name } : null;
+    const currentRole = firstTeam ? firstTeam.role : 'member';
 
     const token = this.auth.generateJWT(
       {
@@ -149,32 +154,6 @@ export class AuthController {
       allTeams,
     );
 
-    if (!currentTeam) {
-      logger.info('User has no team, redirecting to onboarding', {
-        user_id: user.id,
-      });
-      return {
-        token,
-        user: {
-          id: user.id,
-          phone: user.phone,
-          email: user.email,
-          full_name: user.full_name,
-          role: 'member',
-          team_id: null,
-        },
-        team: null,
-        has_team: false,
-        teams: [],
-      };
-    }
-
-    logger.info('User authenticated', {
-      user_id: user.id,
-      role: currentRole,
-      team_id: currentTeam.id,
-      total_teams: allTeams.length,
-    });
     return {
       token,
       user: {
@@ -183,11 +162,12 @@ export class AuthController {
         email: user.email,
         full_name: user.full_name,
         role: currentRole,
-        team_id: currentTeam.id,
+        team_id: currentTeam?.id ?? null,
       },
       team: currentTeam,
-      has_team: true,
+      has_team: !!currentTeam,
       teams: allTeams,
+      is_new_user: isNewUser,
     };
   }
 }

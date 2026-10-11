@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpException,
   Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
@@ -50,6 +51,27 @@ export class CheckinController {
     const result = await this.checkin.respondToCheckin(
       checkInId,
       userId,
+      body.response,
+    );
+    return { success: true, check_in: result };
+  }
+
+  @Patch('checkin/:checkInId/confirm')
+  @Roles('co_manager', 'owner')
+  async managerRespondToCheckIn(
+    @Param('checkInId') checkInId: string,
+    @Body() body: any,
+    @CurrentUser() user: any,
+    @CurrentTeam() team: any,
+  ) {
+    const teamId = team?.id || user?.team_id;
+    if (!teamId) throw new HttpException({ error: 'Unauthorized' }, 401);
+    if (!['yes', 'no'].includes(body?.response)) {
+      throw new ValidationError('Response must be "yes" or "no"');
+    }
+    const result = await this.checkin.respondToCheckinAsManager(
+      checkInId,
+      teamId,
       body.response,
     );
     return { success: true, check_in: result };

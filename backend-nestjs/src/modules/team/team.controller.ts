@@ -17,6 +17,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TeamService } from './team.service';
 import { AuthService } from '../auth/auth.service';
 import { StorageService } from '../storage/storage.service';
+import { ZaloLinkService } from '../zalo/zalo-link.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SkipTenancy } from '../../common/decorators/skip-tenancy.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -48,6 +49,7 @@ export class TeamController {
     private readonly team: TeamService,
     private readonly auth: AuthService,
     private readonly storage: StorageService,
+    private readonly zaloLinks: ZaloLinkService,
   ) {}
 
   // ── Auth-only routes (no tenancy) ──────────────────────────────────────────
@@ -1030,5 +1032,23 @@ export class TeamController {
       base.invite = { code: team.invite_code };
     }
     return base;
+  }
+
+  // ── Zalo account linking ───────────────────────────────────────────────────
+
+  @Post('zalo/link-code')
+  @HttpCode(200)
+  async generateZaloLinkCode(@CurrentUser() user: any) {
+    const code = await this.zaloLinks.generateCode(user.id);
+    return { code, expires_in: 600 };
+  }
+
+  @Get('zalo/status')
+  async getZaloLinkStatus(@CurrentUser() user: any) {
+    const row = await this.prisma.users.findUnique({
+      where: { id: bi(user.id) },
+      select: { zalo_user_id: true },
+    });
+    return { linked: !!row?.zalo_user_id };
   }
 }

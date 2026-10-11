@@ -22,6 +22,7 @@ export class GamificationService {
     points: number,
     reason: string,
     teamId: number | string | bigint,
+    sessionId: number | string | bigint | null = null,
   ): Promise<any> {
     try {
       const month = this.getCurrentMonth();
@@ -32,6 +33,7 @@ export class GamificationService {
           points,
           reason,
           month,
+          session_id: bi(sessionId),
         },
       });
       logger.info('Points added', { userId, teamId, points, reason, month });

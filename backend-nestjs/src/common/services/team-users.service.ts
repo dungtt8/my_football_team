@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 interface GetTeamUsersOpts {
-  role?: string;
+  role?: string | string[];
   status?: string | null;
   excludeUserId?: number | string | bigint;
   columns?: string[];
@@ -40,8 +40,9 @@ export class TeamUsersService {
       sql += ` AND tm.status = $${params.length}`;
     }
     if (role) {
-      params.push(role);
-      sql += ` AND tm.role = $${params.length}`;
+      const roles = Array.isArray(role) ? role : [role];
+      params.push(roles);
+      sql += ` AND tm.role = ANY($${params.length})`;
     }
     if (excludeUserId) {
       params.push(BigInt(excludeUserId as any));
