@@ -203,7 +203,7 @@ export class TasksService {
         deleted_at: null,
         team_fund_amount: { not: null, gt: 0 },
       },
-      select: { id: true, name: true, team_fund_amount: true },
+      select: { id: true, name: true, team_fund_amount: true, owner_id: true },
     });
     logger.info('Teams eligible for team fund', { count: teams.length });
 
@@ -233,7 +233,7 @@ export class TasksService {
             const insertedCampaign = await tx.campaigns.create({
               data: {
                 team_id: team.id,
-                created_by: null,
+                created_by: team.owner_id,
                 name: `Quỹ đội tháng ${currentMonth}`,
                 amount_per_member: team.team_fund_amount,
                 campaign_type: 'team_fund',
