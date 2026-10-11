@@ -224,6 +224,13 @@ export class FinanceController {
     const parsedLimit = Math.min(parseInt(query.limit) || 20, 100);
     const parsedOffset = parseInt(query.offset) || 0;
 
+    // Only fund_transactions — the frontend's Approval type is an alias of
+    // Transaction and its approve/reject actions only call
+    // /finance/transactions/:id/approve|reject, so mixing in
+    // campaign_assignments rows here would let a manager "approve" a
+    // campaign confirmation through the transaction endpoint using the
+    // wrong id space. Campaign confirmations have their own approval queue
+    // at /campaigns/:id/assignments/:userId/approve (see CampaignController).
     const total = await this.prisma.fund_transactions.count({
       where: { team_id: bi(teamId), status: 'pending' },
     });
@@ -268,6 +275,47 @@ export class FinanceController {
       total_expense: totalExpense,
       currency: 'VND',
     };
+  }
+
+  @Get('finance/monthly-summary')
+  @Roles('member', 'co_manager', 'owner')
+  async getMonthlySummary(
+    @CurrentTeam() team: any,
+    @Query('months') monthsQuery?: string,
+  ) {
+    const teamId = team.id;
+    const months = Math.min(24, Math.max(1, parseInt(monthsQuery, 10) || 6));
+
+    const now = new Date();
+    const rangeStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+    const rows = await this.prisma.raw<any[]>(
+      `SELECT
+         TO_CHAR(transaction_date, 'YYYY-MM') AS month,
+         SUM(CASE WHEN transaction_type = 'income' THEN amount ELSE 0 END) AS income,
+         SUM(CASE WHEN transaction_type = 'expense' THEN amount ELSE 0 END) AS expense
+       FROM fund_transactions
+       WHERE team_id = $1 AND status = 'approved' AND transaction_date >= $2
+       GROUP BY month`,
+      bi(teamId),
+      rangeStart,
+    );
+
+    const byMonth = new Map(rows.map((r) => [r.month, r]));
+
+    const summary = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const row = byMonth.get(key);
+      summary.push({
+        month: key,
+        income: toNum(row?.income),
+        expense: toNum(row?.expense),
+      });
+    }
+
+    return { team_id: teamId, months: summary };
   }
 
   @Get('team/finance/closing-period')

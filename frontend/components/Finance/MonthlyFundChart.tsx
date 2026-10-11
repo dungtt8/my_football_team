@@ -27,7 +27,7 @@ interface MonthlyFundChartProps {
 }
 
 export default function MonthlyFundChart({ data }: MonthlyFundChartProps) {
-    const maxValue = Math.max(1, ...data.map(d => Math.max(d.income, d.expense)))
+    const maxValue = Math.max(1, ...data.map(d => Math.max(d.income || 0, d.expense || 0)))
     const barMaxHeight = 120
 
     return (
@@ -47,8 +47,8 @@ export default function MonthlyFundChart({ data }: MonthlyFundChartProps) {
             ) : (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: barMaxHeight + 30 }}>
                     {data.map(d => {
-                        const incomeH = Math.max(2, Math.round((d.income / maxValue) * barMaxHeight))
-                        const expenseH = Math.max(2, Math.round((d.expense / maxValue) * barMaxHeight))
+                        const incomeH = Math.max(2, Math.round(((d.income || 0) / maxValue) * barMaxHeight))
+                        const expenseH = Math.max(2, Math.round(((d.expense || 0) / maxValue) * barMaxHeight))
                         return (
                             <div key={d.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: barMaxHeight }} title={`Thu ${fmtMoney(d.income)} · Chi ${fmtMoney(d.expense)}`}>

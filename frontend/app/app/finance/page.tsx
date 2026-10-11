@@ -169,7 +169,7 @@ export default function FinancePage() {
         <div>
             <div className="sec-title" style={{ marginBottom: 12 }}>Chờ duyệt ({approvals.length})</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {approvals.map((a: any) => (
+                {approvals.map((a: Approval) => (
                     <div key={a.id} className="card pad">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                             <div>
