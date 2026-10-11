@@ -472,23 +472,55 @@ const coManagerApprove = async (req, res) => {
       approvedAmount = amount;
     }
 
-    // Create auto-approved fund_transaction (income — member đóng tiền vào quỹ)
-    const [insertedTransaction] = await db('fund_transactions').insert({
-      team_id: teamId,
-      campaign_id: id,
-      submitted_by: userId,
-      amount: approvedAmount,
-      description: `Đóng quỹ: ${campaign.name}`,
-      transaction_type: 'income',
-      status: 'approved',
-      approved_by: managerId,
-      approved_at: new Date(),
-      bill_image_url: assignment.bill_image_url || null,
-      transaction_date: new Date(),
-      created_at: new Date(),
-      updated_at: new Date()
-    }).returning('id');
-    const transactionId = insertedTransaction.id;
+    // Guard against a concurrent approve race: only transition the assignment
+    // if it's still pending_approval. If two requests race here, only one
+    // will affect a row and the other bails out instead of double-crediting
+    // the fund with two auto-approved transactions.
+    const transactionId = await db.transaction(async (trx) => {
+      const affectedRows = await trx('campaign_assignments')
+        .where({ id: assignment.id, status: 'pending_approval' })
+        .update({
+          status: 'approved',
+          approved_by: managerId,
+          approved_at: new Date(),
+          approval_notes: approval_notes || null,
+          approved_amount: approvedAmount,
+          updated_at: new Date()
+        });
+
+      if (affectedRows === 0) {
+        // Another request already changed the status between our read above
+        // and this update — re-fetch so the error reflects the real cause
+        // instead of the now-stale `assignment.status` we read before racing.
+        const current = await trx('campaign_assignments').where('id', assignment.id).first();
+        throw new ConflictError(
+          `Assignment status is ${current?.status}, cannot approve`
+        );
+      }
+
+      // Create auto-approved fund_transaction (income — member đóng tiền vào quỹ)
+      const [insertedTransaction] = await trx('fund_transactions').insert({
+        team_id: teamId,
+        campaign_id: id,
+        submitted_by: userId,
+        amount: approvedAmount,
+        description: `Đóng quỹ: ${campaign.name}`,
+        transaction_type: 'income',
+        status: 'approved',
+        approved_by: managerId,
+        approved_at: new Date(),
+        bill_image_url: assignment.bill_image_url || null,
+        transaction_date: new Date(),
+        created_at: new Date(),
+        updated_at: new Date()
+      }).returning('id');
+
+      await trx('campaign_assignments')
+        .where('id', assignment.id)
+        .update({ transaction_id: insertedTransaction.id, updated_at: new Date() });
+
+      return insertedTransaction.id;
+    });
 
     logger.info('Auto-created fund transaction', {
       transaction_id: transactionId,
@@ -496,19 +528,6 @@ const coManagerApprove = async (req, res) => {
       user_id: userId,
       amount: approvedAmount
     });
-
-    // Update assignment status and link transaction
-    await db('campaign_assignments')
-      .where('id', assignment.id)
-      .update({
-        status: 'approved',
-        approved_by: managerId,
-        approved_at: new Date(),
-        approval_notes: approval_notes || null,
-        approved_amount: approvedAmount,
-        transaction_id: transactionId,
-        updated_at: new Date()
-      });
 
     // Fetch updated assignment
     const updatedAssignment = await db('campaign_assignments')
@@ -959,7 +978,8 @@ const getReport = async (req, res) => {
       campaign_name: campaign.name,
       total_members: assignments.length,
       amount_per_member: campaign.amount_per_member,
-      expected_total: assignments.length * campaign.amount_per_member,
+      // Exempt/rejected members don't owe money, so exclude them from the expected total.
+      expected_total: (assignments.length - statusCounts.exempt - statusCounts.rejected) * campaign.amount_per_member,
       approved_total: totalApprovedAmount,
       status_breakdown: statusCounts,
       approval_rate:

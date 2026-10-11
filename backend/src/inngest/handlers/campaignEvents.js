@@ -12,6 +12,13 @@ const { getTeamUsers } = require('../../utils/teamUsers');
 const onCampaignCreatedLogic = async ({ event, step }) => {
   const { campaign_id, team_id, campaign_name, amount_per_member, deadline, created_by } = event.data;
 
+  // Skip malformed events (e.g. manual/test events) instead of querying with
+  // undefined bindings, which makes knex throw and Inngest retry forever.
+  if (!campaign_id || !team_id) {
+    logger.warn('Skipping event with missing campaign_id/team_id', { event_name: event.name });
+    return { status: 'skipped', reason: 'missing campaign_id or team_id' };
+  }
+
   logger.info('Processing campaign.created event', {
     campaign_id,
     team_id,
@@ -119,6 +126,13 @@ const onCampaignCreatedHandler = inngest.createFunction(
 const onCampaignMemberConfirmedLogic = async ({ event, step }) => {
   const { campaign_id, team_id, user_id, member_name, campaign_name } = event.data;
 
+  // Skip malformed events (e.g. manual/test events) instead of querying with
+  // undefined bindings, which makes knex throw and Inngest retry forever.
+  if (!campaign_id || !team_id) {
+    logger.warn('Skipping event with missing campaign_id/team_id', { event_name: event.name });
+    return { status: 'skipped', reason: 'missing campaign_id or team_id' };
+  }
+
   logger.info('Processing campaign.member_confirmed event', {
     campaign_id,
     team_id,
@@ -220,6 +234,13 @@ const onCampaignMemberConfirmedHandler = inngest.createFunction(
 // ============================================================================
 const onCampaignChargedLogic = async ({ event, step }) => {
   const { campaign_id, team_id, user_id, member_name, transaction_id, amount } = event.data;
+
+  // Skip malformed events (e.g. manual/test events) instead of querying with
+  // undefined bindings, which makes knex throw and Inngest retry forever.
+  if (!campaign_id || !team_id) {
+    logger.warn('Skipping event with missing campaign_id/team_id', { event_name: event.name });
+    return { status: 'skipped', reason: 'missing campaign_id or team_id' };
+  }
 
   logger.info('Processing campaign.charged event', {
     campaign_id,
@@ -398,6 +419,13 @@ const onCampaignChargedHandler = inngest.createFunction(
 // ============================================================================
 const onCampaignClosedLogic = async ({ event, step }) => {
   const { campaign_id, team_id } = event.data;
+
+  // Skip malformed events (e.g. manual/test events) instead of querying with
+  // undefined bindings, which makes knex throw and Inngest retry forever.
+  if (!campaign_id || !team_id) {
+    logger.warn('Skipping event with missing campaign_id/team_id', { event_name: event.name });
+    return { status: 'skipped', reason: 'missing campaign_id or team_id' };
+  }
 
   logger.info('Processing campaign.closed event', {
     campaign_id,

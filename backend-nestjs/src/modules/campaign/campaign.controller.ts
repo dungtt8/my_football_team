@@ -396,23 +396,60 @@ export class CampaignController {
       approvedAmount = amount;
     }
 
-    // Auto-approved income transaction (member đóng tiền vào quỹ)
-    const transaction = await this.prisma.fund_transactions.create({
-      data: {
-        team_id: bi(teamId),
-        campaign_id: bi(id),
-        submitted_by: bi(userId),
-        amount: approvedAmount,
-        description: `Đóng quỹ: ${campaign.name}`,
-        transaction_type: 'income',
-        status: 'approved',
-        approved_by: bi(managerId),
-        approved_at: new Date(),
-        bill_image_url: assignment.bill_image_url || null,
-        transaction_date: new Date(),
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
+    // Guard against a concurrent approve race: only transition the assignment
+    // if it's still pending_approval. If two requests race here, only one
+    // will affect a row and the other bails out instead of double-crediting
+    // the fund with two auto-approved transactions.
+    const { transaction, updatedAssignment } = await this.prisma.$transaction(async (trx) => {
+      const { count } = await trx.campaign_assignments.updateMany({
+        where: { id: assignment.id, status: 'pending_approval' },
+        data: {
+          status: 'approved',
+          approved_by: bi(managerId),
+          approved_at: new Date(),
+          approval_notes: approval_notes || null,
+          approved_amount: approvedAmount,
+          updated_at: new Date(),
+        },
+      });
+
+      if (count === 0) {
+        // Another request already changed the status between our read above
+        // and this update — re-fetch so the error reflects the real cause
+        // instead of the now-stale `assignment.status` we read before racing.
+        const current = await trx.campaign_assignments.findUnique({
+          where: { id: assignment.id },
+        });
+        throw new ConflictError(
+          `Assignment status is ${current?.status}, cannot approve`,
+        );
+      }
+
+      // Auto-approved income transaction (member đóng tiền vào quỹ)
+      const tx = await trx.fund_transactions.create({
+        data: {
+          team_id: bi(teamId),
+          campaign_id: bi(id),
+          submitted_by: bi(userId),
+          amount: approvedAmount,
+          description: `Đóng quỹ: ${campaign.name}`,
+          transaction_type: 'income',
+          status: 'approved',
+          approved_by: bi(managerId),
+          approved_at: new Date(),
+          bill_image_url: assignment.bill_image_url || null,
+          transaction_date: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+
+      const updated = await trx.campaign_assignments.update({
+        where: { id: assignment.id },
+        data: { transaction_id: tx.id, updated_at: new Date() },
+      });
+
+      return { transaction: tx, updatedAssignment: updated };
     });
 
     logger.info('Auto-created fund transaction', {
@@ -420,23 +457,6 @@ export class CampaignController {
       campaign_id: id,
       user_id: userId,
       amount: approvedAmount,
-    });
-
-    await this.prisma.campaign_assignments.update({
-      where: { id: assignment.id },
-      data: {
-        status: 'approved',
-        approved_by: bi(managerId),
-        approved_at: new Date(),
-        approval_notes: approval_notes || null,
-        approved_amount: approvedAmount,
-        transaction_id: transaction.id,
-        updated_at: new Date(),
-      },
-    });
-
-    const updatedAssignment = await this.prisma.campaign_assignments.findUnique({
-      where: { id: assignment.id },
     });
     logger.info('Campaign assignment approved successfully', {
       assignment_id: assignment.id,

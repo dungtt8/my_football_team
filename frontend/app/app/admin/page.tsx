@@ -50,6 +50,8 @@ export default function AdminPage() {
     const [memberCount, setMemberCount] = useState(0)
     const [balance, setBalance] = useState(0)
     const [busy, setBusy] = useState<string | null>(null)
+    const [rejectingId, setRejectingId] = useState<string | null>(null)
+    const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
 
     // Members who confirmed a campaign payment and are waiting for a
     // co-manager/owner to approve it (campaign_assignments.status = 'pending_approval').
@@ -161,11 +163,17 @@ export default function AdminPage() {
     }
 
     const handleReject = async (id: string) => {
-        const reason = typeof window !== 'undefined' ? window.prompt('Lý do từ chối (tuỳ chọn):') : ''
+        const reason = rejectReasons[id]?.trim()
+        if (!reason) return // reason is required
         setBusy(id)
         try {
-            await rejectTransaction(id, reason || '')
+            await rejectTransaction(id, reason)
             setPending((prev) => prev.filter((p) => p.id !== id))
+            setRejectingId((cur) => (cur === id ? null : cur))
+            setRejectReasons((prev) => {
+                const { [id]: _removed, ...rest } = prev
+                return rest
+            })
             toast('Đã từ chối khoản đóng quỹ', 'success')
         } catch (e: any) {
             toast(e?.message || 'Lỗi khi từ chối', 'error')
@@ -209,33 +217,61 @@ export default function AdminPage() {
                         </div>
                     ) : (
                         pending.map((p, i) => (
-                            <div className="row" key={p.id}>
-                                <div
-                                    className="avatar"
-                                    style={{ width: 42, height: 42, borderRadius: 13, background: GRADS[i % GRADS.length] }}
-                                >
-                                    {initials(p.submitted_by_name)}
+                            <div className="row" key={p.id} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                                    <div
+                                        className="avatar"
+                                        style={{ width: 42, height: 42, borderRadius: 13, background: GRADS[i % GRADS.length] }}
+                                    >
+                                        {initials(p.submitted_by_name)}
+                                    </div>
+                                    <div className="rc">
+                                        <b>{p.submitted_by_name || 'Thành viên'}</b>
+                                        <small>{p.description} · {fmtMoney(p.amount)} · {fmtDate(p.transaction_date || p.created_at)}</small>
+                                    </div>
                                 </div>
-                                <div className="rc">
-                                    <b>{p.submitted_by_name || 'Thành viên'}</b>
-                                    <small>{p.description} · {fmtMoney(p.amount)} · {fmtDate(p.transaction_date || p.created_at)}</small>
-                                </div>
-                                <div style={{ display: 'flex', gap: 8 }}>
+
+                                {rejectingId === p.id && (
+                                    <textarea
+                                        value={rejectReasons[p.id] || ''}
+                                        onChange={(e) => setRejectReasons((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                                        placeholder="Lý do từ chối (bắt buộc)..."
+                                        rows={2}
+                                        style={{
+                                            width: '100%', padding: '8px 10px', fontSize: 13,
+                                            border: '1.5px solid var(--line)', borderRadius: 10,
+                                            background: 'var(--surface-2)', color: 'var(--ink)', resize: 'none',
+                                        }}
+                                    />
+                                )}
+
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                                     <button
                                         className="btn btn-primary btn-sm"
-                                        disabled={busy === p.id}
+                                        disabled={busy === p.id || rejectingId === p.id}
                                         onClick={() => handleApprove(p.id)}
                                     >
                                         Duyệt
                                     </button>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        style={{ color: 'var(--danger)' }}
-                                        disabled={busy === p.id}
-                                        onClick={() => handleReject(p.id)}
-                                    >
-                                        Từ chối
-                                    </button>
+                                    {rejectingId === p.id ? (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ color: 'var(--danger)' }}
+                                            disabled={busy === p.id || !rejectReasons[p.id]?.trim()}
+                                            onClick={() => handleReject(p.id)}
+                                        >
+                                            Xác nhận từ chối
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ color: 'var(--danger)' }}
+                                            disabled={busy === p.id}
+                                            onClick={() => setRejectingId(p.id)}
+                                        >
+                                            Từ chối
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))

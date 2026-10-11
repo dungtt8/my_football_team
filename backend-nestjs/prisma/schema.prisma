@@ -193,7 +193,10 @@ model approvals {
 model campaigns {
   id               BigInt    @id @default(autoincrement())
   team_id          BigInt
-  created_by       BigInt?
+  // NOT NULL at the DB level (migrations/003_campaigns.js) — keep this
+  // required so Prisma catches a missing created_by at compile time
+  // instead of a runtime constraint violation.
+  created_by       BigInt
   name             String    @db.VarChar(255)
   amount_per_member Decimal  @db.Decimal(12, 2)
   deadline         DateTime?
