@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { apiClient } from '@/lib/api'
+import { useAttendance } from '@/hooks/useAttendance'
 
 export interface ActiveCheckIn {
     id: number
@@ -15,23 +15,21 @@ interface UseCheckinReturn {
     respondToCheckIn: (checkInId: number, response: 'yes' | 'no') => Promise<{ success: boolean; check_in: { id: number; response: string; responded_at: string } }>
 }
 
-// Uses the shared apiClient (lib/api.ts) instead of raw fetch so auth headers
-// and 401 handling are consistent with the rest of the app.
+// Thin wrapper over useAttendance's checkin calls so both hooks share one
+// request implementation (auth headers, 401 handling, error state) instead
+// of maintaining a second copy of the same /attendance/checkin/* calls.
 export const useCheckin = (): UseCheckinReturn => {
+    const { getActiveCheckin, respondToCheckin } = useAttendance()
+
     const getActiveCheckIn = useCallback(async () => {
-        const res = await apiClient.get<{ check_in: ActiveCheckIn | null }>('/attendance/checkin/active')
-        if (res.error || !res.data) throw new Error(res.error || 'Failed to get active check-in')
-        return res.data
-    }, [])
+        const result = await getActiveCheckin()
+        return result as unknown as { check_in: ActiveCheckIn | null }
+    }, [getActiveCheckin])
 
     const respondToCheckIn = useCallback(async (checkInId: number, response: 'yes' | 'no') => {
-        const res = await apiClient.post<{ success: boolean; check_in: { id: number; response: string; responded_at: string } }>(
-            `/attendance/checkin/${checkInId}/respond`,
-            { response }
-        )
-        if (res.error || !res.data) throw new Error(res.error || 'Failed to respond to check-in')
-        return res.data
-    }, [])
+        const result = await respondToCheckin(String(checkInId), response)
+        return result as unknown as { success: boolean; check_in: { id: number; response: string; responded_at: string } }
+    }, [respondToCheckin])
 
     return {
         getActiveCheckIn,
