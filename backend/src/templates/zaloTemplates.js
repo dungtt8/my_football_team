@@ -69,6 +69,14 @@ const templates = {
     `Địa điểm: ${p.location}\n\n` +
     `Bạn chưa phản hồi tham gia. Trả lời "1" nếu THAM GIA, "2" nếu KHÔNG THAM GIA`,
 
+    MATCH_ATTENDANCE_SUMMARY: (p) =>
+    `THỐNG KÊ TRẬN ĐẤU (còn 2 tiếng)\n` +
+    `Giờ đá: ${p.session_time}\n` +
+    `Địa điểm: ${p.location}\n\n` +
+    `Tham gia (${p.yes_names.length}): ${p.yes_names.join(', ') || '-'}\n\n` +
+    `Không tham gia (${p.no_names.length}): ${p.no_names.join(', ') || '-'}\n\n` +
+    `Chưa phản hồi: ${p.pending_count}`,
+
     CAMPAIGN_PAYMENT_REMINDER: (p) =>
     `NHẮC ĐÓNG QUỸ\n` +
     `Quỹ: ${p.campaign_name}\n` +

@@ -294,6 +294,59 @@ class NotificationService {
       throw error;
     }
   }
+
+  /**
+   * Send yes/no attendance stats to everyone who answered "yes" for matches
+   * starting in ~2 hours. Stateless: the cron runs every 5 minutes and each run
+   * only covers one aligned 5-minute slice, so a match is picked up once.
+   */
+  async sendPreMatchSummaries() {
+    const SLICE = 5 * 60 * 1000;
+    const end = new Date(Math.floor((Date.now() + 2 * 60 * 60 * 1000) / SLICE) * SLICE);
+    const start = new Date(end.getTime() - SLICE);
+
+    const sessions = await db('attendance_sessions')
+      .where({ session_type: 'match', status: 'active' })
+      .where('session_date', '>=', start)
+      .where('session_date', '<', end);
+
+    let sent = 0;
+    for (const session of sessions) {
+      const members = await getTeamUsers(session.team_id, { status: 'active' });
+      const records = await db('attendance_checkins')
+        .where({ session_id: session.id })
+        .select('user_id', 'response');
+      const responseOf = new Map(records.map(r => [String(r.user_id), r.response]));
+
+      const yes = members.filter(m => responseOf.get(String(m.id)) === 'yes');
+      const no = members.filter(m => responseOf.get(String(m.id)) === 'no');
+      const params = {
+        session_time: new Date(session.session_date).toLocaleString('vi-VN', {
+          timeZone: 'Asia/Ho_Chi_Minh'
+        }),
+        location: session.location || 'TBD',
+        yes_names: yes.map(m => m.full_name),
+        no_names: no.map(m => m.full_name),
+        pending_count: members.length - yes.length - no.length
+      };
+
+      for (const member of yes) {
+        if (!member.zalo_user_id) continue;
+        try {
+          await this.sendZaloMessage(member.zalo_user_id, 'MATCH_ATTENDANCE_SUMMARY', params);
+          sent++;
+          await sleep(150);
+        } catch (error) {
+          logger.error('Failed to send pre-match summary', {
+            member_id: member.id,
+            session_id: session.id,
+            error: error.message
+          });
+        }
+      }
+    }
+    return { sessions: sessions.length, sent };
+  }
 }
 
 module.exports = new NotificationService();

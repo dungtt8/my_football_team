@@ -197,6 +197,25 @@ const checkInNotificationScheduledJob = inngest.createFunction(
   }
 );
 
+/**
+ * Pre-match Summary Scheduled Job
+ * Runs every 5 minutes; sends yes/no attendance stats to participants of
+ * matches starting in ~2 hours.
+ */
+const preMatchSummaryScheduledJob = inngest.createFunction(
+  { id: 'attendance.pre-match-summary' },
+  { cron: '*/5 * * * *' },
+  async ({ step }) => {
+    const notificationService = require('../services/notificationService');
+    const result = await step.run('send-pre-match-summaries', async () => {
+      return await notificationService.sendPreMatchSummaries();
+    });
+    if (result.sessions > 0) {
+      logger.info('[cron] attendance.pre-match-summary completed', { result });
+    }
+    return result;
+  }
+);
 
 module.exports = {
   events,
@@ -219,4 +238,5 @@ module.exports = {
   autoCreateSessionsScheduledJob,
   financeClosingCheckScheduledJob,
   checkInNotificationScheduledJob,
+  preMatchSummaryScheduledJob,
 };
